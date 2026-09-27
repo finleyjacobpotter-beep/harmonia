@@ -21,9 +21,9 @@
   networking.hostName = hostname;
   networking.networkmanager.enable = true;
 
-  time.timeZone = "Europe/London";
-  i18n.defaultLocale = "en_GB.UTF-8";
-  console.keyMap = "uk";
+  time.timeZone = "UTC";
+  i18n.defaultLocale = "en_US.UTF-8";
+  console.keyMap = "us";
 
   users.users.${username} = {
     isNormalUser = true;
