@@ -12,6 +12,12 @@ let
   volDown = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
   volMute = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
   micMute = "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
+
+  # Already recoloured to Miami Wind (lutgen) with its outer margin filled
+  # with p.bg, so it blends into the background. `fit` scales it to the
+  # screen height and centres it (plain `center` would crop a 1468px-tall
+  # image on a 1080p screen).
+  wallpaper = ../assets/wallpaper.png;
 in
 {
   wayland.windowManager.sway = {
@@ -88,7 +94,7 @@ in
         };
       };
 
-      output."*".bg = "${p.bg} solid_color";
+      output."*".bg = "${wallpaper} fit ${p.bg}";
 
       # Hide the pointer as soon as a key is pressed; it comes back when the
       # mouse moves.
