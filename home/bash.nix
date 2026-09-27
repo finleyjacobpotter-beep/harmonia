@@ -67,6 +67,36 @@ in
     '';
   };
 
+  # vi editing mode for bash (and everything else that uses readline).
+  programs.readline = {
+    enable = true;
+    variables = {
+      editing-mode = "vi";
+      show-mode-in-prompt = true;
+      # cursor: bar in insert mode, block in command mode
+      vi-ins-mode-string = ''\1\e[6 q\2'';
+      vi-cmd-mode-string = ''\1\e[2 q\2'';
+      keyseq-timeout = 50;
+      completion-ignore-case = true;
+      show-all-if-ambiguous = true;
+      colored-stats = true;
+      colored-completion-prefix = true;
+    };
+    extraConfig = ''
+      $if mode=vi
+      set keymap vi-command
+      "gg": beginning-of-history
+      "G": end-of-history
+      "k": history-search-backward
+      "j": history-search-forward
+      set keymap vi-insert
+      "\C-l": clear-screen
+      "\C-p": history-search-backward
+      "\C-n": history-search-forward
+      $endif
+    '';
+  };
+
   programs.fzf = {
     enable = true;
     enableBashIntegration = true;

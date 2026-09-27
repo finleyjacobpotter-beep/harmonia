@@ -2,11 +2,16 @@
   pkgs,
   lib,
   palette,
+  keys,
   ...
 }:
 let
   p = palette;
-  mod = "Mod4";
+  mod = keys.sway;
+  volUp = "wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+";
+  volDown = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
+  volMute = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+  micMute = "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
 in
 {
   wayland.windowManager.sway = {
@@ -95,30 +100,150 @@ in
         { command = "eww open bar"; }
       ];
 
-      keybindings = lib.mkOptionDefault {
-        "${mod}+b" = "exec flatpak run app.zen_browser.zen";
-        "${mod}+e" = "exec alacritty -e ranger";
-        "${mod}+Shift+x" = "exec swaylock -f";
-        "${mod}+Shift+b" = "exec eww open --toggle bar";
+      # Complete keymap (sway's defaults are *replaced*, not merged): every
+      # binding is Super+…, apart from dedicated hardware keys. See keys.nix.
+      keybindings =
+        let
+          ws = n: key: {
+            "${mod}+${key}" = "workspace number ${toString n}";
+            "${mod}+Shift+${key}" = "move container to workspace number ${toString n}";
+          };
+          workspaces = lib.foldl' (acc: n: acc // ws n (toString (lib.mod n 10))) { } (lib.range 1 10);
+        in
+        workspaces
+        // {
+          # focus / move — vim directions
+          "${mod}+h" = "focus left";
+          "${mod}+j" = "focus down";
+          "${mod}+k" = "focus up";
+          "${mod}+l" = "focus right";
+          "${mod}+Shift+h" = "move left";
+          "${mod}+Shift+j" = "move down";
+          "${mod}+Shift+k" = "move up";
+          "${mod}+Shift+l" = "move right";
+          "${mod}+a" = "focus parent";
+          "${mod}+Shift+a" = "focus child";
 
-        "Print" = ''exec grim -g "$(slurp)" - | wl-copy'';
-        "Shift+Print" = "exec grim - | wl-copy";
+          # outputs
+          "${mod}+Ctrl+h" = "focus output left";
+          "${mod}+Ctrl+l" = "focus output right";
+          "${mod}+Ctrl+Shift+h" = "move workspace to output left";
+          "${mod}+Ctrl+Shift+l" = "move workspace to output right";
 
-        "XF86AudioRaiseVolume" = "exec wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+";
-        "XF86AudioLowerVolume" = "exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
-        "XF86AudioMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
-        "XF86AudioMicMute" = "exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
-        "XF86AudioPlay" = "exec playerctl play-pause";
-        "XF86AudioNext" = "exec playerctl next";
-        "XF86AudioPrev" = "exec playerctl previous";
-        "XF86MonBrightnessUp" = "exec brightnessctl set 5%+";
-        "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
-      };
+          # workspaces
+          "${mod}+Tab" = "workspace back_and_forth";
+          "${mod}+bracketleft" = "workspace prev_on_output";
+          "${mod}+bracketright" = "workspace next_on_output";
+
+          # layout — split names follow vim (:split = below, :vsplit = beside)
+          "${mod}+s" = "splitv";
+          "${mod}+v" = "splith";
+          "${mod}+t" = "layout tabbed";
+          "${mod}+Shift+t" = "layout stacking";
+          "${mod}+e" = "layout toggle split";
+          "${mod}+f" = "fullscreen toggle";
+          "${mod}+Shift+space" = "floating toggle";
+          "${mod}+space" = "focus mode_toggle";
+          "${mod}+minus" = "scratchpad show";
+          "${mod}+Shift+minus" = "move scratchpad";
+
+          # windows / session
+          "${mod}+q" = "kill";
+          "${mod}+Return" = "exec alacritty";
+          "${mod}+d" = "exec fuzzel";
+          "${mod}+Shift+c" = "reload";
+          "${mod}+Shift+x" = "exec swaylock -f";
+          "${mod}+Shift+b" = "exec eww open --toggle bar";
+
+          # notifications (mako)
+          "${mod}+n" = "exec makoctl dismiss";
+          "${mod}+Shift+n" = "exec makoctl dismiss --all";
+          "${mod}+Ctrl+n" = "exec makoctl restore";
+          "${mod}+i" = "exec makoctl invoke";
+
+          # screenshots → clipboard
+          "${mod}+Shift+s" = ''exec grim -g "$(slurp)" - | wl-copy'';
+          "${mod}+Ctrl+s" = "exec grim - | wl-copy";
+
+          # modes (vim-style "leader" layers; Escape/Return leave)
+          "${mod}+r" = ''mode "resize"'';
+          "${mod}+o" = ''mode "open"'';
+          "${mod}+m" = ''mode "media"'';
+          "${mod}+Shift+e" = ''mode "system"'';
+
+          # dedicated hardware keys
+          "Print" = ''exec grim -g "$(slurp)" - | wl-copy'';
+          "Shift+Print" = "exec grim - | wl-copy";
+          "XF86AudioRaiseVolume" = "exec ${volUp}";
+          "XF86AudioLowerVolume" = "exec ${volDown}";
+          "XF86AudioMute" = "exec ${volMute}";
+          "XF86AudioMicMute" = "exec ${micMute}";
+          "XF86AudioPlay" = "exec playerctl play-pause";
+          "XF86AudioNext" = "exec playerctl next";
+          "XF86AudioPrev" = "exec playerctl previous";
+          "XF86MonBrightnessUp" = "exec brightnessctl set 5%+";
+          "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
+        };
+
+      # Inside a mode sway grabs the whole keyboard, so bare keys are safe here.
+      # The eww bar shows the active mode and its keys.
+      modes =
+        let
+          leave = {
+            Escape = "mode default";
+            Return = "mode default";
+          };
+          # run a command, then drop back to the default mode
+          run = cmd: "exec ${cmd}, mode default";
+          term = app: run "alacritty --class ${app} -e ${app}";
+        in
+        {
+          resize = leave // {
+            h = "resize shrink width 20 px";
+            j = "resize grow height 20 px";
+            k = "resize shrink height 20 px";
+            l = "resize grow width 20 px";
+            "Shift+h" = "resize shrink width 100 px";
+            "Shift+j" = "resize grow height 100 px";
+            "Shift+k" = "resize shrink height 100 px";
+            "Shift+l" = "resize grow width 100 px";
+          };
+          open = leave // {
+            b = run "flatpak run app.zen_browser.zen";
+            f = term "ranger";
+            e = term "nvim";
+            t = run "alacritty -e tmux new-session -A -s main";
+            s = term "btop";
+            a = term "pulsemixer";
+            u = term "bluetuith";
+            n = term "nmtui";
+            v = run "virt-manager";
+          };
+          media = leave // {
+            k = "exec ${volUp}";
+            j = "exec ${volDown}";
+            m = "exec ${volMute}";
+            "Shift+m" = "exec ${micMute}";
+            h = "exec playerctl previous";
+            l = "exec playerctl next";
+            p = "exec playerctl play-pause";
+            "Shift+k" = "exec brightnessctl set 5%+";
+            "Shift+j" = "exec brightnessctl set 5%-";
+          };
+          system = leave // {
+            l = run "swaylock -f";
+            e = "exit";
+            s = run "systemctl suspend";
+            r = run "systemctl reboot";
+            "Shift+p" = run "systemctl poweroff";
+          };
+        };
     };
 
     extraConfig = ''
       for_window [app_id="pavucontrol"] floating enable
       for_window [app_id="blueman-manager"] floating enable
+      for_window [app_id="^(btop|pulsemixer|bluetuith|nmtui)$"] floating enable, resize set 60 ppt 60 ppt, move position center
       for_window [app_id="app.zen_browser.zen" title="^Picture-in-Picture$"] floating enable, sticky enable
     '';
   };
@@ -140,6 +265,12 @@ in
       border = {
         width = 2;
         radius = 0;
+      };
+      # Ctrl+j/k move through results (Ctrl+n/p and arrows still work).
+      key-bindings = {
+        next = "Down Control+n Control+j";
+        prev = "Up Control+p Control+k";
+        delete-line-forward = "none";
       };
       colors = {
         background = "${p.strip p.bg}f2";

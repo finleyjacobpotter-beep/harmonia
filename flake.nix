@@ -28,12 +28,14 @@
       username = "finley";
 
       palette = import ./theme/miami-wind.nix;
+      keys = import ./keys.nix;
       specialArgs = {
         inherit
           inputs
           hostname
           username
           palette
+          keys
           ;
       };
     in

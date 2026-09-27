@@ -86,9 +86,29 @@ let
     user_pref("font.name.serif.x-western", "${p.font.name}");
     user_pref("font.default.x-western", "sans-serif");
     user_pref("widget.use-xdg-desktop-portal.file-picker", 1);
+
+    // Keyboard: enable the side-loaded Vimium without a prompt, and keep
+    // Firefox features that eat bare keys out of Vimium's way.
+    user_pref("extensions.autoDisableScopes", 0);
+    user_pref("extensions.enabledScopes", 15);
+    user_pref("accessibility.typeaheadfind", false);
+    user_pref("accessibility.typeaheadfind.manual", false);
+    user_pref("ui.key.menuAccessKeyFocuses", false);
+    user_pref("browser.tabs.warnOnClose", false);
   '';
 
   font = pkgs.nerd-fonts.departure-mono;
+
+  # Vimium: vim keys for the web (j/k scroll, f link hints, J/K tabs, H/L
+  # history, o/O open, T tab search, / find, x/X close/restore tab, ? help).
+  # Pinned as in nix-community's firefox-addons (rycee/nur-expressions).
+  vimium = {
+    id = "{d7742d87-e61d-4b78-b8a1-b469842139fa}";
+    xpi = pkgs.fetchurl {
+      url = "https://addons.mozilla.org/firefox/downloads/file/4717567/vimium_ff-2.4.2.xpi";
+      sha256 = "131e2a67580e7ae9125ab19781159e61409fac47b441fc2782aab76396ead196";
+    };
+  };
 
   sync = pkgs.writeShellApplication {
     name = "zen-miami-wind";
@@ -103,6 +123,7 @@ let
         install -Dm644 ${userChrome} "$profile/chrome/userChrome.css"
         install -Dm644 ${userContent} "$profile/chrome/userContent.css"
         install -Dm644 ${userJs} "$profile/user.js"
+        install -Dm644 ${vimium.xpi} "$profile/extensions/${vimium.id}.xpi"
         echo "zen-miami-wind: themed $profile"
       done
     '';

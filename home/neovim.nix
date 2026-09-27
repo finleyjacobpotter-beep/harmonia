@@ -20,7 +20,6 @@ in
       plenary-nvim
       which-key-nvim
       indent-blankline-nvim
-      vim-tmux-navigator
     ];
 
     initLua = ''
@@ -70,6 +69,18 @@ in
       vim.keymap.set("n", "<leader>fg", tb.live_grep, { desc = "Live grep" })
       vim.keymap.set("n", "<leader>fb", tb.buffers, { desc = "Buffers" })
       vim.keymap.set("n", "<leader>e", "<cmd>Explore<cr>", { desc = "File explorer" })
+      vim.keymap.set("n", "<leader>fh", tb.help_tags, { desc = "Help" })
+      vim.keymap.set("n", "<leader>fk", tb.keymaps, { desc = "Keymaps" })
+
+      -- Windows: Ctrl+w h/j/k/l is vim's own and doesn't clash with tmux
+      -- (Ctrl+Space prefix) or sway (Super). Leader shortcuts on top:
+      vim.keymap.set("n", "<leader>s", "<cmd>split<cr>", { desc = "Split below" })
+      vim.keymap.set("n", "<leader>v", "<cmd>vsplit<cr>", { desc = "Split right" })
+      vim.keymap.set("n", "<leader>q", "<cmd>quit<cr>", { desc = "Quit window" })
+      vim.keymap.set("n", "]b", "<cmd>bnext<cr>", { desc = "Next buffer" })
+      vim.keymap.set("n", "[b", "<cmd>bprevious<cr>", { desc = "Prev buffer" })
+      -- Leave :terminal insert mode with a double Escape
+      vim.keymap.set("t", "<Esc><Esc>", [[<C-\><C-n>]], { desc = "Terminal normal mode" })
     '';
   };
 

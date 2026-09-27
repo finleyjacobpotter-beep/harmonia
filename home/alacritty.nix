@@ -23,6 +23,64 @@ in
         italic.family = p.font.mono;
         size = p.font.size + 0.0;
       };
+      # Alacritty only binds Ctrl+Shift (keys.nix). Its defaults for
+      # Ctrl+= / Ctrl+- / Ctrl+0 would steal keys from CLI tools, so they are
+      # passed through and font size moves to Ctrl+Shift+K/J/0.
+      keyboard.bindings =
+        map
+          (key: {
+            inherit key;
+            mods = "Control";
+            action = "ReceiveChar";
+          })
+          [
+            "="
+            "+"
+            "-"
+            "0"
+            "NumpadAdd"
+            "NumpadSubtract"
+          ]
+        ++ map (b: b // { mods = "Control|Shift"; }) [
+          {
+            key = "K";
+            action = "IncreaseFontSize";
+          }
+          {
+            key = "J";
+            action = "DecreaseFontSize";
+          }
+          {
+            key = "0";
+            action = "ResetFontSize";
+          }
+          {
+            key = "C";
+            action = "Copy";
+          }
+          {
+            key = "V";
+            action = "Paste";
+          }
+          {
+            key = "F";
+            action = "SearchForward";
+          }
+          {
+            key = "B";
+            action = "SearchBackward";
+          }
+          {
+            # vi mode: scrollback with hjkl, v to select, y to yank
+            key = "Space";
+            action = "ToggleViMode";
+          }
+          {
+            key = "N";
+            action = "SpawnNewInstance";
+          }
+        ];
+      # URL hints stay on alacritty's default Ctrl+Shift+O.
       cursor.style = {
         shape = "Block";
         blinking = "On";

@@ -1,5 +1,10 @@
 # Elkowar's Wacky Widgets — top bar for sway.
-{ pkgs, palette, ... }:
+{
+  pkgs,
+  lib,
+  palette,
+  ...
+}:
 let
   p = palette;
 
@@ -35,6 +40,29 @@ let
     '';
   };
 
+  # Key hints for sway's modes (home/sway.nix), shown while a mode is active.
+  modeHints = {
+    resize = "h/j/k/l resize · Shift = ×5 · Esc done";
+    open = "b zen · f ranger · e nvim · t tmux · s btop · a audio · u bluetooth · n network · v virt-manager";
+    media = "j/k volume · m mute · M mic · h/l prev/next · p play · J/K brightness";
+    system = "l lock · e exit · s suspend · r reboot · P poweroff";
+  };
+
+  # Emits {"name": …, "hint": …} whenever the sway binding mode changes.
+  mode = pkgs.writeShellApplication {
+    name = "eww-sway-mode";
+    runtimeInputs = with pkgs; [
+      sway
+      jq
+    ];
+    text = ''
+      hints=${lib.escapeShellArg (builtins.toJSON modeHints)}
+      echo '{"name":"default","hint":""}'
+      swaymsg -t subscribe -m '["mode"]' \
+        | jq --unbuffered -c --argjson h "$hints" '{name: .change, hint: ($h[.change] // "")}'
+    '';
+  };
+
   volume = pkgs.writeShellApplication {
     name = "eww-volume";
     runtimeInputs = with pkgs; [
@@ -66,6 +94,7 @@ in
   xdg.configFile."eww/eww.yuck".text = ''
     (deflisten workspaces :initial "[]" "${workspaces}/bin/eww-sway-workspaces")
     (deflisten title :initial "" "${title}/bin/eww-sway-title")
+    (deflisten mode :initial "{\"name\":\"default\",\"hint\":\"\"}" "${mode}/bin/eww-sway-mode")
     (defpoll volume :interval "2s" "${volume}/bin/eww-volume")
     (defpoll battery :interval "30s" "${battery}/bin/eww-battery")
     (defpoll time :interval "10s" "date '+%a %d %b  %H:%M'")
@@ -81,7 +110,10 @@ in
     (defwidget left []
       (box :orientation "h" :space-evenly false :halign "start" :spacing 12
         (label :class "logo" :text "")
-        (workspaces)))
+        (workspaces)
+        (box :class "mode" :visible {mode.name != "default"} :orientation "h" :space-evenly false :spacing 8
+          (label :class "mode-name" :text "''${mode.name}")
+          (label :class "mode-hint" :text "''${mode.hint}"))))
 
     (defwidget center []
       (label :class "title" :limit-width 80 :text title))
@@ -157,6 +189,12 @@ in
     }
 
     .title { color: $fg; }
+
+    .mode {
+      padding: 0 8px;
+      .mode-name { color: $bg; background-color: $cyan; padding: 0 8px; }
+      .mode-hint { color: $yellow; }
+    }
 
     .module {
       padding: 0 8px;

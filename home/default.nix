@@ -10,6 +10,8 @@
     ./neovim.nix
     ./gtk.nix
     ./zen.nix
+    ./tui.nix
+    ./keymap.nix
   ];
 
   home.username = username;
