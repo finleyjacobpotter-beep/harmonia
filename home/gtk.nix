@@ -1,7 +1,19 @@
 # GTK / Qt / cursor theming so non-terminal apps pick up Miami Wind too.
-{ pkgs, palette, ... }:
+{
+  config,
+  osConfig,
+  pkgs,
+  palette,
+  ...
+}:
 let
   p = palette;
+
+  # Tulasi with a generic Tulasi icon for every app installed system-wide or
+  # in home-manager that Tulasi doesn't draw (see pkgs/tulasi-icon-theme.nix).
+  tulasi = pkgs.tulasi-icon-theme.override {
+    appPackages = osConfig.environment.systemPackages ++ config.home.packages;
+  };
   # libadwaita / adw-gtk3 named colours
   css = ''
     @define-color accent_color ${p.pink};
@@ -50,9 +62,11 @@ in
       name = "adw-gtk3-dark";
       package = pkgs.adw-gtk3;
     };
+    # Installed through xdg.dataFile below rather than home.packages: the
+    # theme is built *from* home.packages, so it can't also be in it.
     iconTheme = {
       name = "Tulasi";
-      package = pkgs.tulasi-icon-theme;
+      package = null;
     };
     font = {
       name = p.font.name;
@@ -63,12 +77,8 @@ in
     gtk3.extraConfig.gtk-application-prefer-dark-theme = true;
   };
 
-  # Tulasi inherits from these for any icon it doesn't draw itself.
-  home.packages = with pkgs; [
-    kdePackages.breeze-icons
-    adwaita-icon-theme
-    hicolor-icon-theme
-  ];
+  xdg.dataFile."icons/Tulasi".source = "${tulasi}/share/icons/Tulasi";
+  home.packages = [ pkgs.hicolor-icon-theme ];
 
   home.pointerCursor = {
     enable = true;

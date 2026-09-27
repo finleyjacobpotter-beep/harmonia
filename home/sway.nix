@@ -90,6 +90,10 @@ in
 
       output."*".bg = "${p.bg} solid_color";
 
+      # Hide the pointer as soon as a key is pressed; it comes back when the
+      # mouse moves.
+      seat."*".hide_cursor = "when-typing enable";
+
       input."type:touchpad" = {
         tap = "enabled";
         natural_scroll = "enabled";

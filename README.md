@@ -24,7 +24,7 @@ home/                          home-manager, one file per program
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
-pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs), added via overlay
+pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 examples/Vagrantfile           libvirt + virtiofs example
 ```
 
@@ -151,6 +151,20 @@ Hardware keys (volume, media, brightness, Print) work as usual.
 
 Your user is in `libvirtd`, and `VAGRANT_DEFAULT_PROVIDER=libvirt` is set
 (nixpkgs' vagrant ships the vagrant-libvirt plugin). See `examples/Vagrantfile`.
+
+## Icons
+
+Tulasi is the only icon theme. Instead of upstream's breeze/Adwaita
+fallback, every icon Tulasi doesn't draw resolves to one of its own generic
+icons (`pkgs/tulasi-icon-theme.nix`): apps → the purple "?" tile, files →
+a document, folders → a folder, hardware → a computer, anything else → "?".
+This covers every standard icon name and every `Icon=` in the desktop files
+of installed packages, so the theme is rebuilt when your package set changes.
+
+## Mouse
+
+The pointer hides as soon as you type and comes back when the mouse moves
+(sway `hide_cursor when-typing`).
 
 ## Unfree packages
 
