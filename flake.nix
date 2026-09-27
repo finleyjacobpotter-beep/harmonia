@@ -1,5 +1,5 @@
 {
-  description = "snowflakes — NixOS on sway, themed Miami Wind";
+  description = "harmonia — NixOS on sway, themed Miami Wind";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";

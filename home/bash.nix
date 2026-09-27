@@ -42,7 +42,7 @@ in
       v = "nvim";
       t = "tmux new-session -A -s main";
       zen = "flatpak run app.zen_browser.zen";
-      rebuild = "sudo nixos-rebuild switch --flake ~/snowflakes";
+      rebuild = "sudo nixos-rebuild switch --flake ~/harmonia";
     };
     initExtra = ''
       source ${pkgs.git}/share/bash-completion/completions/git-prompt.sh

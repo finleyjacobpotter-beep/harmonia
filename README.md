@@ -1,4 +1,7 @@
-# snowflakes
+# harmonia
+
+*Named for Harmonia, goddess of harmony and concord: one palette, one font and one
+icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
 **neovim**, **vagrant**/**libvirt**, and **Zen browser** jailed in Flatpak —
