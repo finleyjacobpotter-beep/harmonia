@@ -29,7 +29,6 @@ home/                          home-manager, one file per program
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
-examples/Vagrantfile           libvirt + virtiofs example
 ```
 
 ## Install
@@ -138,7 +137,6 @@ Neovim plugins:
 | swtpm | 0.10.1 (unstable 2026-05-21) |
 | virtiofsd | 1.14.0 |
 | Vagrant | 2.4.9 |
-| Vagrant box `generic/debian12` (example) | 4.3.12 |
 
 ### Zen browser
 
@@ -255,7 +253,7 @@ Hardware keys (volume, media, brightness, Print) work as usual.
 ## Vagrant / libvirt
 
 Your user is in `libvirtd`, and `VAGRANT_DEFAULT_PROVIDER=libvirt` is set
-(nixpkgs' vagrant ships the vagrant-libvirt plugin). See `examples/Vagrantfile`.
+(nixpkgs' vagrant ships the vagrant-libvirt plugin).
 
 ## Icons
 

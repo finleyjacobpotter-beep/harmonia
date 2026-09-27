@@ -12,7 +12,7 @@
       package = pkgs.qemu_kvm;
       runAsRoot = false;
       swtpm.enable = true;
-      # virtiofs synced folders for Vagrant (see examples/Vagrantfile)
+      # virtiofs synced folders for Vagrant
       vhostUserPackages = [ pkgs.virtiofsd ];
     };
   };
