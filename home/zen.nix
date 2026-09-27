@@ -110,10 +110,41 @@ let
     };
   };
 
+  # Icons inside the sandbox. Zen may read and write its own
+  # ~/.var/app/app.zen_browser.zen, and GTK in the sandbox looks for icon
+  # themes in its data/icons (XDG_DATA_HOME) and reads its config/gtk-3.0
+  # (XDG_CONFIG_HOME). So Tulasi goes there — no new flatpak permission.
+  # This is the *generic* build (no appPackages): the per-machine build lists
+  # every installed program's icon name, which the browser has no need to see.
+  tulasi = pkgs.tulasi-icon-theme;
+
+  gtkSettings = pkgs.writeText "zen-gtk3-settings.ini" ''
+    [Settings]
+    gtk-icon-theme-name=Tulasi
+    gtk-application-prefer-dark-theme=1
+    gtk-font-name=${p.font.name} ${toString (p.font.size - 1)}
+  '';
+
   sync = pkgs.writeShellApplication {
     name = "zen-miami-wind";
     text = ''
-      root="$HOME/.var/app/app.zen_browser.zen/.zen"
+      app="$HOME/.var/app/app.zen_browser.zen"
+
+      # Tulasi as real files (the sandbox can't follow links into
+      # /nix/store); recopied only when the theme changes.
+      icons="$app/data/icons"
+      if [ "$(cat "$icons/.tulasi-source" 2>/dev/null || true)" != "${tulasi}" ]; then
+        mkdir -p "$icons"
+        tmp=$(mktemp -d "$icons/.tulasi.XXXXXX")
+        cp -r --no-preserve=mode,ownership "${tulasi}/share/icons/Tulasi/." "$tmp/"
+        rm -rf "$icons/Tulasi"
+        mv "$tmp" "$icons/Tulasi"
+        echo "${tulasi}" > "$icons/.tulasi-source"
+        echo "zen-miami-wind: installed Tulasi icons into the sandbox"
+      fi
+      install -Dm644 ${gtkSettings} "$app/config/gtk-3.0/settings.ini"
+
+      root="$app/.zen"
       if [ ! -d "$root" ]; then
         echo "zen-miami-wind: no Zen profile yet — start Zen once, then re-run." >&2
         exit 0
