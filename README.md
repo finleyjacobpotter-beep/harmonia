@@ -198,3 +198,34 @@ Put an image at `assets/wallpaper.jpg` and `git add` it (flakes only see
 tracked files). On rebuild it is recoloured to the Miami Wind palette with
 [lutgen](https://github.com/ozwaldorf/lutgen-rs) and shown centred on the
 background colour `#1e1e2e`. Without it, sway draws a plain `#1e1e2e`.
+
+## Acknowledgements
+
+harmonia stands on other people's work:
+
+- **[Nix flakes](https://nixos.wiki/wiki/Flakes)** and
+  **[nixpkgs](https://github.com/NixOS/nixpkgs)**: the whole system is one
+  reproducible flake.
+- **[home-manager](https://github.com/nix-community/home-manager)**: every
+  per-user program in `home/` is configured through it.
+- **Miami Wind** by hanakin: the colour scheme, from the
+  [VS Code theme](https://github.com/hanakin/miami-wind-vscode)
+  ([marketplace](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind))
+  and its [canonical palette](https://github.com/hanakin/miami-wind/blob/main/palette.css).
+- **[Tulasi](https://github.com/ShringarStudio/Tulasi)** by Shringar Studio:
+  the pixel-art icon theme.
+- **Wallpaper art** by Park Junkyu ([gharliera on ArtStation](https://www.artstation.com/gharliera)),
+  [original image](https://cdna.artstation.com/p/assets/images/images/020/830/958/large/park-junkyu-kakaotalk-20190924-182145141111.jpg),
+  recoloured here with the Miami Wind palette.
+- **[Departure Mono](https://departuremono.com/)** via
+  [Nerd Fonts](https://www.nerdfonts.com/): the font.
+- **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
+  Flatpak setup for Zen.
+
+## License
+
+The configuration in this repository is [MIT](LICENSE) licensed. That covers
+the Nix code and scripts only: the projects above keep their own licenses.
+In particular the Tulasi icons are CC BY-NC-SA 4.0 (non-commercial use with
+attribution), and the wallpaper artwork belongs to its artist and is not
+covered by this repository's license.
