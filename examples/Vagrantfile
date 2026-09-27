@@ -4,6 +4,7 @@
 #   mkdir vm && cp examples/Vagrantfile vm/ && cd vm && vagrant up
 Vagrant.configure("2") do |config|
   config.vm.box = "generic/debian12"
+  config.vm.box_version = "4.3.12"
 
   config.vm.provider :libvirt do |lv|
     lv.driver = "kvm"

@@ -1,16 +1,21 @@
 {
   description = "harmonia — NixOS on sway, themed Miami Wind";
 
+  # Every input is pinned to an exact commit. To update one, replace its rev
+  # with a newer commit from the branch or tag named in the comment above it
+  # (`git ls-remote <repo> <ref>`), then rebuild.
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    # nixos-unstable, 2026-09-27
+    nixpkgs.url = "github:nixos/nixpkgs/e158d9ed9b51c98974c5e66e1ba1c9e0255fecaa";
 
     home-manager = {
-      url = "github:nix-community/home-manager";
+      # master, 2026-09-27
+      url = "github:nix-community/home-manager/7b4c5ec4bedaf1e062bbc1bcaeddbc6bd242aa1b";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Declarative flatpak (used for the sandboxed Zen browser)
-    nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=latest";
+    # Declarative flatpak (used for the sandboxed Zen browser). Tag v0.7.0.
+    nix-flatpak.url = "github:gmodena/nix-flatpak/440818969ac2cbd77bfe025e884d0aa528991374";
   };
 
   outputs =

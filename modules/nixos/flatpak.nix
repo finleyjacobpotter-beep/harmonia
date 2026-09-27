@@ -1,7 +1,13 @@
 # Zen browser from Flathub, run inside a tightened flatpak sandbox ("browser jail").
-{ ... }:
+{ lib, ... }:
 let
   zen = "app.zen_browser.zen";
+
+  # Flathub OSTree commit to pin Zen to; null follows the latest Flathub build.
+  # Read the current one on an installed machine with
+  #   flatpak remote-info flathub app.zen_browser.zen   (the "Commit:" line)
+  # A pinned app is never auto-updated; bump this by hand.
+  zenCommit = null;
 in
 {
   services.flatpak = {
@@ -13,10 +19,13 @@ in
       }
     ];
     packages = [
-      {
-        appId = zen;
-        origin = "flathub";
-      }
+      (
+        {
+          appId = zen;
+          origin = "flathub";
+        }
+        // lib.optionalAttrs (zenCommit != null) { commit = zenCommit; }
+      )
     ];
     update.auto = {
       enable = true;
