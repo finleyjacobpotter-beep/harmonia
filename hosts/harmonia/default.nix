@@ -39,13 +39,11 @@
     initialPassword = "changeme";
   };
 
-  # The only non-free packages allowed:
-  #   vagrant           — BUSL-1.1
+  # The only non-free package allowed:
   #   tulasi-icon-theme — CC BY-NC-SA 4.0 (non-commercial)
   nixpkgs.config.allowUnfreePredicate =
     pkg:
     builtins.elem (lib.getName pkg) [
-      "vagrant"
       "tulasi-icon-theme"
     ];
 

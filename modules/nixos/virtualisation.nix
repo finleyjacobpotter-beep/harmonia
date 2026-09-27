@@ -1,4 +1,4 @@
-# libvirt/KVM + Vagrant (with the vagrant-libvirt provider, bundled by nixpkgs).
+# libvirt/KVM for VMs, rootless Podman + Buildah for containers.
 {
   pkgs,
   username,
@@ -12,7 +12,7 @@
       package = pkgs.qemu_kvm;
       runAsRoot = false;
       swtpm.enable = true;
-      # virtiofs synced folders for Vagrant
+      # virtiofs shared folders
       vhostUserPackages = [ pkgs.virtiofsd ];
     };
   };
@@ -24,8 +24,15 @@
     "kvm"
   ];
 
-  environment.systemPackages = [ pkgs.vagrant ];
-  environment.variables.VAGRANT_DEFAULT_PROVIDER = "libvirt";
+  # Rootless Podman, no Docker daemon.
+  virtualisation.podman = {
+    enable = true;
+    defaultNetwork.settings.dns_enabled = true; # containers resolve each other by name (compose)
+  };
+  environment.systemPackages = with pkgs; [
+    podman-compose
+    buildah
+  ];
 
   # Let VMs on libvirt bridges reach the host (DHCP/DNS from dnsmasq).
   networking.firewall.trustedInterfaces = [ "virbr+" ];

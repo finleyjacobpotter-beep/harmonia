@@ -4,7 +4,7 @@
 icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, **vagrant**/**libvirt**, and **Zen browser** jailed in Flatpak —
+**neovim**, **libvirt**, **podman**, and **Zen browser** jailed in Flatpak —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -20,7 +20,7 @@ modules/nixos/
   desktop.nix                  sway, greetd/tuigreet, pipewire, portals, console colours
   fonts.nix                    DepartureMono Nerd Font as system default
   flatpak.nix                  Flathub + Zen browser with a tightened sandbox
-  virtualisation.nix           libvirtd/KVM, virt-manager, vagrant (libvirt provider)
+  virtualisation.nix           libvirtd/KVM, virt-manager, rootless podman + buildah
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
   eww.nix                      eww bar (workspaces, title, cpu, mem, volume, battery, clock)
@@ -136,7 +136,9 @@ Neovim plugins:
 | virt-manager | 5.1.0 |
 | swtpm | 0.10.1 (unstable 2026-05-21) |
 | virtiofsd | 1.14.0 |
-| Vagrant | 2.4.9 |
+| Podman | 5.8.7 |
+| podman-compose | 1.6.0 |
+| Buildah | 1.45.1 |
 
 ### Zen browser
 
@@ -250,10 +252,11 @@ Hardware keys (volume, media, brightness, Print) work as usual.
   keys (`btop` has `vim_keys` turned on).
 - **nmtui** and **virt-manager** are keyboard-driven but don't use vim keys.
 
-## Vagrant / libvirt
+## VMs and containers
 
-Your user is in `libvirtd`, and `VAGRANT_DEFAULT_PROVIDER=libvirt` is set
-(nixpkgs' vagrant ships the vagrant-libvirt plugin).
+Your user is in `libvirtd` and `kvm`, so `virt-manager` and `virsh` work without
+root. Containers use rootless **podman** (with `podman-compose` and `buildah`);
+there is no Docker daemon and no `docker` alias.
 
 ## Icons
 
@@ -279,9 +282,9 @@ The pointer hides as soon as you type and comes back when the mouse moves
 
 ## Unfree packages
 
-Only two non-free packages are allowed (`hosts/harmonia/default.nix`):
-vagrant (BUSL-1.1) and the Tulasi icon theme (CC BY-NC-SA 4.0, free for
-non-commercial use with attribution).
+Only one non-free package is allowed (`hosts/harmonia/default.nix`):
+the Tulasi icon theme (CC BY-NC-SA 4.0, free for non-commercial use with
+attribution).
 
 ## Colours
 
