@@ -12,10 +12,10 @@ colour scheme, **DepartureMono Nerd Font** and the pixel-art
 ## Layout
 
 ```
-flake.nix                      inputs, hostname/username, nixosConfigurations.snowflake
+flake.nix                      inputs, hostname/username, nixosConfigurations.harmonia
 theme/miami-wind.nix           the palette — every app reads its colours from here
 keys.nix                       the keyboard contract (which layer owns which modifier)
-hosts/snowflake/               host config + hardware-configuration.nix (placeholder!)
+hosts/harmonia/                host config + hardware-configuration.nix (placeholder!)
 modules/nixos/
   desktop.nix                  sway, greetd/tuigreet, pipewire, portals, console colours
   fonts.nix                    DepartureMono Nerd Font as system default
@@ -34,14 +34,14 @@ examples/Vagrantfile           libvirt + virtiofs example
 ## Install
 
 1. Edit `hostname` / `username` in `flake.nix`, and the timezone/locale/keymap in
-   `hosts/snowflake/default.nix`.
+   `hosts/harmonia/default.nix`.
 2. Replace the placeholder hardware config:
    ```sh
-   sudo nixos-generate-config --show-hardware-config > hosts/snowflake/hardware-configuration.nix
+   sudo nixos-generate-config --show-hardware-config > hosts/harmonia/hardware-configuration.nix
    ```
 3. Build and switch (this also creates `flake.lock`):
    ```sh
-   sudo nixos-rebuild switch --flake .#snowflake
+   sudo nixos-rebuild switch --flake .#harmonia
    ```
 4. Log in (initial password `changeme`), run `passwd`.
 
@@ -179,7 +179,7 @@ The pointer hides as soon as you type and comes back when the mouse moves
 
 ## Unfree packages
 
-Only two non-free packages are allowed (`hosts/snowflake/default.nix`):
+Only two non-free packages are allowed (`hosts/harmonia/default.nix`):
 vagrant (BUSL-1.1) and the Tulasi icon theme (CC BY-NC-SA 4.0, free for
 non-commercial use with attribution).
 

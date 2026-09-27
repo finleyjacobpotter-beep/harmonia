@@ -1,6 +1,6 @@
 # PLACEHOLDER — replace this file with the one generated on your machine:
 #
-#   sudo nixos-generate-config --show-hardware-config > hosts/snowflake/hardware-configuration.nix
+#   sudo nixos-generate-config --show-hardware-config > hosts/harmonia/hardware-configuration.nix
 #
 # The values below only exist so the flake evaluates (`nix flake check`).
 { lib, modulesPath, ... }:

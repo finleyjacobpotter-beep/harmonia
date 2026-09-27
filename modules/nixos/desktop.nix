@@ -35,7 +35,7 @@ in
         "--time"
         "--remember"
         "--asterisks"
-        "--greeting 'snowflake'"
+        "--greeting 'harmonia'"
         "--theme 'border=magenta;text=white;prompt=cyan;time=magenta;action=blue;button=yellow;container=black;input=cyan'"
         "--cmd sway"
       ];

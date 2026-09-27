@@ -24,7 +24,7 @@
       system = "x86_64-linux";
 
       # Change these two to match your machine / login.
-      hostname = "snowflake";
+      hostname = "harmonia";
       username = "finley";
 
       palette = import ./theme/miami-wind.nix;
@@ -49,7 +49,7 @@
               (final: _: { tulasi-icon-theme = final.callPackage ./pkgs/tulasi-icon-theme.nix { }; })
             ];
           }
-          ./hosts/snowflake
+          ./hosts/harmonia
           nix-flatpak.nixosModules.nix-flatpak
           home-manager.nixosModules.home-manager
           {
