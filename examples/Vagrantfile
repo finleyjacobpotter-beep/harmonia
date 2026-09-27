@@ -1,0 +1,18 @@
+# Example Vagrantfile for the libvirt provider (the default on this system via
+# VAGRANT_DEFAULT_PROVIDER=libvirt).
+#
+#   mkdir vm && cp examples/Vagrantfile vm/ && cd vm && vagrant up
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/debian12"
+
+  config.vm.provider :libvirt do |lv|
+    lv.driver = "kvm"
+    lv.memory = 2048
+    lv.cpus = 2
+    # Required for virtiofs synced folders
+    lv.memorybacking :access, mode: "shared"
+  end
+
+  # virtiofs avoids NFS, whose /etc/exports editing does not fit NixOS.
+  config.vm.synced_folder ".", "/vagrant", type: "virtiofs"
+end
