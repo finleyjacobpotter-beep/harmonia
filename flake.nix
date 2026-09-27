@@ -25,7 +25,7 @@
 
       # Change these two to match your machine / login.
       hostname = "harmonia";
-      username = "finley";
+      username = "u";
 
       palette = import ./theme/miami-wind.nix;
       keys = import ./keys.nix;
