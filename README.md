@@ -28,7 +28,7 @@ home/                          home-manager, one file per program
   tui.nix                      btop, pulsemixer, bluetuith
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
-pkgs/miami-wind-wallpaper.nix  recolours assets/wallpaper.jpg to the palette with lutgen
+assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 examples/Vagrantfile           libvirt + virtiofs example
 ```
 
@@ -194,10 +194,17 @@ secondary cyan `#22d3ee`, and the theme's `terminal.ansi*` colours for the
 
 ## Wallpaper
 
-Put an image at `assets/wallpaper.jpg` and `git add` it (flakes only see
-tracked files). On rebuild it is recoloured to the Miami Wind palette with
-[lutgen](https://github.com/ozwaldorf/lutgen-rs) and shown centred on the
-background colour `#1e1e2e`. Without it, sway draws a plain `#1e1e2e`.
+`assets/wallpaper.png` is scaled to fit and centred on the background colour `#1e1e2e`.
+It was recoloured to the Miami Wind palette with
+[lutgen](https://github.com/ozwaldorf/lutgen-rs), using every colour in
+`theme/miami-wind.nix`:
+
+```
+lutgen apply -P -L 0.5 -o wallpaper.png original.jpg -- <palette colours>
+```
+
+and its black outer margin was then flood-filled with `#1e1e2e` so the image
+blends into the background.
 
 ## Acknowledgements
 

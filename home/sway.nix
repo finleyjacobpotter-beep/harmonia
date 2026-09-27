@@ -13,14 +13,11 @@ let
   volMute = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
   micMute = "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
 
-  # Drop an image here (and `git add` it, flakes only see tracked files) to
-  # get it recoloured to Miami Wind and centred on the background colour.
-  # Without it the background is a plain `p.bg`.
-  wallpaperSrc = ../assets/wallpaper.jpg;
-  wallpaper = pkgs.callPackage ../pkgs/miami-wind-wallpaper.nix {
-    inherit palette;
-    src = wallpaperSrc;
-  };
+  # Already recoloured to Miami Wind (lutgen) with its outer margin filled
+  # with p.bg, so it blends into the background. `fit` scales it to the
+  # screen height and centres it (plain `center` would crop a 1468px-tall
+  # image on a 1080p screen).
+  wallpaper = ../assets/wallpaper.png;
 in
 {
   wayland.windowManager.sway = {
@@ -97,11 +94,7 @@ in
         };
       };
 
-      output."*".bg =
-        if builtins.pathExists wallpaperSrc then
-          "${wallpaper} center ${p.bg}"
-        else
-          "${p.bg} solid_color";
+      output."*".bg = "${wallpaper} fit ${p.bg}";
 
       # Hide the pointer as soon as a key is pressed; it comes back when the
       # mouse moves.
