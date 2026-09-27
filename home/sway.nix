@@ -12,6 +12,15 @@ let
   volDown = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
   volMute = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
   micMute = "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
+
+  # Drop an image here (and `git add` it, flakes only see tracked files) to
+  # get it recoloured to Miami Wind and centred on the background colour.
+  # Without it the background is a plain `p.bg`.
+  wallpaperSrc = ../assets/wallpaper.jpg;
+  wallpaper = pkgs.callPackage ../pkgs/miami-wind-wallpaper.nix {
+    inherit palette;
+    src = wallpaperSrc;
+  };
 in
 {
   wayland.windowManager.sway = {
@@ -88,7 +97,11 @@ in
         };
       };
 
-      output."*".bg = "${p.bg} solid_color";
+      output."*".bg =
+        if builtins.pathExists wallpaperSrc then
+          "${wallpaper} center ${p.bg}"
+        else
+          "${p.bg} solid_color";
 
       # Hide the pointer as soon as a key is pressed; it comes back when the
       # mouse moves.

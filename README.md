@@ -28,6 +28,7 @@ home/                          home-manager, one file per program
   tui.nix                      btop, pulsemixer, bluetuith
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
+pkgs/miami-wind-wallpaper.nix  recolours assets/wallpaper.jpg to the palette with lutgen
 examples/Vagrantfile           libvirt + virtiofs example
 ```
 
@@ -190,3 +191,10 @@ non-commercial use with attribution).
 editor background `#1e1e2e`, foreground `#cdd6f4`, accent pink `#f472b6`,
 secondary cyan `#22d3ee`, and the theme's `terminal.ansi*` colours for the
 16-colour palette (used by alacritty, the Linux console, ranger and tuigreet).
+
+## Wallpaper
+
+Put an image at `assets/wallpaper.jpg` and `git add` it (flakes only see
+tracked files). On rebuild it is recoloured to the Miami Wind palette with
+[lutgen](https://github.com/ozwaldorf/lutgen-rs) and shown centred on the
+background colour `#1e1e2e`. Without it, sway draws a plain `#1e1e2e`.
