@@ -51,8 +51,8 @@ in
       package = pkgs.adw-gtk3;
     };
     iconTheme = {
-      name = "Papirus-Dark";
-      package = pkgs.papirus-icon-theme;
+      name = "Tulasi";
+      package = pkgs.tulasi-icon-theme;
     };
     font = {
       name = p.font.name;
@@ -62,6 +62,13 @@ in
     gtk4.extraCss = css;
     gtk3.extraConfig.gtk-application-prefer-dark-theme = true;
   };
+
+  # Tulasi inherits from these for any icon it doesn't draw itself.
+  home.packages = with pkgs; [
+    kdePackages.breeze-icons
+    adwaita-icon-theme
+    hicolor-icon-theme
+  ];
 
   home.pointerCursor = {
     enable = true;
@@ -75,6 +82,7 @@ in
   dconf.settings."org/gnome/desktop/interface" = {
     color-scheme = "prefer-dark";
     gtk-theme = "adw-gtk3-dark";
+    icon-theme = "Tulasi";
     font-name = "${p.font.name} ${toString (p.font.size - 1)}";
     monospace-font-name = "${p.font.mono} ${toString p.font.size}";
   };

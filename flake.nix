@@ -43,7 +43,12 @@
       nixosConfigurations.${hostname} = nixpkgs.lib.nixosSystem {
         inherit specialArgs;
         modules = [
-          { nixpkgs.hostPlatform = system; }
+          {
+            nixpkgs.hostPlatform = system;
+            nixpkgs.overlays = [
+              (final: _: { tulasi-icon-theme = final.callPackage ./pkgs/tulasi-icon-theme.nix { }; })
+            ];
+          }
           ./hosts/snowflake
           nix-flatpak.nixosModules.nix-flatpak
           home-manager.nixosModules.home-manager

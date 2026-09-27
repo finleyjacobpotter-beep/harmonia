@@ -1,7 +1,6 @@
 # libvirt/KVM + Vagrant (with the vagrant-libvirt provider, bundled by nixpkgs).
 {
   pkgs,
-  lib,
   username,
   ...
 }:
@@ -24,9 +23,6 @@
     "libvirtd"
     "kvm"
   ];
-
-  # Vagrant is BUSL-licensed, which nixpkgs treats as unfree.
-  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "vagrant" ];
 
   environment.systemPackages = [ pkgs.vagrant ];
   environment.variables.VAGRANT_DEFAULT_PROVIDER = "libvirt";

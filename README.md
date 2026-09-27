@@ -3,7 +3,8 @@
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
 **neovim**, **vagrant**/**libvirt**, and **Zen browser** jailed in Flatpak —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
-colour scheme and **DepartureMono Nerd Font**.
+colour scheme, **DepartureMono Nerd Font** and the pixel-art
+[**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
 
 ## Layout
 
@@ -23,6 +24,7 @@ home/                          home-manager, one file per program
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
+pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs), added via overlay
 examples/Vagrantfile           libvirt + virtiofs example
 ```
 
@@ -148,8 +150,13 @@ Hardware keys (volume, media, brightness, Print) work as usual.
 ## Vagrant / libvirt
 
 Your user is in `libvirtd`, and `VAGRANT_DEFAULT_PROVIDER=libvirt` is set
-(nixpkgs' vagrant ships the vagrant-libvirt plugin). Vagrant is BUSL licensed,
-so it's allowed as the only unfree package. See `examples/Vagrantfile`.
+(nixpkgs' vagrant ships the vagrant-libvirt plugin). See `examples/Vagrantfile`.
+
+## Unfree packages
+
+Only two non-free packages are allowed (`hosts/snowflake/default.nix`):
+vagrant (BUSL-1.1) and the Tulasi icon theme (CC BY-NC-SA 4.0, free for
+non-commercial use with attribution).
 
 ## Colours
 

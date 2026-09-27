@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   hostname,
   username,
   ...
@@ -37,6 +38,16 @@
     # Set a password with `passwd` after first boot, or use hashedPasswordFile.
     initialPassword = "changeme";
   };
+
+  # The only non-free packages allowed:
+  #   vagrant           — BUSL-1.1
+  #   tulasi-icon-theme — CC BY-NC-SA 4.0 (non-commercial)
+  nixpkgs.config.allowUnfreePredicate =
+    pkg:
+    builtins.elem (lib.getName pkg) [
+      "vagrant"
+      "tulasi-icon-theme"
+    ];
 
   nix.settings = {
     experimental-features = [

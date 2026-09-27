@@ -256,7 +256,8 @@ in
         font = "${p.font.name}:size=${toString p.font.size}";
         terminal = "alacritty -e";
         prompt = ''"❯ "'';
-        icons-enabled = false;
+        icons-enabled = true;
+        icon-theme = "Tulasi";
         width = 40;
         lines = 12;
         horizontal-pad = 16;
