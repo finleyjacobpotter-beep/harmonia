@@ -1,5 +1,5 @@
 # Local secrets: gpg + gpg-agent, pass, ykman, Bitwarden CLI and the OpenBao
-# CLI, plus `secrets-backup` (home/secrets-backup.sh), which bundles pass,
+# CLI, plus the `secrets-backup` command (home/secrets-backup.sh), which bundles pass,
 # Bitwarden and gpg keys into one passphrase-encrypted tarball. See docs/secrets.md.
 { pkgs, config, ... }:
 {
@@ -7,6 +7,18 @@
     yubikey-manager # ykman
     bitwarden-cli # bw
     openbao # bao
+    (writeShellApplication {
+      name = "secrets-backup";
+      runtimeInputs = [
+        gnupg
+        bitwarden-cli
+        jq
+        gnutar
+        gzip
+        coreutils
+      ];
+      text = builtins.readFile ./secrets-backup.sh;
+    })
   ];
 
   programs.gpg = {
@@ -35,6 +47,4 @@
       PASSWORD_STORE_CLIP_TIME = "45";
     };
   };
-
-  programs.bash.initExtra = builtins.readFile ./secrets-backup.sh;
 }

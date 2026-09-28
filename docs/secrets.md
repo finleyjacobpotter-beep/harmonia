@@ -23,7 +23,7 @@ ykman info                       # with the key plugged in
 
 ## Backup: `secrets-backup`
 
-`secrets-backup [DIR]` writes `DIR/secrets-backup-<UTC time>.tar.gz.gpg`
+`secrets-backup [DIR]` (a command on your PATH) writes `DIR/secrets-backup-<UTC time>.tar.gz.gpg`
 (`DIR` defaults to `$HOME`). It includes whatever is reachable right now and
 skips, with a warning, anything missing, locked or logged out:
 
