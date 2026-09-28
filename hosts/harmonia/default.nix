@@ -12,6 +12,7 @@
     ../../modules/nixos/fonts.nix
     ../../modules/nixos/flatpak.nix
     ../../modules/nixos/virtualisation.nix
+    ../../modules/nixos/vms.nix
   ];
 
   boot.loader.systemd-boot.enable = true;

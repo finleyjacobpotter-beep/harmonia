@@ -23,6 +23,15 @@ let
     b: b.mods or "" != keys.terminalMods && b.action or "" != "ReceiveChar"
   ) alacritty;
 
+  # Alt belongs to i3 in the Kali VM: neovim, tmux and alacritty keep off it.
+  nvimAlt = builtins.match ".*<[MA]-.*" (
+    builtins.replaceStrings [ "\n" ] [ " " ] config.programs.neovim.initLua
+  );
+  tmuxAlt = builtins.match ".*bind(-key)? +(-[a-zA-Z]+ +)*M-.*" (
+    builtins.replaceStrings [ "\n" ] [ " " ] tmux.extraConfig
+  );
+  alacrittyAlt = lib.filter (b: lib.hasInfix "Alt" (b.mods or "")) alacritty;
+
   # tmux: no root-table bindings (`bind -n` / `bind -T root`).
   rootTable = builtins.match ".*(bind(-key)? +(-[a-zA-Z]+ +)*(-n|-T +root)).*" (
     builtins.replaceStrings [ "\n" ] [ " " ] tmux.extraConfig
@@ -51,6 +60,10 @@ in
       message = "keys.nix: alacritty bindings must use ${keys.terminalMods}: ${
         toString (map (b: b.key) strayAlacritty)
       }";
+    }
+    {
+      assertion = nvimAlt == null && tmuxAlt == null && alacrittyAlt == [ ];
+      message = "keys.nix: Alt is reserved for i3 in the Kali VM; neovim, tmux and alacritty must not bind it";
     }
   ];
 }
