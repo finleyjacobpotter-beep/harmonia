@@ -29,32 +29,28 @@ skips, with a warning, anything missing, locked or logged out:
 
 | Part | What goes in | Needs |
 | --- | --- | --- |
-| `gpg/` | all public keys and the ownertrust | a keyring |
 | `pass/` | the whole store as is (already encrypted), with its git history | `pass init` done |
 | `bitwarden.json` | `bw export --format json` (asks for the master password again) | `bw status` is `unlocked` |
-| `bao/<mount>/…` | every KV secret the token can read, one JSON per secret | `bao token lookup` succeeds |
-| `yubikey/<serial>/` | `ykman info`, OATH account names, PIV and OpenPGP status | a YubiKey plugged in |
+| `gpg/` | public and secret keys, and the ownertrust | a secret key in the keyring |
 
-The tarball is encrypted to `$SECRETS_BACKUP_RECIPIENT` (a key id, fingerprint
-or email), or to the first gpg secret key when that is unset. The recipient
-must be a key you trust, for example your own. Set it permanently in
-`home/bash.nix`'s `sessionVariables`.
+The tarball is encrypted with a **passphrase** (gpg `--symmetric`, AES-256),
+not with a gpg key, so it still opens if your keys are lost. gpg asks for the
+passphrase twice through pinentry and does not cache it. The secret keys
+inside keep their own key passphrase on top of that. Pick a strong backup
+passphrase you can remember without this machine.
 
-Plaintext (the Bitwarden and OpenBao exports) only exists in a private
-`mktemp -d` directory that is deleted when the function exits or is
-interrupted; the tar stream goes straight into gpg, so no unencrypted archive
-is written.
+Plaintext (the Bitwarden export) only exists in a private `mktemp -d`
+directory that is deleted when the function exits or is interrupted; the tar
+stream goes straight into gpg, so no unencrypted archive is written.
 
-What is **not** in the backup:
-
-- **gpg secret keys.** The backup is encrypted to them, so a copy inside it
-  would be useless if they were lost. Back them up separately, e.g.
-  `gpg --armor --export-secret-keys > /media/offline-usb/secret-keys.asc`.
-- **YubiKey private keys and OATH seeds.** They cannot leave the device; the
-  inventory tells you what to re-enrol on a replacement key.
+YubiKey private keys and OATH seeds are not in the backup: they cannot leave
+the device.
 
 Restore:
 
 ```sh
 d=$(mktemp -d) && gpg -d secrets-backup-<time>.tar.gz.gpg | tar -xzf - -C "$d" && cd "$d"
+gpg --import gpg/secret-keys.asc && gpg --import-ownertrust gpg/ownertrust.txt
+cp -a pass ~/.local/share/password-store
+bw import bitwardenjson bitwarden.json   # then delete the plaintext: rm -rf "$d"
 ```

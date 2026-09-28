@@ -1,8 +1,9 @@
 # secrets-backup [DIR]
 #
-# Bundle everything the local secrets tools can currently reach into
-# DIR/secrets-backup-<UTC timestamp>.tar.gz.gpg (DIR defaults to $HOME),
-# encrypted to $SECRETS_BACKUP_RECIPIENT, or to your first gpg secret key.
+# Bundle the pass store, a Bitwarden export and your gpg keys (secret keys
+# included) into DIR/secrets-backup-<UTC timestamp>.tar.gz.gpg (DIR defaults
+# to $HOME), encrypted with a passphrase (AES-256) rather than a gpg key, so
+# the backup can still be opened after the keys themselves are lost.
 #
 # A tool that is missing, locked or logged out is skipped with a warning.
 # Plaintext only ever exists inside a private mktemp directory, which is
@@ -21,30 +22,27 @@ secrets-backup() {
       exit 1
     fi
 
-    recipient=${SECRETS_BACKUP_RECIPIENT:-}
-    if [ -z "$recipient" ]; then
-      recipient=$(gpg --list-secret-keys --with-colons 2>/dev/null |
-        awk -F: '$1 == "fpr" { print $10; exit }')
-    fi
-    if [ -z "$recipient" ] || ! gpg --list-keys "$recipient" >/dev/null 2>&1; then
-      warn "no gpg key to encrypt to; set SECRETS_BACKUP_RECIPIENT or create a key"
-      exit 1
-    fi
-
     tmp=$(mktemp -d) || exit 1
     trap 'rm -rf "$tmp"' EXIT
     trap 'exit 130' INT TERM HUP
     included=()
 
-    # gpg: public keys and ownertrust. Secret keys are left out on purpose:
-    # the backup is encrypted to them, so they need a backup of their own.
-    mkdir "$tmp/gpg"
-    if gpg --armor --export >"$tmp/gpg/public-keys.asc" &&
-      gpg --export-ownertrust >"$tmp/gpg/ownertrust.txt"; then
-      included+=(gpg)
+    # gpg: public and secret keys plus ownertrust. Secret keys stay protected
+    # by their own passphrase inside the export (gpg asks for it).
+    if ! have gpg; then
+      warn "gpg: not installed, skipping"
+    elif [ -z "$(gpg --list-secret-keys --with-colons 2>/dev/null)" ]; then
+      warn "gpg: no secret keys, skipping"
     else
-      warn "gpg: export failed, skipping"
-      rm -rf "$tmp/gpg"
+      mkdir "$tmp/gpg"
+      if gpg --armor --export >"$tmp/gpg/public-keys.asc" &&
+        gpg --armor --export-secret-keys >"$tmp/gpg/secret-keys.asc" &&
+        gpg --export-ownertrust >"$tmp/gpg/ownertrust.txt"; then
+        included+=(gpg)
+      else
+        warn "gpg: export failed, skipping"
+        rm -rf "$tmp/gpg"
+      fi
     fi
 
     # pass: the store is already gpg-encrypted, copy it as is (with its git history).
@@ -76,70 +74,17 @@ secrets-backup() {
       fi
     fi
 
-    # OpenBao: every KV secret the current token can read, one JSON file per secret.
-    bao_walk() { # mount path
-      local keys key
-      keys=$(bao kv list -format=json -mount="$1" "$2" 2>/dev/null | jq -r '.[]') || return 0
-      while IFS= read -r key; do
-        [ -n "$key" ] || continue
-        case $key in
-          */) bao_walk "$1" "$2$key" ;;
-          *)
-            mkdir -p "$tmp/bao/$1/$2"
-            bao kv get -format=json -mount="$1" "$2$key" >"$tmp/bao/$1/$2$key.json" ||
-              warn "bao: could not read $1/$2$key"
-            ;;
-        esac
-      done <<<"$keys"
-    }
-    if ! have bao; then
-      warn "bao: not installed, skipping"
-    elif ! bao token lookup >/dev/null 2>&1; then
-      warn "bao: not logged in or server unreachable (check BAO_ADDR, run bao login), skipping"
-    else
-      mkdir "$tmp/bao"
-      mounts=$(bao secrets list -format=json 2>/dev/null |
-        jq -r 'to_entries[] | select(.value.type == "kv") | .key | rtrimstr("/")')
-      while IFS= read -r mount; do
-        [ -n "$mount" ] && bao_walk "$mount" ""
-      done <<<"$mounts"
-      if [ -n "$(ls -A "$tmp/bao")" ]; then
-        included+=(bao)
-      else
-        warn "bao: no readable KV secrets, skipping"
-        rmdir "$tmp/bao"
-      fi
-    fi
-
-    # YubiKey: private keys never leave the device, so this is an inventory
-    # (serials, OATH account names, PIV and OpenPGP status) to rebuild from.
-    if ! have ykman; then
-      warn "ykman: not installed, skipping"
-    else
-      serials=$(ykman list --serials 2>/dev/null)
-      if [ -z "$serials" ]; then
-        warn "ykman: no YubiKey plugged in, skipping"
-      else
-        while IFS= read -r serial; do
-          d="$tmp/yubikey/$serial"
-          mkdir -p "$d"
-          ykman --device "$serial" info >"$d/info.txt" 2>&1
-          ykman --device "$serial" oath accounts list >"$d/oath-accounts.txt" 2>&1
-          ykman --device "$serial" piv info >"$d/piv.txt" 2>&1
-          ykman --device "$serial" openpgp info >"$d/openpgp.txt" 2>&1
-        done <<<"$serials"
-        included+=(yubikey)
-      fi
-    fi
-
     if [ ${#included[@]} -eq 0 ]; then
       warn "nothing to back up"
       exit 1
     fi
 
+    # gpg asks for the backup passphrase twice through pinentry.
     out="$out_dir/secrets-backup-$(date -u +%Y%m%dT%H%M%SZ).tar.gz.gpg"
     if tar -C "$tmp" -czf - . |
-      gpg --batch --yes --encrypt --recipient "$recipient" --output "$out.partial"; then
+      gpg --yes --no-symkey-cache --symmetric --cipher-algo AES256 \
+        --s2k-mode 3 --s2k-digest-algo SHA512 --s2k-count 65011712 \
+        --output "$out.partial"; then
       mv "$out.partial" "$out"
       printf 'secrets-backup: wrote %s (%s)\n' "$out" "${included[*]}"
     else

@@ -1,6 +1,6 @@
 # Local secrets: gpg + gpg-agent, pass, ykman, Bitwarden CLI and the OpenBao
-# CLI, plus `secrets-backup` (home/secrets-backup.sh), which bundles whatever
-# is unlocked into one gpg-encrypted tarball. See docs/secrets.md.
+# CLI, plus `secrets-backup` (home/secrets-backup.sh), which bundles pass,
+# Bitwarden and gpg keys into one passphrase-encrypted tarball. See docs/secrets.md.
 { pkgs, config, ... }:
 {
   home.packages = with pkgs; [
