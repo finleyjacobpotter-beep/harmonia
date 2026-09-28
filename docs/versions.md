@@ -94,6 +94,18 @@ Neovim plugins:
 | Kali installer (VM) | 2026.2 (checksum read from the release's SHA256SUMS) |
 | Ubuntu Desktop installer (VM) | 26.04.1 (sha256 `601e30fb…1bda1f`) |
 
+## Secrets
+
+| Package | Version |
+| --- | --- |
+| GnuPG | 2.4.9 |
+| pinentry (curses) | 1.3.2 |
+| pass | 1.7.4 |
+| yubikey-manager (`ykman`) | 5.9.2 |
+| pcsc-lite | 2.4.1 |
+| Bitwarden CLI (`bw`) | 2026.9.0 |
+| OpenBao (`bao`) | 2.7.0 |
+
 ## Zen browser
 
 | Package | Version |

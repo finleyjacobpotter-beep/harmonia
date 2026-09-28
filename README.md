@@ -22,12 +22,15 @@ modules/nixos/
   flatpak.nix                  Flathub + Zen browser with a tightened sandbox
   virtualisation.nix           libvirtd/KVM, virt-manager, rootless podman + buildah
   vms.nix                      Kali (i3) and Ubuntu (GNOME) libvirt VMs, virtio GPU
+  secrets.nix                  pcscd + YubiKey udev rules
 vms/kali-i3.nix                i3 + i3status config for the Kali VM (Alt modifier)
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
   eww.nix                      eww bar (workspaces, title, cpu, mem, volume, battery, clock)
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
+  secrets.nix                  gpg, gpg-agent, pass, ykman, bw, bao
+  secrets-backup.sh            the `secrets-backup` bash function
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
@@ -55,6 +58,7 @@ docs/                          the rest of the documentation (linked below)
 - [Keyboard](docs/keyboard.md): the modifier contract and every binding
 - [Zen browser jail](docs/zen.md): the Flatpak sandbox and its theming
 - [VMs and containers](docs/vms-and-containers.md): libvirt, the Kali and Ubuntu VMs, podman
+- [Secrets](docs/secrets.md): gpg, pass, YubiKey, Bitwarden, OpenBao and `secrets-backup`
 - [Theme](docs/theme.md): Miami Wind colours, Tulasi icons, the wallpaper
 
 ## Unfree packages
