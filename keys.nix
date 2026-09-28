@@ -6,6 +6,9 @@
 #   Ctrl+Space …     tmux prefix only. tmux has no prefix-less (root table)
 #                    bindings, so every other key reaches the program inside.
 #   Ctrl+Shift + …   alacritty only (copy/paste, search, font size, hints).
+#   Alt + …          i3 inside the Kali VM only (vms/kali-i3.nix). Nothing on
+#                    the host binds Alt, so a VM window passes it straight
+#                    through, and neovim/tmux/alacritty never use it.
 #   everything else  the focused app: Zen (+ Vimium), neovim, ranger, bash
 #                    (vi mode), btop, pulsemixer, bluetuith, …
 #
@@ -16,4 +19,5 @@
   sway = "Mod4";
   tmuxPrefix = "C-Space";
   terminalMods = "Control|Shift";
+  vmWm = "Mod1";
 }
