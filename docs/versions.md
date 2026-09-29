@@ -115,11 +115,12 @@ Neovim plugins:
 | Zen (Flathub `app.zen_browser.zen`) | follows Flathub (1.22.3b on 2026-09-27) until `zenCommit` is set in `modules/nixos/flatpak.nix` |
 | Vimium add-on | 2.4.2 |
 
-## Lutris and Element
+## Lutris, Element and LM Studio
 
 | Package | Version |
 | --- | --- |
 | Lutris (Flathub `net.lutris.Lutris`) | follows Flathub |
 | Element (Flathub `im.riot.Riot`) | follows Flathub |
+| LM Studio (Flathub `ai.lmstudio.lm-studio`) | follows Flathub |
 | GameMode | from the pinned nixpkgs |
 | steam-devices-udev-rules | from the pinned nixpkgs |

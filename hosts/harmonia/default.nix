@@ -13,6 +13,7 @@
     ../../modules/nixos/flatpak.nix
     ../../modules/nixos/gaming.nix
     ../../modules/nixos/element.nix
+    ../../modules/nixos/lmstudio.nix
     ../../modules/nixos/virtualisation.nix
     ../../modules/nixos/vms.nix
     ../../modules/nixos/secrets.nix

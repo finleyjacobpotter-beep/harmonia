@@ -43,7 +43,7 @@ let
   # Key hints for sway's modes (home/sway.nix), shown while a mode is active.
   modeHints = {
     resize = "h/j/k/l resize · Shift = ×5 · Esc done";
-    open = "b zen · f ranger · e nvim · t tmux · s btop · a audio · u bluetooth · n network · v virt-manager · g lutris · c element";
+    open = "b zen · f ranger · e nvim · t tmux · s btop · a audio · u bluetooth · n network · v virt-manager · g lutris · c element · l lm-studio";
     media = "j/k volume · m mute · M mic · h/l prev/next · p play · J/K brightness";
     system = "l lock · e exit · s suspend · r reboot · P poweroff";
   };

@@ -4,7 +4,7 @@
 icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, **libvirt**, **podman**, and **Zen browser**, **Lutris** and **Element** jailed in Flatpak —
+**neovim**, **libvirt**, **podman**, and **Zen browser**, **Lutris**, **Element** and **LM Studio** jailed in Flatpak —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -22,6 +22,7 @@ modules/nixos/
   flatpak.nix                  Flathub + Zen browser with a tightened sandbox
   gaming.nix                   Lutris from Flathub with a tightened sandbox, controller udev rules, GameMode
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
+  lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
   virtualisation.nix           libvirtd/KVM, virt-manager, rootless podman + buildah
   vms.nix                      Kali (i3) and Ubuntu (GNOME) libvirt VMs, virtio GPU
   secrets.nix                  pcscd + YubiKey udev rules
@@ -88,6 +89,7 @@ Run it as your normal user: `bash scripts/ubuntu-install.sh`.
 - [Zen browser jail](docs/zen.md): the Flatpak sandbox and its theming
 - [Gaming](docs/gaming.md): Lutris in a Flatpak jail, its theming, anti-cheat, controllers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
+- [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
 - [VMs and containers](docs/vms-and-containers.md): libvirt, the Kali and Ubuntu VMs, their firewall, podman
 - [WireGuard](docs/wireguard.md): importing tunnels and the bar panel
 - [Secrets](docs/secrets.md): gpg, pass, YubiKey, Bitwarden, OpenBao and `secrets-backup`
@@ -98,6 +100,9 @@ Run it as your normal user: `bash scripts/ubuntu-install.sh`.
 Only one non-free package is allowed (`hosts/harmonia/default.nix`):
 the Tulasi icon theme (CC BY-NC-SA 4.0, free for non-commercial use with
 attribution).
+
+LM Studio is proprietary too, but it comes from Flathub rather than nixpkgs,
+so it needs no entry there.
 
 ## Acknowledgements
 
@@ -120,7 +125,7 @@ harmonia stands on other people's work:
 - **[Departure Mono](https://departuremono.com/)** via
   [Nerd Fonts](https://www.nerdfonts.com/): the font.
 - **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
-  Flatpak setup for Zen, Lutris and Element.
+  Flatpak setup for Zen, Lutris, Element and LM Studio.
 
 ## License
 

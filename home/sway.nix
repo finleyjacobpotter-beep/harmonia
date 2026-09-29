@@ -230,6 +230,7 @@ in
             v = run "virt-manager";
             g = run "flatpak run net.lutris.Lutris";
             c = run "flatpak run im.riot.Riot";
+            l = run "flatpak run ai.lmstudio.lm-studio";
           };
           media = leave // {
             k = "exec ${volUp}";
