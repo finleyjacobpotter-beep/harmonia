@@ -28,7 +28,7 @@ vms/kali-i3.nix                i3, i3status and caffeine bar for the Kali VM (Al
 vms/firewall.nix               host-enforced VM firewall policies (libvirt nwfilter)
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, cpu, mem, wireguard, caffeine, volume, battery, clock)
+  eww.nix                      eww bar (workspaces, title, caps/num lock, cpu, mem, wireguard, caffeine, volume, battery, clock)
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
   secrets.nix                  gpg, gpg-agent, pass, ykman, bw, bao

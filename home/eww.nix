@@ -166,6 +166,21 @@ let
     '';
   };
 
+  # Caps Lock / Num Lock state from the keyboard LEDs (world-readable), as
+  # {"caps": bool, "num": bool}. Any keyboard with the LED lit counts.
+  locks = pkgs.writeShellApplication {
+    name = "eww-locks";
+    text = ''
+      lit() {
+        for led in /sys/class/leds/*::"$1"/brightness; do
+          [ -r "$led" ] && [ "$(cat "$led")" != 0 ] && { echo true; return; }
+        done
+        echo false
+      }
+      printf '{"caps":%s,"num":%s}\n' "$(lit capslock)" "$(lit numlock)"
+    '';
+  };
+
   battery = pkgs.writeShellApplication {
     name = "eww-battery";
     text = ''
@@ -185,6 +200,7 @@ in
     (deflisten mode :initial "{\"name\":\"default\",\"hint\":\"\"}" "${mode}/bin/eww-sway-mode")
     (defpoll volume :interval "2s" "${volume}/bin/eww-volume")
     (defpoll wg :interval "5s" :initial "{\"active\":0,\"tunnels\":[]}" "${wireguard}/bin/eww-wg")
+    (defpoll locks :interval "500ms" :initial "{\"caps\":false,\"num\":false}" "${locks}/bin/eww-locks")
     (defpoll caffeine :interval "10s" "${caffeine}/bin/eww-caffeine")
     (defpoll battery :interval "30s" "${battery}/bin/eww-battery")
     (defpoll time :interval "10s" "date '+%a %d %b  %H:%M'")
@@ -215,6 +231,8 @@ in
 
     (defwidget right []
       (box :orientation "h" :space-evenly false :halign "end" :spacing 4
+        (label :class "lock caps" :visible {locks.caps} :text "CAPS")
+        (label :class "lock num" :visible {locks.num} :text "NUM")
         (module :class "cpu" :icon "" :text "''${round(EWW_CPU.avg, 0)}%")
         (module :class "mem" :icon "" :text "''${round(EWW_RAM.used_mem_perc, 0)}%")
         (button
@@ -336,6 +354,14 @@ in
       &.wg.on { color: $cyan; }
       &.caffeine { color: $muted; &:hover { background-color: $surface; } }
       &.caffeine.on { color: $orange; }
+    }
+
+    .lock {
+      padding: 0 8px;
+      color: $bg;
+      font-weight: bold;
+      &.caps { background-color: $yellow; }
+      &.num { background-color: $purple; }
     }
 
     .wg-panel {
