@@ -124,3 +124,10 @@ Neovim plugins:
 | LM Studio (Flathub `ai.lmstudio.lm-studio`) | follows Flathub |
 | GameMode | from the pinned nixpkgs |
 | steam-devices-udev-rules | from the pinned nixpkgs |
+
+## Fans
+
+| Package | Version |
+| --- | --- |
+| LACT | 0.10.1 |
+| lm_sensors | 3.6.2 |
