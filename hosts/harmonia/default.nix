@@ -11,6 +11,7 @@
     ../../modules/nixos/desktop.nix
     ../../modules/nixos/fonts.nix
     ../../modules/nixos/flatpak.nix
+    ../../modules/nixos/gaming.nix
     ../../modules/nixos/virtualisation.nix
     ../../modules/nixos/vms.nix
     ../../modules/nixos/secrets.nix

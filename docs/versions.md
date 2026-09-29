@@ -114,3 +114,11 @@ Neovim plugins:
 | --- | --- |
 | Zen (Flathub `app.zen_browser.zen`) | follows Flathub (1.22.3b on 2026-09-27) until `zenCommit` is set in `modules/nixos/flatpak.nix` |
 | Vimium add-on | 2.4.2 |
+
+## Gaming
+
+| Package | Version |
+| --- | --- |
+| Steam (Flathub `com.valvesoftware.Steam`) | follows Flathub; the client also updates itself |
+| GameMode | from the pinned nixpkgs |
+| steam-devices-udev-rules | from the pinned nixpkgs |
