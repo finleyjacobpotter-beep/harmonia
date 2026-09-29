@@ -45,9 +45,15 @@ in
 
       vim.cmd.colorscheme("miami-wind")
 
-      require("nvim-treesitter.configs").setup({
-        highlight = { enable = true },
-        indent = { enable = true },
+      -- nvim-treesitter's main branch has no `configs` module: highlighting
+      -- and indent are turned on per buffer. pcall skips filetypes without
+      -- a parser.
+      vim.api.nvim_create_autocmd("FileType", {
+        callback = function(args)
+          if pcall(vim.treesitter.start, args.buf) then
+            vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+          end
+        end,
       })
       require("nvim-web-devicons").setup({ default = true })
       require("gitsigns").setup()
