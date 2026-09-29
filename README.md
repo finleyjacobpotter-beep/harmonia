@@ -35,7 +35,7 @@ home/                          home-manager, one file per program
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          the rest of the documentation (linked below)
-scripts/install.sh             base NixOS install from the minimal ISO (docs/install.md)
+scripts/install.py             base NixOS install from the minimal ISO (docs/install.md)
 ```
 
 ## Install
@@ -43,7 +43,7 @@ scripts/install.sh             base NixOS install from the minimal ISO (docs/ins
 Start from a base NixOS install with flakes and git enabled and a user named
 `u` (or whatever you set as `username`). [Installing base NixOS](docs/install.md)
 walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
-[`scripts/install.sh`](scripts/install.sh) does it for you.
+[`scripts/install.py`](scripts/install.py) does it for you.
 
 1. Clone this repo and edit `hostname` / `username` in `flake.nix`, and the
    timezone/locale/keymap in `hosts/harmonia/default.nix`:
