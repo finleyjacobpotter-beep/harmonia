@@ -1,48 +1,51 @@
-# Steam from Flathub, run inside a tightened flatpak sandbox ("game jail").
+# Lutris from Flathub, run inside a tightened flatpak sandbox ("game jail").
 #
-# Steam, Proton and every game it installs live in
-# ~/.var/app/com.valvesoftware.Steam and cannot see the rest of your home
-# directory. See docs/gaming.md for what the jail does and doesn't stop.
+# Lutris, Wine, every prefix and every game live in
+# ~/.var/app/net.lutris.Lutris and ~/Games, and cannot see the rest of your
+# home directory. See docs/gaming.md for what the jail does and doesn't stop.
+# The Miami Wind theming inside the sandbox is in home/lutris.nix.
 { username, ... }:
 let
-  steam = "com.valvesoftware.Steam";
+  lutris = "net.lutris.Lutris";
 in
 {
   # Flathub itself and the weekly update timer come from flatpak.nix.
   services.flatpak.packages = [
     {
-      appId = steam;
+      appId = lutris;
       origin = "flathub";
     }
   ];
 
-  # Tighten Flathub's default permissions for Steam. Anything not listed keeps
-  # the manifest default; entries prefixed with "!" revoke a permission.
-  # The manifest already gives Steam no host or home access: its home is its
-  # own ~/.var/app directory. These revoke the extra holes it does punch.
-  services.flatpak.overrides.${steam} = {
+  # Tighten Flathub's default permissions for Lutris. Anything not listed
+  # keeps the manifest default; entries prefixed with "!" revoke a permission.
+  services.flatpak.overrides.${lutris} = {
     Context = {
       filesystems = [
-        # Read access to your music and pictures.
-        "!xdg-music"
-        "!xdg-pictures"
-        # Read-write access to removable drives and anything under /mnt.
-        # To keep a library on another drive, add just that path back,
-        # e.g. "/mnt/games" (see docs/gaming.md).
-        "!/mnt"
+        # Flathub gives Lutris your whole home directory. Take it away and
+        # give back only ~/Games: the default install location, and where to
+        # drop installers (GOG .exe/.sh files and the like).
+        "!home"
+        "~/Games:create"
+        # Removable drives, and Flathub Steam's data.
         "!/media"
         "!/run/media"
-        # Discord rich-presence socket.
-        "!xdg-run/app/com.discordapp.Discord"
+        "!~/.var/app/com.valvesoftware.Steam"
       ];
-      # X11 stays: the Steam client and most Proton games are X11-only and
-      # run under Xwayland. Only other Xwayland windows are visible to them;
-      # native Wayland apps (alacritty, Zen) are not.
-      # --device=all also stays: controllers, wheels and VR headsets need
-      # the raw hidraw/input devices.
+      # X11 stays: Wine and most games are X11-only and run under Xwayland.
+      # Only other Xwayland windows are visible to them; native Wayland apps
+      # (alacritty, Zen, Element) are not.
+      # --device=all also stays: controllers and wheels need the raw
+      # hidraw/input devices.
     };
-    # Wine uses UDisks2 to list (and mount) drives; games don't need it.
+    "Session Bus Policy" = {
+      # org.freedesktop.Flatpak lets an app run any command *outside* the
+      # sandbox (flatpak-spawn --host). Flathub grants it to Lutris; with it,
+      # the jail is no jail at all.
+      "org.freedesktop.Flatpak" = "none";
+    };
     "System Bus Policy" = {
+      # Wine uses UDisks2 to list (and mount) drives; games don't need it.
       "org.freedesktop.UDisks2" = "none";
     };
   };
@@ -52,8 +55,8 @@ in
   hardware.steam-hardware.enable = true;
 
   # Feral GameMode on the host; sandboxed games reach it through the
-  # xdg-desktop-portal GameMode portal. Add `gamemoderun %command%` to a
-  # game's launch options to use it.
+  # xdg-desktop-portal GameMode portal. Tick "Enable Feral GameMode" in a
+  # game's Lutris system options to use it.
   programs.gamemode.enable = true;
   users.users.${username}.extraGroups = [ "gamemode" ];
 }

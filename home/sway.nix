@@ -228,7 +228,8 @@ in
             u = term "bluetuith";
             n = term "nmtui";
             v = run "virt-manager";
-            g = run "flatpak run com.valvesoftware.Steam";
+            g = run "flatpak run net.lutris.Lutris";
+            c = run "flatpak run im.riot.Riot";
           };
           media = leave // {
             k = "exec ${volUp}";
@@ -256,8 +257,7 @@ in
       for_window [app_id="blueman-manager"] floating enable
       for_window [app_id="^(btop|pulsemixer|bluetuith|nmtui)$"] floating enable, resize set 60 ppt 60 ppt, move position center
       for_window [app_id="app.zen_browser.zen" title="^Picture-in-Picture$"] floating enable, sticky enable
-      for_window [class="^steam$" title="^(Friends List|Steam Settings)$"] floating enable
-      for_window [class="^steam_app_"] inhibit_idle fullscreen
+      for_window [class=".*"] inhibit_idle fullscreen
     '';
   };
 

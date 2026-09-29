@@ -4,7 +4,7 @@
 icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, **libvirt**, **podman**, and **Zen browser** and **Steam** jailed in Flatpak —
+**neovim**, **libvirt**, **podman**, and **Zen browser**, **Lutris** and **Element** jailed in Flatpak —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -20,7 +20,8 @@ modules/nixos/
   desktop.nix                  sway, greetd/tuigreet, pipewire, portals, console colours
   fonts.nix                    DepartureMono Nerd Font as system default
   flatpak.nix                  Flathub + Zen browser with a tightened sandbox
-  gaming.nix                   Steam from Flathub with a tightened sandbox, controller udev rules, GameMode
+  gaming.nix                   Lutris from Flathub with a tightened sandbox, controller udev rules, GameMode
+  element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   virtualisation.nix           libvirtd/KVM, virt-manager, rootless podman + buildah
   vms.nix                      Kali (i3) and Ubuntu (GNOME) libvirt VMs, virtio GPU
   secrets.nix                  pcscd + YubiKey udev rules
@@ -34,6 +35,7 @@ home/                          home-manager, one file per program
   tui.nix                      btop, pulsemixer, bluetuith
   secrets.nix                  gpg, gpg-agent, pass, ykman, bw, bao
   secrets-backup.sh            the `secrets-backup` command
+  lutris.nix element.nix       Miami Wind inside the Lutris and Element sandboxes
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
@@ -84,7 +86,8 @@ Run it as your normal user: `bash scripts/ubuntu-install.sh`.
 - [Pinned versions](docs/versions.md): exact commits and package versions
 - [Keyboard](docs/keyboard.md): the modifier contract and every binding
 - [Zen browser jail](docs/zen.md): the Flatpak sandbox and its theming
-- [Gaming](docs/gaming.md): Steam in a Flatpak jail, Proton, anti-cheat, controllers
+- [Gaming](docs/gaming.md): Lutris in a Flatpak jail, its theming, anti-cheat, controllers
+- [Element](docs/element.md): the Matrix client's Flatpak jail and theme
 - [VMs and containers](docs/vms-and-containers.md): libvirt, the Kali and Ubuntu VMs, their firewall, podman
 - [WireGuard](docs/wireguard.md): importing tunnels and the bar panel
 - [Secrets](docs/secrets.md): gpg, pass, YubiKey, Bitwarden, OpenBao and `secrets-backup`
@@ -95,9 +98,6 @@ Run it as your normal user: `bash scripts/ubuntu-install.sh`.
 Only one non-free package is allowed (`hosts/harmonia/default.nix`):
 the Tulasi icon theme (CC BY-NC-SA 4.0, free for non-commercial use with
 attribution).
-
-Steam is proprietary too, but it comes from Flathub rather than nixpkgs, so
-it needs no entry there.
 
 ## Acknowledgements
 
@@ -120,7 +120,7 @@ harmonia stands on other people's work:
 - **[Departure Mono](https://departuremono.com/)** via
   [Nerd Fonts](https://www.nerdfonts.com/): the font.
 - **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
-  Flatpak setup for Zen and Steam.
+  Flatpak setup for Zen, Lutris and Element.
 
 ## License
 

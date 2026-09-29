@@ -10,6 +10,8 @@
     ./neovim.nix
     ./gtk.nix
     ./zen.nix
+    ./lutris.nix
+    ./element.nix
     ./tui.nix
     ./keymap.nix
     ./secrets.nix
