@@ -1,11 +1,13 @@
 # Two libvirt VMs on qemu:///system, both with a virtio GPU (virgl 3D over a
 # local SPICE display, opened with virt-manager):
 #
-#   harmonia-kali    Kali Linux, installed with the i3 desktop. Gets the i3
-#                    config from vms/kali-i3.nix and this flake's neovim config
-#                    through a read-only virtiofs share (mount tag "harmonia"),
-#                    and has a read-write share with the host (tag "shared",
+#   harmonia-kali    Kali Linux, installed with the i3 desktop. Has a
+#                    read-write virtiofs share with the host (tag "shared",
 #                    ~/vms/kali-shared on the host, ~/shared in the guest).
+#                    On every boot the harmonia-vms service puts an install
+#                    script there (harmonia/install.sh) with the i3 config
+#                    from vms/kali-i3.nix, the bash setup and this flake's
+#                    neovim config.
 #   harmonia-ubuntu  Ubuntu Desktop (GNOME), stock.
 #
 # The domains and their empty disks are created by the harmonia-vms service
@@ -90,17 +92,18 @@ let
 
   # Run inside Kali: installs i3 and the tools the config uses, then copies
   # everything into place (existing files are kept as *.bak).
-  kaliSetup = pkgs.writeText "setup.sh" ''
+  kaliInstall = pkgs.writeText "install.sh" ''
     #!/bin/sh
-    # Usage (in the Kali guest):
-    #   sudo mount -t virtiofs harmonia /mnt && sh /mnt/setup.sh
+    # Usage (in the Kali guest; see docs/vms-and-containers.md):
+    #   mkdir -p ~/shared && sudo mount -t virtiofs shared ~/shared
+    #   sh ~/shared/harmonia/install.sh
     set -eu
     src=$(dirname "$(readlink -f "$0")")
 
     sudo apt-get update
     sudo apt-get install -y kali-desktop-i3 i3status rofi dunst feh maim xclip \
-      i3lock alacritty neovim ripgrep fd-find git bash-completion fzf \
-      tmux ranger
+      i3lock xss-lock x11-xserver-utils python3 alacritty neovim ripgrep \
+      fd-find git bash-completion fzf tmux ranger
 
     put() { # put <source> <dest>
       mkdir -p "$(dirname "$2")"
@@ -110,6 +113,8 @@ let
     }
     put "$src/i3/config"        "$HOME/.config/i3/config"
     put "$src/i3status/config"  "$HOME/.config/i3status/config"
+    put "$src/harmonia-status"  "$HOME/.local/bin/harmonia-status"
+    chmod +x "$HOME/.local/bin/harmonia-status"
     put "$src/wallpaper.png"    "$HOME/.local/share/harmonia/wallpaper.png"
     put "$src/nvim/config"      "$HOME/.config/nvim"
     put "$src/nvim/pack"        "$HOME/.local/share/nvim/site/pack/hm"
@@ -119,25 +124,26 @@ let
     # bash instead of Kali's default zsh
     [ "$(getent passwd "$USER" | cut -d: -f7)" = /bin/bash ] || sudo chsh -s /bin/bash "$USER"
 
-    # The read-write share (host: ${kaliRwShare}), mounted at ~/shared on boot.
+    # Mount the read-write share (host: ${kaliRwShare}) at ~/shared on boot.
     mkdir -p "$HOME/shared"
     grep -q '^shared ' /etc/fstab ||
       echo "shared $HOME/shared virtiofs defaults,nofail 0 0" | sudo tee -a /etc/fstab >/dev/null
     sudo systemctl daemon-reload
-    sudo mount "$HOME/shared" || true
 
     echo "Done. Log out and pick i3 at the login screen; the i3 modifier is Alt."
-    echo "~/shared is the read-write share with the host."
+    echo "~/shared is the read-write share with the host; re-run this script after a host rebuild to update."
   '';
 
-  kaliShare = pkgs.runCommand "harmonia-kali-share" { } ''
+  # Everything install.sh copies, put into the read-write share on boot.
+  kaliBundle = pkgs.runCommand "harmonia-kali-bundle" { } ''
     mkdir -p $out/i3 $out/i3status $out/nvim/config $out/bash
+    cp ${pkgs.writeText "harmonia-status" kaliI3.status} $out/harmonia-status
     cp ${kaliBashrc} $out/bash/bashrc
     cp ${kaliInputrc} $out/bash/inputrc
     cp ${pkgs.writeText "i3-config" kaliI3.i3} $out/i3/config
     cp ${pkgs.writeText "i3status-config" kaliI3.i3status} $out/i3status/config
     cp ${../../assets/wallpaper.png} $out/wallpaper.png
-    cp ${kaliSetup} $out/setup.sh
+    cp ${kaliInstall} $out/install.sh
 
     cp ${nvimInit} $out/nvim/config/init.lua
     ${lib.concatMapStrings (f: ''
@@ -165,8 +171,8 @@ let
         sums = "https://cdimage.kali.org/kali-2026.2/SHA256SUMS";
         sha256 = null;
       };
-      share = kaliShare;
-      rwShare = kaliRwShare;
+      share = kaliRwShare;
+      bundle = kaliBundle;
     };
     ubuntu = {
       memory = 6144;
@@ -179,7 +185,7 @@ let
         sha256 = "601e30fbf5d97759367c632e2c33630665039b7e2158fd068403da3ccf1bda1f";
       };
       share = null;
-      rwShare = null;
+      bundle = null;
     };
   };
 
@@ -199,7 +205,7 @@ let
         <features><acpi/><apic/></features>
         <cpu mode="host-passthrough"/>
         <clock offset="utc"/>
-        ${lib.optionalString (vm.share != null || vm.rwShare != null) ''
+        ${lib.optionalString (vm.share != null) ''
           <memoryBacking><source type="memfd"/><access mode="shared"/></memoryBacking>
         ''}
         <devices>
@@ -243,13 +249,6 @@ let
             <filesystem type="mount" accessmode="passthrough">
               <driver type="virtiofs"/>
               <source dir="${vm.share}"/>
-              <target dir="harmonia"/>
-            </filesystem>
-          ''}
-          ${lib.optionalString (vm.rwShare != null) ''
-            <filesystem type="mount" accessmode="passthrough">
-              <driver type="virtiofs"/>
-              <source dir="${vm.rwShare}"/>
               <target dir="shared"/>
             </filesystem>
           ''}
@@ -326,6 +325,13 @@ in
           [ -e ${imageDir}/harmonia-${name}.qcow2 ] ||
             qemu-img create -f qcow2 ${imageDir}/harmonia-${name}.qcow2 ${vm.disk}
           virsh define ${domainXml name vm}
+          ${lib.optionalString (vm.bundle != null) ''
+            mkdir -p ${vm.share}
+            rm -rf ${vm.share}/harmonia
+            cp -rL ${vm.bundle} ${vm.share}/harmonia
+            chmod -R u+w ${vm.share}/harmonia
+            chown -R ${username}:users ${vm.share}/harmonia
+          ''}
         '') vms
       )}
     '';

@@ -23,7 +23,7 @@ modules/nixos/
   virtualisation.nix           libvirtd/KVM, virt-manager, rootless podman + buildah
   vms.nix                      Kali (i3) and Ubuntu (GNOME) libvirt VMs, virtio GPU
   secrets.nix                  pcscd + YubiKey udev rules
-vms/kali-i3.nix                i3 + i3status config for the Kali VM (Alt modifier)
+vms/kali-i3.nix                i3, i3status and caffeine bar for the Kali VM (Alt modifier)
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
   eww.nix                      eww bar (workspaces, title, cpu, mem, caffeine, volume, battery, clock)
