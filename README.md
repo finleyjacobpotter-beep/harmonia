@@ -35,12 +35,21 @@ home/                          home-manager, one file per program
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          the rest of the documentation (linked below)
+scripts/install.sh             base NixOS install from the minimal ISO (docs/install.md)
 ```
 
 ## Install
 
-1. Edit `hostname` / `username` in `flake.nix`, and the timezone/locale/keymap in
-   `hosts/harmonia/default.nix`.
+Start from a base NixOS install with flakes and git enabled and a user named
+`u` (or whatever you set as `username`). [Installing base NixOS](docs/install.md)
+walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
+[`scripts/install.sh`](scripts/install.sh) does it for you.
+
+1. Clone this repo and edit `hostname` / `username` in `flake.nix`, and the
+   timezone/locale/keymap in `hosts/harmonia/default.nix`:
+   ```sh
+   git clone https://github.com/finleyjacobpotter-beep/harmonia ~/harmonia && cd ~/harmonia
+   ```
 2. Replace the placeholder hardware config:
    ```sh
    sudo nixos-generate-config --show-hardware-config > hosts/harmonia/hardware-configuration.nix
@@ -50,10 +59,14 @@ docs/                          the rest of the documentation (linked below)
    ```sh
    sudo nixos-rebuild switch --flake .#harmonia
    ```
-4. Log in (initial password `changeme`), run `passwd`.
+4. Reboot and log in at tuigreet. If your user already existed (as it does
+   after the base install), use its existing password. The initial password
+   `changeme` only applies when harmonia creates the user; in that case, run
+   `passwd` straight away.
 
 ## Documentation
 
+- [Installing base NixOS](docs/install.md): the base system harmonia installs onto
 - [Pinned versions](docs/versions.md): exact commits and package versions
 - [Keyboard](docs/keyboard.md): the modifier contract and every binding
 - [Zen browser jail](docs/zen.md): the Flatpak sandbox and its theming
