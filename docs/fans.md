@@ -2,9 +2,15 @@
 
 ## GPU (AMD)
 
-[LACT](https://github.com/ilya-zlobintsev/LACT) runs as a daemon
-([`modules/nixos/fans.nix`](../modules/nixos/fans.nix)). Open **LACT** from
-fuzzel, go to *Thermals*, switch fan control from automatic to
+[LACT](https://github.com/ilya-zlobintsev/LACT) is split in two
+([`modules/nixos/fans.nix`](../modules/nixos/fans.nix)): its daemon runs on
+the host as root, because it writes to the GPU, and its window comes from
+Flathub (`io.github.ilya_zlobintsev.LACT`) in a Flatpak sandbox that can only
+reach the daemon's socket. The window uses the desktop theme (Miami Wind
+colours, Tulasi icons, the font), copied in by
+[`home/flatpak-theme.nix`](../home/flatpak-theme.nix).
+
+Open **LACT** from fuzzel, go to *Thermals*, switch fan control from automatic to
 custom, and drag the curve points. Apply, and the daemon keeps the curve across reboots in
 `/etc/lact/config.yaml`.
 

@@ -3,7 +3,7 @@
 # Lutris, Wine, every prefix and every game live in
 # ~/.var/app/net.lutris.Lutris and ~/Games, and cannot see the rest of your
 # home directory. See docs/gaming.md for what the jail does and doesn't stop.
-# The Miami Wind theming inside the sandbox is in home/lutris.nix.
+# The Miami Wind theming inside the sandbox is in home/flatpak-theme.nix.
 { username, ... }:
 let
   lutris = "net.lutris.Lutris";

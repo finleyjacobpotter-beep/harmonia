@@ -129,5 +129,6 @@ Neovim plugins:
 
 | Package | Version |
 | --- | --- |
-| LACT | 0.10.1 |
+| LACT daemon (nixpkgs) | 0.10.1 |
+| LACT GUI (Flathub `io.github.ilya_zlobintsev.LACT`) | follows Flathub (0.10.1 on 2026-09-29) |
 | lm_sensors | 3.6.2 |

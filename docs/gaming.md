@@ -68,8 +68,8 @@ with another. For a game you really don't trust, use a VM
 Lutris is a GTK 3 app, so it gets the same look as the rest of the desktop:
 the adw-gtk3 dark theme with the Miami Wind colours, Tulasi icons, the Bibata
 cursor and DepartureMono. The sandbox can't read the host's copies, so
-[`home/lutris.nix`](../home/lutris.nix) copies them into
-`~/.var/app/net.lutris.Lutris` on every rebuild (or run `lutris-miami-wind`).
+[`home/flatpak-theme.nix`](../home/flatpak-theme.nix) copies them into
+`~/.var/app/net.lutris.Lutris` on every rebuild (or run `flatpak-miami-wind`).
 Games themselves draw their own UI and aren't themed.
 
 ## Anti-cheat

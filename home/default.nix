@@ -10,7 +10,7 @@
     ./neovim.nix
     ./gtk.nix
     ./zen.nix
-    ./lutris.nix
+    ./flatpak-theme.nix
     ./element.nix
     ./tui.nix
     ./keymap.nix
