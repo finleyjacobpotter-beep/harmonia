@@ -9,6 +9,8 @@
 #                 unpacked to /opt/godot and linked as /usr/local/bin/godot
 #   Godot MCP     https://github.com/Coding-Solo/godot-mcp
 #                 server: `npx @coding-solo/godot-mcp`
+#   Tau           https://github.com/huggingface/tau
+#                 Hugging Face's terminal coding agent, `pipx install tau-ai`
 #   Caffeine      https://extensions.gnome.org/extension/517/caffeine/
 #
 # Run it as your normal user from a GNOME session (it asks for sudo when it
@@ -43,7 +45,7 @@ trap 'rm -rf "$TMP"' EXIT
 # --- packages ---------------------------------------------------------------
 step "Installing base packages"
 sudo apt-get update
-sudo apt-get install -y curl unzip jq
+sudo apt-get install -y curl unzip jq pipx
 
 # The Godot MCP server runs on Node; older Ubuntu releases ship a Node too old
 # for it, so fall back to the Node snap.
@@ -108,6 +110,18 @@ Categories=Development;IDE;Game;
 EOF
 echo "Godot $tag installed at $GODOT_DIR/godot"
 
+# --- Tau ------------------------------------------------------------------------
+step "Installing Tau"
+# Tau needs Python 3.12+. Ubuntu 24.04 and later ship it; on older releases
+# pipx uses a 3.12 fetched by uv instead.
+tau_python=python3
+if ! python3 -c 'import sys; sys.exit(sys.version_info < (3, 12))'; then
+  uv python install 3.12
+  tau_python=$(uv python find 3.12)
+fi
+pipx install --force --python "$tau_python" tau-ai
+pipx ensurepath >/dev/null
+
 # --- register the MCP servers -------------------------------------------------
 if command -v claude >/dev/null; then
   step "Registering the MCP servers with Claude Code"
@@ -144,11 +158,14 @@ step "Done"
 cat <<EOF
 Blender:  $(blender --version 2>/dev/null | head -1)
 Godot:    $("$GODOT_DIR/godot" --version 2>/dev/null || echo "$tag")
+Tau:      $HOME/.local/bin/tau
 
 Next steps:
   - Log out and back in so GNOME loads Caffeine (the coffee cup in the top bar).
   - In Blender, open the sidebar (N) in the 3D viewport, go to the BlenderMCP
     tab and click "Connect to Claude" before using the Blender MCP server.
+  - Run \`tau\` and use /login to connect a model provider (Hugging Face,
+    Anthropic, OpenAI, OpenRouter or a local model).
 EOF
 
 if [[ -z ${REGISTERED:-} ]]; then
