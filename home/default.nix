@@ -12,6 +12,7 @@
     ./zen.nix
     ./tui.nix
     ./keymap.nix
+    ./secrets.nix
   ];
 
   home.username = username;
