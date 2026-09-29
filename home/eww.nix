@@ -78,6 +78,31 @@ let
     '';
   };
 
+  # Caffeine: stopping swayidle (home/sway.nix) turns off the lock and blank
+  # timers until it is started again. The bar button toggles it.
+  caffeine = pkgs.writeShellApplication {
+    name = "eww-caffeine";
+    runtimeInputs = with pkgs; [
+      systemd
+      eww
+    ];
+    text = ''
+      state() {
+        if systemctl --user is-active --quiet swayidle.service; then echo off; else echo on; fi
+      }
+      if [ "''${1:-}" = toggle ]; then
+        if [ "$(state)" = off ]; then
+          systemctl --user stop swayidle.service
+        else
+          systemctl --user start swayidle.service
+        fi
+        eww update caffeine="$(state)"
+      else
+        state
+      fi
+    '';
+  };
+
   battery = pkgs.writeShellApplication {
     name = "eww-battery";
     text = ''
@@ -96,6 +121,7 @@ in
     (deflisten title :initial "" "${title}/bin/eww-sway-title")
     (deflisten mode :initial "{\"name\":\"default\",\"hint\":\"\"}" "${mode}/bin/eww-sway-mode")
     (defpoll volume :interval "2s" "${volume}/bin/eww-volume")
+    (defpoll caffeine :interval "10s" "${caffeine}/bin/eww-caffeine")
     (defpoll battery :interval "30s" "${battery}/bin/eww-battery")
     (defpoll time :interval "10s" "date '+%a %d %b  %H:%M'")
 
@@ -127,6 +153,11 @@ in
       (box :orientation "h" :space-evenly false :halign "end" :spacing 4
         (module :class "cpu" :icon "" :text "''${round(EWW_CPU.avg, 0)}%")
         (module :class "mem" :icon "" :text "''${round(EWW_RAM.used_mem_perc, 0)}%")
+        (button
+          :class "module caffeine ''${caffeine}"
+          :tooltip "Caffeine ''${caffeine}: click to ''${caffeine == "on" ? "allow" : "stop"} locking and screen blanking"
+          :onclick "${caffeine}/bin/eww-caffeine toggle"
+          (label :class "icon" :text {caffeine == "on" ? "󰅶" : "󰛊"}))
         (module :class "vol" :icon "󰕾" :text volume)
         (module :class "bat" :icon "󰁹" :text "''${battery}%" :visible {battery != ""})
         (module :class "clock" :icon "󰥔" :text time)))
@@ -204,6 +235,8 @@ in
       &.vol .icon { color: $cyan; }
       &.bat .icon { color: $yellow; }
       &.clock .icon { color: $pink; }
+      &.caffeine { color: $muted; &:hover { background-color: $surface; } }
+      &.caffeine.on { color: $orange; }
     }
   '';
 }

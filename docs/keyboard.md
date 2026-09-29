@@ -92,3 +92,11 @@ Hardware keys (volume, media, brightness, Print) work as usual.
 
 The pointer hides as soon as you type and comes back when the mouse moves
 (sway `hide_cursor when-typing`).
+
+## Idle
+
+The screen locks after 10 minutes idle and turns off after 15 (swayidle,
+`home/sway.nix`); it also locks before suspend. The coffee cup on the eww bar
+is a caffeine toggle: click it to stop swayidle (cup filled, orange), so
+nothing locks or blanks, and click again to bring the timers back. While
+caffeine is on, suspending doesn't lock either.

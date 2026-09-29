@@ -26,7 +26,7 @@ modules/nixos/
 vms/kali-i3.nix                i3 + i3status config for the Kali VM (Alt modifier)
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, cpu, mem, volume, battery, clock)
+  eww.nix                      eww bar (workspaces, title, cpu, mem, caffeine, volume, battery, clock)
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
   secrets.nix                  gpg, gpg-agent, pass, ykman, bw, bao
