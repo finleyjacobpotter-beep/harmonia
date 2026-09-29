@@ -103,6 +103,69 @@ let
     '';
   };
 
+  # WireGuard tunnels (NetworkManager connections of type wireguard, see
+  # modules/nixos/wireguard.nix) for the bar button and its panel.
+  wireguard = pkgs.writeShellApplication {
+    name = "eww-wg";
+    runtimeInputs = with pkgs; [
+      networkmanager
+      iproute2
+      jq
+      gawk
+      coreutils
+      eww
+    ];
+    text = ''
+      # Usage: eww-wg            JSON for the bar: {"active": N, "tunnels": [...]}
+      #        eww-wg toggle NAME  bring a NetworkManager WireGuard connection up/down
+      wg_show() { # wg_show endpoints|latest-handshakes: "iface<TAB>peer<TAB>value" lines, or nothing
+        /run/wrappers/bin/sudo -n ${pkgs.wireguard-tools}/bin/wg show all "$1" 2>/dev/null || true
+      }
+
+      list() {
+        endpoints=$(wg_show endpoints)
+        handshakes=$(wg_show latest-handshakes)
+        now=$(date +%s)
+        nmcli -t -f NAME,TYPE,DEVICE connection show |
+          while IFS=: read -r name type dev; do
+            [ "$type" = wireguard ] || continue
+            address=$(nmcli -g ipv4.addresses connection show "$name" | cut -d, -f1)
+            rx=""; tx=""; endpoint=""; handshake=""
+            if [ -n "$dev" ]; then
+              read -r rx tx < <(ip -j -s link show dev "$dev" | jq -r '.[0].stats64 | "\(.rx.bytes) \(.tx.bytes)"')
+              rx=$(numfmt --to=iec-i --suffix=B "$rx"); tx=$(numfmt --to=iec-i --suffix=B "$tx")
+              endpoint=$(awk -v d="$dev" '$1 == d { print $3; exit }' <<<"$endpoints")
+              last=$(awk -v d="$dev" '$1 == d { print $3; exit }' <<<"$handshakes")
+              if [ -z "$last" ]; then handshake="unknown"
+              elif [ "$last" -eq 0 ]; then handshake="never"
+              else
+                ago=$((now - last))
+                if [ "$ago" -lt 120 ]; then handshake="''${ago}s ago"; else handshake="$((ago / 60))m ago"; fi
+              fi
+            fi
+            jq -nc --arg name "$name" --arg dev "$dev" --arg address "$address" \
+              --arg endpoint "$endpoint" --arg rx "$rx" --arg tx "$tx" --arg handshake "$handshake" \
+              '{name: $name, active: ($dev != ""), device: $dev, address: $address,
+                endpoint: $endpoint, rx: $rx, tx: $tx, handshake: $handshake}'
+          done |
+          jq -sc '{active: (map(select(.active)) | length), tunnels: .}'
+      }
+
+      case "''${1:-}" in
+        toggle)
+          name=$2
+          if [ -n "$(nmcli -g GENERAL.STATE connection show --active "$name" 2>/dev/null)" ]; then
+            nmcli connection down id "$name" >/dev/null
+          else
+            nmcli connection up id "$name" >/dev/null
+          fi
+          eww update wg="$(list)"
+          ;;
+        *) list ;;
+      esac
+    '';
+  };
+
   battery = pkgs.writeShellApplication {
     name = "eww-battery";
     text = ''
@@ -121,6 +184,7 @@ in
     (deflisten title :initial "" "${title}/bin/eww-sway-title")
     (deflisten mode :initial "{\"name\":\"default\",\"hint\":\"\"}" "${mode}/bin/eww-sway-mode")
     (defpoll volume :interval "2s" "${volume}/bin/eww-volume")
+    (defpoll wg :interval "5s" :initial "{\"active\":0,\"tunnels\":[]}" "${wireguard}/bin/eww-wg")
     (defpoll caffeine :interval "10s" "${caffeine}/bin/eww-caffeine")
     (defpoll battery :interval "30s" "${battery}/bin/eww-battery")
     (defpoll time :interval "10s" "date '+%a %d %b  %H:%M'")
@@ -154,6 +218,13 @@ in
         (module :class "cpu" :icon "" :text "''${round(EWW_CPU.avg, 0)}%")
         (module :class "mem" :icon "" :text "''${round(EWW_RAM.used_mem_perc, 0)}%")
         (button
+          :class "module wg ''${wg.active > 0 ? "on" : ""}"
+          :tooltip "WireGuard: click for tunnels"
+          :onclick "${pkgs.eww}/bin/eww open --toggle wg"
+          (box :orientation "h" :space-evenly false :spacing 6
+            (label :class "icon" :text "󰖂")
+            (label :text "''${wg.active}")))
+        (button
           :class "module caffeine ''${caffeine}"
           :tooltip "Caffeine ''${caffeine}: click to ''${caffeine == "on" ? "allow" : "stop"} locking and screen blanking"
           :onclick "${caffeine}/bin/eww-caffeine toggle"
@@ -167,6 +238,32 @@ in
         (left)
         (center)
         (right)))
+
+    (defwidget wg-panel []
+      (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+        (box :orientation "h" :space-evenly false
+          (label :class "wg-title" :hexpand true :halign "start" :text "WireGuard")
+          (button :class "wg-close" :onclick "${pkgs.eww}/bin/eww close wg" "✕"))
+        (label :class "wg-detail" :visible {arraylength(wg.tunnels) == 0} :halign "start" :wrap true
+          :text "No tunnels yet. Import one with: nmcli connection import type wireguard file wg0.conf")
+        (for t in {wg.tunnels}
+          (box :class "wg-tunnel ''${t.active ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
+            (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+              (label :class "wg-name" :halign "start" :text "''${t.active ? "●" : "○"} ''${t.name}")
+              (label :class "wg-detail" :halign "start" :text "''${t.address}")
+              (label :class "wg-detail" :visible {t.active} :halign "start"
+                :text "''${t.endpoint != "" ? t.endpoint : "no peer endpoint"} · handshake ''${t.handshake}")
+              (label :class "wg-detail" :visible {t.active} :halign "start" :text "↓ ''${t.rx}  ↑ ''${t.tx}"))
+            (button :class "wg-toggle" :valign "center"
+              :onclick "${wireguard}/bin/eww-wg toggle \"''${t.name}\""
+              "''${t.active ? "Disconnect" : "Connect"}")))))
+
+    (defwindow wg
+      :monitor 0
+      :stacking "overlay"
+      :namespace "eww-wg"
+      :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
+      (wg-panel))
 
     (defwindow bar
       :monitor 0
@@ -235,8 +332,28 @@ in
       &.vol .icon { color: $cyan; }
       &.bat .icon { color: $yellow; }
       &.clock .icon { color: $pink; }
+      &.wg { color: $muted; &:hover { background-color: $surface; } }
+      &.wg.on { color: $cyan; }
       &.caffeine { color: $muted; &:hover { background-color: $surface; } }
       &.caffeine.on { color: $orange; }
+    }
+
+    .wg-panel {
+      background-color: $bg;
+      color: $fg;
+      border: 2px solid $surface;
+      padding: 12px;
+      .wg-title { color: $cyan; font-weight: bold; }
+      .wg-close { color: $muted; padding: 0 4px; &:hover { color: $fg; } }
+      .wg-tunnel { background-color: $bg-alt; padding: 8px 10px; }
+      .wg-tunnel.up .wg-name { color: $green; }
+      .wg-tunnel.down .wg-name { color: $muted; }
+      .wg-detail { color: $muted; }
+      .wg-toggle {
+        padding: 4px 10px;
+        background-color: $surface;
+        &:hover { color: $bg; background-color: $pink; }
+      }
     }
   '';
 }

@@ -23,10 +23,11 @@ modules/nixos/
   virtualisation.nix           libvirtd/KVM, virt-manager, rootless podman + buildah
   vms.nix                      Kali (i3) and Ubuntu (GNOME) libvirt VMs, virtio GPU
   secrets.nix                  pcscd + YubiKey udev rules
+  wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
 vms/kali-i3.nix                i3, i3status and caffeine bar for the Kali VM (Alt modifier)
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, cpu, mem, caffeine, volume, battery, clock)
+  eww.nix                      eww bar (workspaces, title, cpu, mem, wireguard, caffeine, volume, battery, clock)
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
   secrets.nix                  gpg, gpg-agent, pass, ykman, bw, bao
@@ -71,6 +72,7 @@ walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
 - [Keyboard](docs/keyboard.md): the modifier contract and every binding
 - [Zen browser jail](docs/zen.md): the Flatpak sandbox and its theming
 - [VMs and containers](docs/vms-and-containers.md): libvirt, the Kali and Ubuntu VMs, podman
+- [WireGuard](docs/wireguard.md): importing tunnels and the bar panel
 - [Secrets](docs/secrets.md): gpg, pass, YubiKey, Bitwarden, OpenBao and `secrets-backup`
 - [Theme](docs/theme.md): Miami Wind colours, Tulasi icons, the wallpaper
 
