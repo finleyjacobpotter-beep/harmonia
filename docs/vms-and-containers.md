@@ -26,8 +26,15 @@ with a virtio GPU (virgl 3D over a local SPICE display) and UEFI:
    sudo mount -t virtiofs harmonia /mnt && sh /mnt/setup.sh
    ```
    It installs i3's helpers (rofi, dunst, feh, maim, i3lock…) plus neovim,
-   ripgrep and fd, and copies the configs into place (existing ones are kept as
-   `*.bak`).
+   ripgrep, fd, fzf, tmux and ranger, and copies the configs into place
+   (existing ones are kept as `*.bak`). That includes harmonia's bash setup:
+   the Miami Wind prompt, vi-mode readline, fzf colours, history settings and
+   aliases (without the host-only `zen` and `rebuild`), with bash made your
+   login shell instead of zsh.
+4. Kali also has a **read-write** virtiofs share: `~/vms/kali-shared` on the
+   host is `~/shared` in the guest. `setup.sh` adds it to the guest's
+   `/etc/fstab`, so it mounts on every boot. Files keep their uid, and the
+   first user on both sides is uid 1000, so they belong to you on both.
 
 The Kali i3 config ([`vms/kali-i3.nix`](../vms/kali-i3.nix)) uses **Alt** as its
 modifier with vim directions (`Alt+h/j/k/l` focus, `Alt+Shift+h/j/k/l` move,
