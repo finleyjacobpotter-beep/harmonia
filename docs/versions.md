@@ -21,6 +21,7 @@ only change when an input's commit is bumped; update this table when you do.
 | bash | 5.3p15 |
 | greetd / tuigreet | 0.10.3 / 0.11.1 |
 | NetworkManager | 1.58.1 |
+| wireguard-tools | 1.0.20260223 |
 | PipeWire / WirePlumber | 1.6.8 / 0.5.17 |
 | BlueZ / Blueman | 5.87 / 2.4.6 |
 | UPower | 1.91.4 |
@@ -65,6 +66,7 @@ only change when an input's commit is bumped; update this table when you do.
 | btop | 1.4.7 |
 | pulsemixer / bluetuith | 1.5.1 / 0.2.7 |
 | fzf | 0.74.4 |
+| Calibre | 9.14.0 |
 
 Neovim plugins:
 

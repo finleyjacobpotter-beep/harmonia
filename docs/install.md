@@ -12,12 +12,12 @@ harmonia assumes:
 - an **x86_64** machine
 - a real `hosts/harmonia/hardware-configuration.nix` from *your* machine (the one in the repo is a placeholder)
 
-**Scripted version:** [`scripts/install.sh`](../scripts/install.sh) does steps
+**Scripted version:** [`scripts/install.py`](../scripts/install.py) does steps
 3 to 10 for you. Boot the ISO, get online (steps 1 and 2), then:
 
 ```sh
-curl -LO https://raw.githubusercontent.com/finleyjacobpotter-beep/harmonia/main/scripts/install.sh
-sudo bash install.sh
+curl -LO https://raw.githubusercontent.com/finleyjacobpotter-beep/harmonia/main/scripts/install.py
+chmod +x install.py && sudo ./install.py   # fetches Python via nix-shell
 ```
 
 It asks for the disk, whether to use LUKS (the passphrase is read in, then

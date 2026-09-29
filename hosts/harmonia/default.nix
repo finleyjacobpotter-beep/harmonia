@@ -14,6 +14,7 @@
     ../../modules/nixos/virtualisation.nix
     ../../modules/nixos/vms.nix
     ../../modules/nixos/secrets.nix
+    ../../modules/nixos/wireguard.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
