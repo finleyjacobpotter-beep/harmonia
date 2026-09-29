@@ -12,6 +12,19 @@ harmonia assumes:
 - an **x86_64** machine
 - a real `hosts/harmonia/hardware-configuration.nix` from *your* machine (the one in the repo is a placeholder)
 
+**Scripted version:** [`scripts/install.sh`](../scripts/install.sh) does steps
+3 to 10 for you. Boot the ISO, get online (steps 1 and 2), then:
+
+```sh
+curl -LO https://raw.githubusercontent.com/finleyjacobpotter-beep/harmonia/main/scripts/install.sh
+sudo bash install.sh
+```
+
+It asks for the disk, whether to use LUKS (the passphrase is read in, then
+shown back to you to confirm before anything is written), and a swap size,
+then asks you to type `ERASE` before touching the disk. It ends with your
+hardware config already in `~u/harmonia`, ready for step 11.
+
 The layout below is GPT with two partitions: a 1 GiB ESP and an ext4 root.
 LUKS encryption is optional and marked **(LUKS)** where the steps differ.
 
