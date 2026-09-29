@@ -20,7 +20,7 @@ readable only by root.
 
 ## The bar
 
-The shield icon on the eww bar shows how many tunnels are up (cyan when at
+The VPN icon on the eww bar shows how many tunnels are up (cyan when at
 least one is). Click it to open the WireGuard panel. For each tunnel it
 shows:
 
