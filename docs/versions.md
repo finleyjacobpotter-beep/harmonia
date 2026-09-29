@@ -65,6 +65,7 @@ only change when an input's commit is bumped; update this table when you do.
 | btop | 1.4.7 |
 | pulsemixer / bluetuith | 1.5.1 / 0.2.7 |
 | fzf | 0.74.4 |
+| Calibre | 9.14.0 |
 
 Neovim plugins:
 

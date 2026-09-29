@@ -1,4 +1,4 @@
-{ username, ... }:
+{ pkgs, username, ... }:
 {
   imports = [
     ./sway.nix
@@ -20,6 +20,9 @@
 
   programs.home-manager.enable = true;
   programs.git.enable = true;
+
+  # E-book library and reader (GPL; built without unrar, so no unfree bits).
+  home.packages = [ pkgs.calibre ];
 
   home.stateVersion = "26.05";
 }
