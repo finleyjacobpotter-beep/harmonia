@@ -8,6 +8,9 @@
 #                    script there (harmonia/install.sh) with the i3 config
 #                    from vms/kali-i3.nix, the bash setup and this flake's
 #                    neovim config.
+#
+# Both VMs' networking is filtered on the host (vms/firewall.nix): pick a
+# policy per VM below, or switch a running one with harmonia-vm-firewall.
 #   harmonia-ubuntu  Ubuntu Desktop (GNOME), stock.
 #
 # The domains and their empty disks are created by the harmonia-vms service
@@ -27,6 +30,7 @@ let
   hm = config.home-manager.users.${username};
 
   kaliI3 = import ../../vms/kali-i3.nix { inherit palette keys; };
+  firewall = import ../../vms/firewall.nix { inherit lib; };
 
   # Neovim exactly as home-manager sets it up on the host: init.lua, the
   # other nvim/ config files (colours, lualine theme) and the plugin pack
@@ -173,6 +177,10 @@ let
       };
       share = kaliRwShare;
       bundle = kaliBundle;
+      # Host-enforced network policy (vms/firewall.nix): open, internet-only
+      # or isolated, plus optional raw nwfilter <rule>s in extraRules.
+      # Switch a running VM with `harmonia-vm-firewall kali isolated`.
+      firewall.policy = "open";
     };
     ubuntu = {
       memory = 6144;
@@ -186,6 +194,7 @@ let
       };
       share = null;
       bundle = null;
+      firewall.policy = "open";
     };
   };
 
@@ -223,6 +232,7 @@ let
           <interface type="network">
             <source network="default"/>
             <model type="virtio"/>
+            <filterref filter="harmonia-vm-${name}"/>
           </interface>
           <graphics type="spice">
             <listen type="none"/>
@@ -255,6 +265,56 @@ let
         </devices>
       </domain>
     '';
+
+  # nwfilter XML: the shared policies, and every VM filter for every policy
+  # (so harmonia-vm-firewall can switch without a rebuild).
+  policyXml = lib.mapAttrs (p: xml: pkgs.writeText "harmonia-${p}.xml" xml) firewall.policyFilters;
+  vmFilterXml =
+    name: vm: policy:
+    pkgs.writeText "harmonia-vm-${name}-${policy}.xml" (firewall.vmFilter name (vm.firewall // { inherit policy; }));
+
+  defineFilters = ''
+    ${lib.concatMapStrings (p: "virsh nwfilter-define ${policyXml.${p}}\n") firewall.policies}
+  '';
+
+  vmFirewall = pkgs.writeShellApplication {
+    name = "harmonia-vm-firewall";
+    runtimeInputs = [
+      config.virtualisation.libvirtd.package
+      pkgs.gnugrep
+      pkgs.gnused
+    ];
+    text = ''
+      # Usage: harmonia-vm-firewall                 show each VM's policy
+      #        harmonia-vm-firewall VM POLICY       switch it now (${toString firewall.policies})
+      # Takes effect on a running VM at once. The policy in modules/nixos/vms.nix
+      # comes back on the next boot or rebuild.
+      export LIBVIRT_DEFAULT_URI=qemu:///system
+      show() {
+        for vm in ${toString (lib.attrNames vms)}; do
+          policy=$(virsh nwfilter-dumpxml "harmonia-vm-$vm" 2>/dev/null |
+            grep -o 'filter="harmonia-[a-z-]*"' | sed 's/filter="harmonia-//; s/"//') || true
+          echo "$vm: ''${policy:-not defined}"
+        done
+      }
+      if [ $# -eq 0 ]; then show; exit 0; fi
+      [ $# -eq 2 ] || { echo "usage: harmonia-vm-firewall [VM POLICY]" >&2; exit 1; }
+      case "$1/$2" in
+        ${lib.concatStrings (
+          lib.concatLists (
+            lib.mapAttrsToList (
+              name: vm:
+              map (policy: ''
+                ${name}/${policy}) virsh nwfilter-define ${vmFilterXml name vm policy} >/dev/null ;;
+              '') firewall.policies
+            ) vms
+          )
+        )}
+        *) echo "unknown VM or policy (VMs: ${toString (lib.attrNames vms)}; policies: ${toString firewall.policies})" >&2; exit 1 ;;
+      esac
+      show
+    '';
+  };
 
   fetch = pkgs.writeShellApplication {
     name = "harmonia-vm-fetch";
@@ -292,7 +352,10 @@ let
   };
 in
 {
-  environment.systemPackages = [ fetch ];
+  environment.systemPackages = [
+    fetch
+    vmFirewall
+  ];
 
   systemd.tmpfiles.rules = [
     "d /home/${username}/vms 0755 ${username} users -"
@@ -320,8 +383,10 @@ in
         virsh net-autostart default
         virsh net-start default 2>/dev/null || true
       fi
+      ${defineFilters}
       ${lib.concatStrings (
         lib.mapAttrsToList (name: vm: ''
+          virsh nwfilter-define ${vmFilterXml name vm vm.firewall.policy}
           [ -e ${imageDir}/harmonia-${name}.qcow2 ] ||
             qemu-img create -f qcow2 ${imageDir}/harmonia-${name}.qcow2 ${vm.disk}
           virsh define ${domainXml name vm}

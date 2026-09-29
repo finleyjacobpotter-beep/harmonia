@@ -25,6 +25,7 @@ modules/nixos/
   secrets.nix                  pcscd + YubiKey udev rules
   wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
 vms/kali-i3.nix                i3, i3status and caffeine bar for the Kali VM (Alt modifier)
+vms/firewall.nix               host-enforced VM firewall policies (libvirt nwfilter)
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
   eww.nix                      eww bar (workspaces, title, cpu, mem, wireguard, caffeine, volume, battery, clock)
@@ -71,7 +72,7 @@ walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
 - [Pinned versions](docs/versions.md): exact commits and package versions
 - [Keyboard](docs/keyboard.md): the modifier contract and every binding
 - [Zen browser jail](docs/zen.md): the Flatpak sandbox and its theming
-- [VMs and containers](docs/vms-and-containers.md): libvirt, the Kali and Ubuntu VMs, podman
+- [VMs and containers](docs/vms-and-containers.md): libvirt, the Kali and Ubuntu VMs, their firewall, podman
 - [WireGuard](docs/wireguard.md): importing tunnels and the bar panel
 - [Secrets](docs/secrets.md): gpg, pass, YubiKey, Bitwarden, OpenBao and `secrets-backup`
 - [Theme](docs/theme.md): Miami Wind colours, Tulasi icons, the wallpaper

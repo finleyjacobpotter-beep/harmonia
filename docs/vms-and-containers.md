@@ -47,6 +47,46 @@ host. The **caffeine** block on the left of its bar toggles that: click it and
 it reads `caffeine on` in orange, and nothing locks or blanks until you click
 it again. It resets to off when you log in again.
 
+## Firewall (enforced on the host)
+
+Each VM's network is filtered by libvirt on the host, on the VM's virtual
+network card ([`vms/firewall.nix`](../vms/firewall.nix)). Nothing inside the
+guest, root included, can change it. Every policy also blocks MAC, IP and
+ARP spoofing.
+
+| Policy | The VM can reach |
+| --- | --- |
+| `open` | everything (the default) |
+| `internet-only` | DHCP and DNS from the host, then the internet only: not the host, your LAN, other VMs or link-local addresses |
+| `isolated` | nothing |
+
+To switch a VM right away, even while it's running:
+
+```sh
+harmonia-vm-firewall                    # show each VM's policy
+harmonia-vm-firewall kali isolated      # sandbox Kali now
+harmonia-vm-firewall kali open          # and back
+```
+
+That lasts until the next boot or rebuild. To change the default, set
+`firewall.policy` for the VM in `modules/nixos/vms.nix`. For finer control,
+add raw [nwfilter](https://libvirt.org/formatnwfilter.html) rules in
+`firewall.extraRules`. They are checked before the policy, so give them a
+priority below 100 to win. For example, to let an internet-only Kali reach
+one LAN host:
+
+```nix
+firewall = {
+  policy = "internet-only";
+  extraRules = ''
+    <rule action="accept" direction="out" priority="50"><tcp dstipaddr="192.168.1.20" dstportstart="443" dstportend="443"/></rule>
+  '';
+};
+```
+
+The Kali shared folder (`~/shared`) is virtiofs, not networking, so the
+firewall doesn't affect it.
+
 The Kali i3 config ([`vms/kali-i3.nix`](../vms/kali-i3.nix)) uses **Alt** as its
 modifier with vim directions (`Alt+h/j/k/l` focus, `Alt+Shift+h/j/k/l` move,
 `Alt+Return` terminal, `Alt+d` rofi, `Alt+q` close, `Alt+1…0` workspaces,
