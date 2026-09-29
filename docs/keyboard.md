@@ -75,11 +75,8 @@ Hardware keys (volume, media, brightness, Print) work as usual.
 
 ## Apps
 
-- **Zen**: [Vimium](https://github.com/philc/vimium) is installed into each
-  profile: `j`/`k` scroll, `f` follow link, `J`/`K` previous/next tab,
-  `H`/`L` back/forward, `o`/`O` open URL, `T` search tabs, `/` find,
-  `x`/`X` close/restore tab, `?` help. Vimium can't run on `about:` pages;
-  use Zen's own `Ctrl+L`, `Ctrl+T`, `Ctrl+Tab` there.
+- **Zen**: [Vimium](https://github.com/philc/vimium), see
+  [Zen browser (Vimium)](#zen-browser-vimium) below.
 - **bash**: readline vi mode (`Esc` for normal mode; cursor is a bar in
   insert mode, a block in normal mode). `Ctrl+r` fzf history, `Ctrl+t` fzf files.
 - **neovim**: leader is `Space` (`which-key` shows the rest). `Space f f/g/b`
@@ -88,7 +85,85 @@ Hardware keys (volume, media, brightness, Print) work as usual.
   keys (`btop` has `vim_keys` turned on).
 - **nmtui** and **virt-manager** are keyboard-driven but don't use vim keys.
 
+## Zen browser (Vimium)
+
+[Vimium](https://github.com/philc/vimium) is installed into each Zen profile
+with its default bindings (none are remapped). Keys are case-sensitive, and
+`?` shows the full list in the browser.
+
+**Scrolling and page**
+
+| Key | Action |
+| --- | --- |
+| `j` / `k` | scroll down / up |
+| `h` / `l` | scroll left / right |
+| `d` / `u` | half page down / up |
+| `gg` / `G` | top / bottom of the page |
+| `r` | reload |
+| `yy` | copy the page URL |
+| `gs` | view source |
+| `gi` | focus the first text input |
+| `gu` / `gU` | go up one level in the URL / to the site root |
+
+**Links**
+
+| Key | Action |
+| --- | --- |
+| `f` / `F` | open a link / open it in a new tab (type the hint letters) |
+| `yf` | copy a link's URL |
+| `[[` / `]]` | previous / next page (follows "prev"/"next" links) |
+
+**Find**
+
+| Key | Action |
+| --- | --- |
+| `/` | find on page (`Enter` to confirm) |
+| `n` / `N` | next / previous match |
+
+**Opening and history**
+
+| Key | Action |
+| --- | --- |
+| `o` / `O` | open a URL, bookmark or history entry / in a new tab |
+| `b` / `B` | open a bookmark / in a new tab |
+| `H` / `L` | back / forward |
+| `p` / `P` | open the clipboard URL / in a new tab |
+
+**Tabs**
+
+| Key | Action |
+| --- | --- |
+| `J` / `K` | previous / next tab (`gT` / `gt` work too) |
+| `g0` / `g$` | first / last tab |
+| `^` | last visited tab |
+| `T` | search open tabs |
+| `t` | new tab |
+| `yt` | duplicate tab |
+| `x` / `X` | close tab / restore closed tab |
+| `<<` / `>>` | move tab left / right |
+| `alt-p` | pin / unpin tab |
+
+**Modes**
+
+| Key | Action |
+| --- | --- |
+| `i` | insert mode: keys go to the page until `Esc` |
+| `v` / `V` | visual / visual line mode (`y` copies the selection) |
+| `Esc` | leave any mode, close the hint or find bar |
+
+Vimium can't run on `about:` pages (new tab, settings). Use Zen's own keys
+there: `Ctrl+L` address bar, `Ctrl+T` new tab, `Ctrl+W` close tab,
+`Ctrl+Tab` next tab.
+
 ## Mouse
 
 The pointer hides as soon as you type and comes back when the mouse moves
 (sway `hide_cursor when-typing`).
+
+## Idle
+
+The screen locks after 10 minutes idle and turns off after 15 (swayidle,
+`home/sway.nix`); it also locks before suspend. The coffee cup on the eww bar
+is a caffeine toggle: click it to stop swayidle (cup filled, orange), so
+nothing locks or blanks, and click again to bring the timers back. While
+caffeine is on, suspending doesn't lock either.

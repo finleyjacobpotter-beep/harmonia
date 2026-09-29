@@ -1,4 +1,4 @@
-# i3 + i3status config for the Kali VM (modules/nixos/vms.nix).
+# i3, i3status and the bar wrapper for the Kali VM (modules/nixos/vms.nix).
 #
 # The modifier is Alt (keys.vmWm), not Super: sway owns Super on the host and
 # would swallow it before the VM window saw it, and neovim/tmux/alacritty
@@ -38,6 +38,11 @@ in
 
     exec_always --no-startup-id feh --no-fehbg --bg-max --image-bg '${p.bg}' ~/.local/share/harmonia/wallpaper.png
     exec --no-startup-id dunst
+
+    # Idle, like the host: lock after 10 minutes, blank after 15. The caffeine
+    # button on the bar (harmonia-status) turns both off and on again.
+    exec --no-startup-id xset s 600 600 +dpms dpms 900 900 900
+    exec --no-startup-id xss-lock --transfer-sleep-lock -- ${lock} -n
 
     # apps
     bindsym $mod+Return exec alacritty
@@ -106,7 +111,7 @@ in
     }
 
     bar {
-      status_command i3status
+      status_command ~/.local/bin/harmonia-status
       position top
       font pango:${p.font.name} ${toString p.font.size}
       colors {
@@ -125,6 +130,7 @@ in
 
   i3status = ''
     general {
+      output_format = "i3bar"
       colors = true
       color_good = "${p.green}"
       color_degraded = "${p.yellow}"
@@ -141,5 +147,77 @@ in
     memory { format = "mem %used" }
     disk "/" { format = "disk %avail" }
     tztime local { format = "%a %d %b %H:%M" }
+  '';
+
+  # Wraps i3status to add a clickable caffeine block (i3bar protocol with
+  # click events). Caffeine on = no idle lock and no screen blanking.
+  status = ''
+    #!/usr/bin/env python3
+    import json
+    import subprocess
+    import sys
+    import threading
+
+    lock = threading.Lock()
+    state = {"caffeine": False, "blocks": [], "first": True}
+
+
+    def apply_idle():
+        if state["caffeine"]:
+            subprocess.run(["xset", "s", "off", "-dpms"])
+        else:
+            subprocess.run(["xset", "s", "600", "600", "+dpms", "dpms", "900", "900", "900"])
+
+
+    def caffeine_block():
+        on = state["caffeine"]
+        return {
+            "name": "caffeine",
+            "full_text": "caffeine on" if on else "caffeine off",
+            "color": "${p.orange}" if on else "${p.muted}",
+        }
+
+
+    def emit():
+        with lock:
+            line = json.dumps([caffeine_block()] + state["blocks"])
+            print(line if state["first"] else "," + line, flush=True)
+            state["first"] = False
+
+
+    def clicks():
+        for raw in sys.stdin:
+            raw = raw.strip().lstrip(",")
+            if not raw or raw == "[":
+                continue
+            try:
+                event = json.loads(raw)
+            except ValueError:
+                continue
+            if event.get("name") == "caffeine":
+                state["caffeine"] = not state["caffeine"]
+                apply_idle()
+                emit()
+
+
+    def main():
+        i3status = subprocess.Popen(["i3status"], stdout=subprocess.PIPE, text=True)
+        out = i3status.stdout
+        out.readline()  # i3status's own header
+        print(json.dumps({"version": 1, "click_events": True}), flush=True)
+        print("[", flush=True)
+        threading.Thread(target=clicks, daemon=True).start()
+        for raw in out:
+            raw = raw.strip().lstrip(",")
+            if not raw or raw == "[":
+                continue
+            try:
+                state["blocks"] = json.loads(raw)
+            except ValueError:
+                continue
+            emit()
+
+
+    main()
   '';
 }

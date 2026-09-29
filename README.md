@@ -23,10 +23,12 @@ modules/nixos/
   virtualisation.nix           libvirtd/KVM, virt-manager, rootless podman + buildah
   vms.nix                      Kali (i3) and Ubuntu (GNOME) libvirt VMs, virtio GPU
   secrets.nix                  pcscd + YubiKey udev rules
-vms/kali-i3.nix                i3 + i3status config for the Kali VM (Alt modifier)
+  wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
+vms/kali-i3.nix                i3, i3status and caffeine bar for the Kali VM (Alt modifier)
+vms/firewall.nix               host-enforced VM firewall policies (libvirt nwfilter)
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, cpu, mem, volume, battery, clock)
+  eww.nix                      eww bar (workspaces, title, caps/num lock, cpu, mem, wireguard, caffeine, volume, battery, clock)
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
   secrets.nix                  gpg, gpg-agent, pass, ykman, bw, bao
@@ -35,7 +37,7 @@ home/                          home-manager, one file per program
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          the rest of the documentation (linked below)
-scripts/install.sh             base NixOS install from the minimal ISO (docs/install.md)
+scripts/install.py             base NixOS install from the minimal ISO (docs/install.md)
 ```
 
 ## Install
@@ -43,7 +45,7 @@ scripts/install.sh             base NixOS install from the minimal ISO (docs/ins
 Start from a base NixOS install with flakes and git enabled and a user named
 `u` (or whatever you set as `username`). [Installing base NixOS](docs/install.md)
 walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
-[`scripts/install.sh`](scripts/install.sh) does it for you.
+[`scripts/install.py`](scripts/install.py) does it for you.
 
 1. Clone this repo and edit `hostname` / `username` in `flake.nix`, and the
    timezone/locale/keymap in `hosts/harmonia/default.nix`:
@@ -70,7 +72,8 @@ walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
 - [Pinned versions](docs/versions.md): exact commits and package versions
 - [Keyboard](docs/keyboard.md): the modifier contract and every binding
 - [Zen browser jail](docs/zen.md): the Flatpak sandbox and its theming
-- [VMs and containers](docs/vms-and-containers.md): libvirt, the Kali and Ubuntu VMs, podman
+- [VMs and containers](docs/vms-and-containers.md): libvirt, the Kali and Ubuntu VMs, their firewall, podman
+- [WireGuard](docs/wireguard.md): importing tunnels and the bar panel
 - [Secrets](docs/secrets.md): gpg, pass, YubiKey, Bitwarden, OpenBao and `secrets-backup`
 - [Theme](docs/theme.md): Miami Wind colours, Tulasi icons, the wallpaper
 
