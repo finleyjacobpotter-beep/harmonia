@@ -21,6 +21,14 @@
   programs.home-manager.enable = true;
   programs.git.enable = true;
 
+  # XDG base dirs (~/.config, ~/.local/share, ...) plus the user dirs
+  # (Desktop, Documents, Downloads, ...), created on every activation.
+  xdg.enable = true;
+  xdg.userDirs = {
+    enable = true;
+    createDirectories = true;
+  };
+
   # E-book library and reader (GPL; built without unrar, so no unfree bits).
   home.packages = [ pkgs.calibre ];
 
