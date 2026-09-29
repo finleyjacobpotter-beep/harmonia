@@ -36,6 +36,7 @@ pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-on
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          the rest of the documentation (linked below)
 scripts/install.sh             base NixOS install from the minimal ISO (docs/install.md)
+scripts/ubuntu-install.sh      Ubuntu: Blender + Blender MCP, Godot 4 + Godot MCP, Caffeine
 ```
 
 ## Install
@@ -63,6 +64,15 @@ walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
    after the base install), use its existing password. The initial password
    `changeme` only applies when harmonia creates the user; in that case, run
    `passwd` straight away.
+
+### Ubuntu
+
+[`scripts/ubuntu-install.sh`](scripts/ubuntu-install.sh) is separate from the
+NixOS setup: on an Ubuntu GNOME desktop it installs Blender with
+[Blender MCP](https://github.com/ahujasid/blender-mcp), Godot 4 with
+[Godot MCP](https://github.com/Coding-Solo/godot-mcp), and the
+[Caffeine](https://extensions.gnome.org/extension/517/caffeine/) extension.
+Run it as your normal user: `bash scripts/ubuntu-install.sh`.
 
 ## Documentation
 
