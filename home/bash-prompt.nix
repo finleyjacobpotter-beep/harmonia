@@ -34,4 +34,10 @@ in
   export LESS_TERMCAP_me=$'\e[0m'
   export LESS_TERMCAP_ue=$'\e[0m'
   export LESS_TERMCAP_se=$'\e[0m'
+
+  # Setup GPG / SSH
+  export GPG_TTY="$(tty)"
+  gpg-connect-agent /bye
+  export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
+
 ''
