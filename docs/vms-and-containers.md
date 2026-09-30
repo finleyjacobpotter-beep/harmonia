@@ -21,8 +21,12 @@ no guest audio.
    ```sh
    sudo harmonia-vm-fetch          # or: sudo harmonia-vm-fetch kali
    ```
-2. Start a VM from virt-manager (`Super+o v`) and install as usual. For Kali,
-   pick **i3** on the installer's desktop-environment screen.
+2. Start a VM from virt-manager (`Super+o v`), or with
+   `virsh -c qemu:///system start harmonia-kali`, and open its display
+   (virt-manager, or a VNC viewer on the port above). The disk is empty, so it
+   boots the installer ISO; install as usual onto the 60 GB virtio disk. For
+   Kali, pick **i3** on the installer's desktop-environment screen. After the
+   install the ISO stays attached, but the disk boots first.
 3. Kali only: the VM has one **read-write** virtiofs share: `~/vms/kali-shared`
    on the host is `~/shared` in the guest. Files keep their uid, and the first
    user on both sides is uid 1000, so they belong to you on both. On every
@@ -50,6 +54,49 @@ Kali locks after 10 minutes idle and blanks the screen after 15, like the
 host. The **caffeine** block on the left of its bar toggles that: click it and
 it reads `caffeine on` in orange, and nothing locks or blanks until you click
 it again. It resets to off when you log in again.
+
+### Removing and reinstalling the VMs from scratch
+
+This deletes the VMs, their disks, UEFI variables, TPM state and network
+filters (the installer ISOs stay):
+
+```sh
+export LIBVIRT_DEFAULT_URI=qemu:///system
+for vm in kali ubuntu; do
+  virsh destroy harmonia-$vm 2>/dev/null           # stop it if it's running
+  virsh undefine harmonia-$vm --nvram --tpm
+  sudo rm -f /var/lib/libvirt/images/harmonia-$vm.qcow2
+  virsh nwfilter-undefine harmonia-vm-$vm
+done
+for p in open internet-only isolated; do virsh nwfilter-undefine harmonia-$p; done
+```
+
+Then recreate them with new, empty disks and install again from step 1 above:
+
+```sh
+sudo systemctl restart harmonia-vms
+systemctl status harmonia-vms                      # active (exited)
+```
+
+To reset only one VM, list just that one in the first loop and skip the
+second. For Kali, `~/vms/kali-shared` on the host is left alone, so empty it
+too if you want a clean share.
+
+### Adding another VM
+
+Add an entry to `vms` in `modules/nixos/vms.nix`, next to `kali` and `ubuntu`,
+with its own `vncPort` (5902, 5903…), `iso` (name, url, SHA256SUMS url and a
+pinned `sha256`, or `null` to trust the release's sums file) and
+`firewall.policy`. Set `share` and `bundle` to `null` unless it needs a host
+folder. Rebuild (`rebuild`), then `sudo harmonia-vm-fetch <name>` and install
+it as above. The domain is named `harmonia-<name>`.
+
+### If the harmonia-vms service fails
+
+`systemctl status harmonia-vms` and `journalctl -u harmonia-vms` show why.
+The service redefines the network filters and domains on every boot and
+rebuild, reusing their existing ids, so it's safe to restart at any time:
+`sudo systemctl restart harmonia-vms`.
 
 ## Firewall (enforced on the host)
 

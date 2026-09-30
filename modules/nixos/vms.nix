@@ -272,18 +272,48 @@ let
     name: vm: policy:
     pkgs.writeText "harmonia-vm-${name}-${policy}.xml" (firewall.vmFilter name (vm.firewall // { inherit policy; }));
 
+  # Our XML has no <uuid>, so libvirt makes up a new one on every define and
+  # then refuses it for an existing name ("already exists with uuid ...").
+  # These reuse the existing object's uuid, so redefining updates it in place.
+  defineHelpers = ''
+    define_filter() { # define_filter <name> <xml>
+      local uuid tmp
+      if uuid=$(virsh nwfilter-dumpxml "$1" 2>/dev/null | grep -o '<uuid>[^<]*</uuid>'); then
+        tmp=$(mktemp)
+        sed "0,\\|<filter [^>]*>|s||&$uuid|" "$2" >"$tmp"
+        virsh nwfilter-define "$tmp" >/dev/null
+        rm -f "$tmp"
+      else
+        virsh nwfilter-define "$2" >/dev/null
+      fi
+    }
+    define_domain() { # define_domain <name> <xml>
+      local uuid tmp
+      if uuid=$(virsh domuuid "$1" 2>/dev/null) && [ -n "$uuid" ]; then
+        tmp=$(mktemp)
+        sed "0,\\|<name>[^<]*</name>|s||&<uuid>$uuid</uuid>|" "$2" >"$tmp"
+        virsh define "$tmp" >/dev/null
+        rm -f "$tmp"
+      else
+        virsh define "$2" >/dev/null
+      fi
+    }
+  '';
+
   defineFilters = ''
-    ${lib.concatMapStrings (p: "virsh nwfilter-define ${policyXml.${p}}\n") firewall.policies}
+    ${lib.concatMapStrings (p: "define_filter harmonia-${p} ${policyXml.${p}}\n") firewall.policies}
   '';
 
   vmFirewall = pkgs.writeShellApplication {
     name = "harmonia-vm-firewall";
     runtimeInputs = [
       config.virtualisation.libvirtd.package
+      pkgs.coreutils
       pkgs.gnugrep
       pkgs.gnused
     ];
     text = ''
+      ${defineHelpers}
       # Usage: harmonia-vm-firewall                 show each VM's policy
       #        harmonia-vm-firewall VM POLICY       switch it now (${toString firewall.policies})
       # Takes effect on a running VM at once. The policy in modules/nixos/vms.nix
@@ -304,7 +334,7 @@ let
             lib.mapAttrsToList (
               name: vm:
               map (policy: ''
-                ${name}/${policy}) virsh nwfilter-define ${vmFilterXml name vm policy} >/dev/null ;;
+                ${name}/${policy}) define_filter harmonia-vm-${name} ${vmFilterXml name vm policy} ;;
               '') firewall.policies
             ) vms
           )
@@ -371,12 +401,15 @@ in
     path = [
       config.virtualisation.libvirtd.package
       pkgs.qemu_kvm
+      pkgs.gnugrep
+      pkgs.gnused
     ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
     };
     script = ''
+      ${defineHelpers}
       mkdir -p ${imageDir}
       if virsh net-info default >/dev/null 2>&1; then
         virsh net-autostart default
@@ -385,10 +418,10 @@ in
       ${defineFilters}
       ${lib.concatStrings (
         lib.mapAttrsToList (name: vm: ''
-          virsh nwfilter-define ${vmFilterXml name vm vm.firewall.policy}
+          define_filter harmonia-vm-${name} ${vmFilterXml name vm vm.firewall.policy}
           [ -e ${imageDir}/harmonia-${name}.qcow2 ] ||
             qemu-img create -f qcow2 ${imageDir}/harmonia-${name}.qcow2 ${vm.disk}
-          virsh define ${domainXml name vm}
+          define_domain harmonia-${name} ${domainXml name vm}
           ${lib.optionalString (vm.bundle != null) ''
             mkdir -p ${vm.share}
             rm -rf ${vm.share}/harmonia
