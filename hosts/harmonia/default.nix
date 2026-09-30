@@ -12,6 +12,7 @@
     ../../modules/nixos/fonts.nix
     ../../modules/nixos/flatpak.nix
     ../../modules/nixos/gaming.nix
+    ../../modules/nixos/steam.nix
     ../../modules/nixos/element.nix
     ../../modules/nixos/lmstudio.nix
     ../../modules/nixos/fans.nix

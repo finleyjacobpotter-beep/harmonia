@@ -229,6 +229,7 @@ in
             n = term "nmtui";
             v = run "virt-manager";
             g = run "flatpak run net.lutris.Lutris";
+            "Shift+g" = run "flatpak run com.valvesoftware.Steam";
             c = run "flatpak run im.riot.Riot";
             l = run "flatpak run ai.lmstudio.lm-studio";
           };

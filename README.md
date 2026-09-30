@@ -4,7 +4,7 @@
 icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, **libvirt**, **podman**, and **Zen browser**, **Lutris**, **Element** and **LM Studio** jailed in Flatpak —
+**neovim**, **libvirt**, **podman**, and **Zen browser**, **Lutris**, **Steam**, **Element** and **LM Studio** jailed in Flatpak —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -21,6 +21,7 @@ modules/nixos/
   fonts.nix                    DepartureMono Nerd Font as system default
   flatpak.nix                  Flathub + Zen browser with a tightened sandbox
   gaming.nix                   Lutris from Flathub with a tightened sandbox, controller udev rules, GameMode
+  steam.nix                    Steam from Flathub, locked down, sharing only ~/Games with Lutris
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
   fans.nix                     LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
@@ -89,7 +90,7 @@ Run it as your normal user: `bash scripts/ubuntu-install.sh`.
 - [Pinned versions](docs/versions.md): exact commits and package versions
 - [Keyboard](docs/keyboard.md): the modifier contract and every binding
 - [Zen browser jail](docs/zen.md): the Flatpak sandbox and its theming
-- [Gaming](docs/gaming.md): Lutris in a Flatpak jail, its theming, anti-cheat, controllers
+- [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
@@ -104,8 +105,8 @@ Only one non-free package is allowed (`hosts/harmonia/default.nix`):
 the Tulasi icon theme (CC BY-NC-SA 4.0, free for non-commercial use with
 attribution).
 
-LM Studio is proprietary too, but it comes from Flathub rather than nixpkgs,
-so it needs no entry there.
+Steam and LM Studio are proprietary too, but they come from Flathub rather
+than nixpkgs, so they need no entry there.
 
 ## Acknowledgements
 
@@ -128,7 +129,7 @@ harmonia stands on other people's work:
 - **[Departure Mono](https://departuremono.com/)** via
   [Nerd Fonts](https://www.nerdfonts.com/): the font.
 - **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
-  Flatpak setup for Zen, Lutris, Element and LM Studio.
+  Flatpak setup for Zen, Lutris, Steam, Element and LM Studio.
 
 ## License
 

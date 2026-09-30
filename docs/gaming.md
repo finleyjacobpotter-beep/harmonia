@@ -27,7 +27,8 @@ Flathub's Lutris is far more open than that. On top of its manifest,
   command on the host, outside the sandbox (`flatpak-spawn --host`). With it,
   the rest of the jail means nothing.
 - access to your whole home directory (only `~/Games` is given back)
-- `/media` and `/run/media` (USB sticks, other drives) and Flathub Steam's data
+- `/media` and `/run/media` (USB sticks, other drives) and Flatpak Steam's
+  data (its logins and config; shared games live in `~/Games`)
 - UDisks2 on the system bus, so Wine can't list or mount drives
 
 Check the effective permissions with
@@ -86,31 +87,67 @@ automatically; the 32-bit one (`org.freedesktop.Platform.GL32.default`), which
 both are there with `flatpak list --runtime | grep GL`. DXVK and VKD3D turn
 Direct3D into Vulkan and are on by default in Lutris's Wine runner options.
 
-## Steam (Windows) in Lutris
+## Steam
 
-The Linux Steam client can't run inside this jail, but the Windows one can,
-under Wine:
+Steam comes from Flathub too (`com.valvesoftware.Steam`), in its own sandbox
+([`modules/nixos/steam.nix`](../modules/nixos/steam.nix)). Start it with
+`Super+o Shift+g`. Proton runs inside that sandbox, so Windows games work as
+they would with any Linux Steam.
 
-1. Open Lutris (`Super+o g`), click **+** and pick **Search the Lutris
-   website for installers**.
-2. Search for **Steam** and choose the **Windows** installer (not the Linux
-   one, which needs the native client).
-3. Keep the suggested install folder under `~/Games`, then click through.
-   Lutris downloads its Wine build and `SteamSetup.exe`, and runs it.
-4. When the installer finishes, start **Steam** from your Lutris library
-   and log in.
+It is locked down as far as Steam still runs. Its logins, config and Proton
+prefixes stay in `~/.var/app/com.valvesoftware.Steam`, and the only host
+directory it can see is `~/Games`. On top of the Flathub manifest it loses:
 
-Games you install from Steam live in `~/Games/steam/…` inside that Wine
-prefix, and you start them from the Steam window.
+- `~/Music`, `~/Pictures`, `/mnt`, `/media` and `/run/media`
+- the Discord, MangoHud and speech-dispatcher paths
+- the PipeWire socket, which reaches cameras and screen capture without the
+  portal asking. Game audio still works; Steam's game recording and Remote
+  Play streaming don't.
+- raw Bluetooth sockets (Bluetooth controllers pair through the host as usual)
+- UDisks2 on the system bus
 
-If the Steam window stays black or blank, right-click Steam in Lutris →
-**Configure** → **Game options** → **Arguments**, add `-cef-disable-gpu`,
-and start it again.
+Network, X11, `--device=all` and `/run/udev` stay, for the same reasons as
+Lutris (see above).
 
-This is less polished than native Steam with Proton: Proton's anti-cheat
-support, Steam Input for some controllers and the Steam overlay work badly or
-not at all under Wine. It is the price of keeping Steam and its games inside
-the jail. A native Steam would need the jail's protections loosened or a VM.
+### A library Lutris can see
+
+`~/Games` is the one directory Steam and Lutris share. The first time you
+start Steam, open **Settings → Storage**, add a drive, pick
+`~/Games/SteamLibrary` and make it the default. Games installed there are
+visible to Lutris; Steam's logins and config are not.
+
+To launch a Steam game from Lutris:
+
+1. Find the game's App ID: it's the number in its store page URL
+   (`store.steampowered.com/app/<id>/`).
+2. In Lutris click **+** → **Add locally installed game**. Name it, and set
+   the runner to **Linux**.
+3. Under **Game options**, set the executable to `/usr/bin/xdg-open` and the
+   arguments to `steam://rungameid/<id>`.
+
+Starting it asks Steam to launch the game, through the desktop portal. The
+first time, the portal may ask which app should open `steam://` links: pick
+Steam.
+
+Lutris's built-in Steam runner and Steam library sync would do this for you,
+but they start Steam with `flatpak-spawn --host`, the escape `gaming.nix`
+revokes. The link keeps each app in its own jail.
+
+DRM-free games bought on Steam can also run straight from Lutris: add the
+game's `.exe` under `~/Games/SteamLibrary/steamapps/common/` with the Wine
+runner. Games that need Steam running still need the link above.
+
+Anything in `~/Games` can be changed by any game in either app, so a bad game
+can tamper with the others there.
+
+### Steam (Windows) in Lutris
+
+If you'd rather keep Steam inside Lutris, the Windows client runs under
+Wine: in Lutris, **+** → **Search the Lutris website for installers** →
+**Steam** → the **Windows** installer, installed under `~/Games`. If its
+window stays black, add `-cef-disable-gpu` under **Configure → Game options
+→ Arguments**. It is rougher than Flatpak Steam: Proton's anti-cheat
+support, Steam Input and the overlay work badly or not at all under Wine.
 
 ## Anti-cheat
 

@@ -35,11 +35,13 @@ in
     Context = {
       filesystems = [
         # Flathub gives Lutris your whole home directory. Take it away and
-        # give back only ~/Games: the default install location, and where to
-        # drop installers (GOG .exe/.sh files and the like).
+        # give back only ~/Games: the default install location, where to
+        # drop installers (GOG .exe/.sh files and the like), and the one
+        # directory it shares with Flatpak Steam (steam.nix).
         "!home"
         "~/Games:create"
-        # Removable drives, and Flathub Steam's data.
+        # Removable drives, and Flatpak Steam's own data (its logins and
+        # config; the games themselves are in ~/Games).
         "!/media"
         "!/run/media"
         "!~/.var/app/com.valvesoftware.Steam"
@@ -53,7 +55,9 @@ in
     "Session Bus Policy" = {
       # org.freedesktop.Flatpak lets an app run any command *outside* the
       # sandbox (flatpak-spawn --host). Flathub grants it to Lutris; with it,
-      # the jail is no jail at all.
+      # the jail is no jail at all. It is also how Lutris's built-in Steam
+      # runner starts Flatpak Steam, so Steam games are launched through a
+      # steam:// link instead (docs/gaming.md).
       "org.freedesktop.Flatpak" = "none";
     };
     "System Bus Policy" = {
