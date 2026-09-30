@@ -93,7 +93,7 @@ let
     ${import ../../home/bash-prompt.nix {
       inherit palette;
       gitPrompt = "/usr/lib/git-core/git-sh-prompt";
-      gpg = "${pkgs.gpg2}";
+      gpg = hm.programs.gpg.package;
     }}
   '';
 
