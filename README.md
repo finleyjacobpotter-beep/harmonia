@@ -26,7 +26,7 @@ modules/nixos/
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
   fans.nix                     LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
   virtualisation.nix           libvirtd/KVM, virt-manager, rootless podman + buildah
-  vms.nix                      Kali (i3) and Ubuntu (GNOME) libvirt VMs, virtio GPU
+  vms.nix                      Kali (i3) and Ubuntu (GNOME) libvirt VMs, VGA + VNC
   secrets.nix                  pcscd + YubiKey udev rules
   wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
 vms/kali-i3.nix                i3, i3status and caffeine bar for the Kali VM (Alt modifier)
