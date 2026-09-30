@@ -11,12 +11,17 @@ the button again closes it too. Panels open on the primary display.
 | 󰍹 **1** 󰓎, 󰍹 **2** | one icon per display, the star marks the primary one; opens its panel (below) |
 | CPU, memory | |
 | 󰢮 GPU | load and temperature from `rocm-smi`; the tooltip adds VRAM use |
-| 󰈀 / 󰖩 network | the shown interface with its download and upload rate; opens a panel listing every interface's rates, where **Show** picks the one on the bar (**Automatic** follows the default route) |
+| 󰈀 / 󰖩 network | the shown interface with its download and upload rate in Mbps (0.00 to 9999.99); opens a panel listing every interface's rates, where **Show** picks the one on the bar (**Automatic** follows the default route) |
 | 󰖂 WireGuard | active tunnels; opens the tunnel panel ([wireguard.md](wireguard.md)) |
 | caffeine | stops the lock and blank timers until clicked again |
 | 󰕾 volume | opens a panel with a slider, **− 5%**, **Mute** and **+ 5%**; scrolling on the icon changes the volume too |
 | battery | laptops only |
 | 󰥔 clock | `Wed Sep 30 14:16` and the time zone; opens the calendar ([calendar.md](calendar.md)) |
+
+CPU, memory, GPU, network and volume each take a fixed width, sized for
+their widest value (`100%`, `100% 200°C`, `9999.99 Mbps`), so the bar doesn't
+shift as the numbers change. Shorter values are padded with spaces, which
+works because the bar font is monospace.
 
 ## Displays
 

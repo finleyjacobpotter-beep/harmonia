@@ -36,7 +36,7 @@ list() {
   if [ "$choice" = auto ] || [ ! -e "/sys/class/net/$choice" ]; then shown=$default; fi
   addrs=$(ip -j -4 addr show 2>/dev/null || echo '[]')
 
-  # name state wireless down up (bytes per second)
+  # name state wireless down up
   awk -v now="$now" -v last="$last" -v old="$old" '
     BEGIN {
       n = split(old, lines, "\n")
@@ -49,22 +49,24 @@ list() {
         if ($2 >= rx[$1]) down = ($2 - rx[$1]) / dt
         if ($3 >= tx[$1]) up = ($3 - tx[$1]) / dt
       }
-      printf "%s\t%s\t%s\t%d\t%d\n", $1, $4, $5, down, up
+      printf "%s\t%s\t%s\t%s\t%s\n", $1, $4, $5, mbps(down), mbps(up)
+    }
+    # Megabits per second, capped and padded to a fixed width ("   0.00" to
+    # "9999.99") so the bar stays put as rates change.
+    function mbps(bytes,  m) {
+      m = bytes * 8 / 1e6
+      if (m > 9999.99) m = 9999.99
+      return sprintf("%7.2f Mbps", m)
     }' <<<"$cur" |
     jq -Rsc --arg shown "$shown" --arg choice "$choice" --arg default "$default" --argjson addrs "$addrs" '
-      def rate:
-        if . < 1024 then "\(.)B/s"
-        else (if . < 1048576 then [1024, "K"] elif . < 1073741824 then [1048576, "M"] else [1073741824, "G"] end) as [$d, $p]
-          | "\(. / $d * 10 | round / 10)\($p)B/s"
-        end;
       ($addrs | map({key: .ifname, value: ([.addr_info[]? | .local][0] // "")}) | from_entries) as $ip
       | [split("\n")[] | select(. != "") | split("\t")
          | {name: .[0], state: .[1], wireless: (.[2] == "true"),
-            down: (.[3] | tonumber | rate), up: (.[4] | tonumber | rate),
+            down: .[3], up: .[4],
             address: ($ip[.[0]] // ""), shown: (.[0] == $shown), default: (.[0] == $default)}] as $ifs
       | {auto: ($choice == "auto"), default: $default,
          shown: (($ifs | map(select(.shown)) | .[0])
-           // {name: "offline", state: "down", wireless: false, down: "0B/s", up: "0B/s", address: ""}),
+           // {name: "offline", state: "down", wireless: false, down: "   0.00 Mbps", up: "   0.00 Mbps", address: ""}),
          ifaces: $ifs}'
 }
 

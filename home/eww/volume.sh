@@ -1,5 +1,5 @@
 # Default sink volume for the bar and its panel.
-# Usage: eww-volume                 JSON: {"pct": N, "muted": bool, "text": "40%", "sink": "..."}
+# Usage: eww-volume                 JSON: {"pct": N, "muted": bool, "text": " 40%", "sink": "..."}
 #        eww-volume up|down|mute    change it by 5% (up to 150%) or toggle mute
 #        eww-volume set N           set it to N%
 sink=@DEFAULT_AUDIO_SINK@
@@ -11,7 +11,10 @@ state() {
   case "$out" in *MUTED*) muted=true ;; esac
   name=$(wpctl inspect "$sink" 2>/dev/null | sed -n 's/.*node\.description = "\(.*\)"/\1/p' | head -n1)
   jq -nc --argjson pct "$pct" --argjson muted "$muted" --arg sink "$name" \
-    '{pct: $pct, muted: $muted, sink: $sink, text: (if $muted then "muted" else "\($pct)%" end)}'
+    '{pct: $pct, muted: $muted, sink: $sink,
+      text: (if $muted then "mute" else "\($pct)%" end)}
+      # Padded to four characters ("100%") so the bar stays put.
+      | .text = ([range(4 - (.text | length))] | map(" ") | join("")) + .text'
 }
 
 case "${1:-}" in
