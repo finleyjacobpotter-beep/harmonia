@@ -8,7 +8,6 @@ kept in $XDG_RUNTIME_DIR.
 """
 
 import json
-import math
 import os
 import subprocess
 import sys
@@ -19,7 +18,7 @@ STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
 STATE = STATE_DIR / "net-iface"
 PREV = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "eww-net.prev"
 SYS = Path("/sys/class/net")
-OFFLINE = {"name": "offline", "state": "down", "wireless": False, "down": "0B/s", "up": "0B/s", "address": ""}
+OFFLINE = {"name": "offline", "state": "down", "wireless": False, "down": "  0.0 bps ", "up": "  0.0 bps ", "address": ""}
 
 
 def read(path: Path, default: str = "") -> str:
@@ -37,14 +36,15 @@ def ip_json(*args: str) -> list:
         return []
 
 
-def rate(n: int) -> str:
-    if n < 1024:
-        return f"{n}B/s"
-    for size, prefix in ((1073741824, "G"), (1048576, "M"), (1024, "K")):
-        if n >= size or prefix == "K":
-            x = math.floor(n / size * 10 + 0.5) / 10
-            return f"{int(x) if x.is_integer() else x}{prefix}B/s"
-    return ""
+def rate(bytes_per_second: float) -> str:
+    """Bits per second, scaled to bps, kbps, Mbps or Gbps and padded to a
+    fixed width: the number is "0.0" to "999.9", padded to five characters
+    ("  0.0 bps " to "999.9 Gbps") so the bar stays put."""
+    v, units = bytes_per_second * 8, ["bps", "kbps", "Mbps", "Gbps"]
+    i = 0
+    while v >= 999.95 and i < len(units) - 1:
+        v, i = v / 1000, i + 1
+    return f"{min(v, 999.9):5.1f} {units[i]:<4}"
 
 
 def sample() -> dict:
@@ -86,12 +86,12 @@ def listing() -> str:
     dt = (now - last) / 1e9 if last > 0 and now > last else 0
     ifaces = []
     for name, (rx, tx, operstate, wireless) in cur.items():
-        down = up = 0
+        down = up = 0.0
         if dt > 0 and name in old:
             if rx >= old[name][0]:
-                down = int((rx - old[name][0]) / dt)
+                down = (rx - old[name][0]) / dt
             if tx >= old[name][1]:
-                up = int((tx - old[name][1]) / dt)
+                up = (tx - old[name][1]) / dt
         ifaces.append(
             {
                 "name": name,

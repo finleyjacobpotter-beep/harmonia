@@ -1,5 +1,6 @@
 """GPU load, temperature and VRAM from rocm-smi (modules/nixos/fans.nix), as
-{"ok": bool, "use": %, "temp": °C, "vram": %, "vram_text": "6.1/16.0 GiB"}.
+{"ok": bool, "use": %, "temp": °C, "vram": %, "vram_text": "6.1/16.0 GiB",
+ "text": " 37%  52°C"} (padded to a fixed width for the bar).
 With several GPUs, the one with the most VRAM is shown.
 """
 
@@ -8,7 +9,7 @@ import math
 import re
 import subprocess
 
-EMPTY = {"ok": False, "use": 0, "temp": 0, "vram": 0, "vram_text": ""}
+EMPTY = {"ok": False, "use": 0, "temp": 0, "vram": 0, "vram_text": "", "text": ""}
 
 
 def rounded(x: float) -> int:
@@ -55,12 +56,15 @@ def stats(data: dict) -> dict:
     if gpu["use"] is None:
         return EMPTY
     total, used = gpu["total"], gpu["used"]
+    temp = rounded(gpu["temp"] or 0)
     return {
         "ok": True,
         "use": gpu["use"],
-        "temp": rounded(gpu["temp"] or 0),
+        "temp": temp,
         "vram": rounded(used * 100 / total) if total > 0 else 0,
         "vram_text": f"{gib(used)}/{gib(total)} GiB" if total > 0 else "",
+        # Left-padded for the worst case, "100% 200°C", so the bar stays put.
+        "text": f"{gpu['use']:>3}% {temp:>3}°C",
     }
 
 

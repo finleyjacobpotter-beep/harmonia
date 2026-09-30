@@ -166,7 +166,7 @@ in
     (deflisten mode :initial "{\"name\":\"default\",\"hint\":\"\"}" "${mode}/bin/eww-sway-mode")
     (defpoll volume :interval "2s" :initial "{\"pct\":0,\"muted\":false,\"sink\":\"\",\"text\":\"\"}"
       "${volume}/bin/eww-volume")
-    (defpoll gpu :interval "3s" :initial "{\"ok\":false,\"use\":0,\"temp\":0,\"vram\":0,\"vram_text\":\"\"}"
+    (defpoll gpu :interval "3s" :initial "{\"ok\":false,\"use\":0,\"temp\":0,\"vram\":0,\"vram_text\":\"\",\"text\":\"\"}"
       "${gpu}/bin/eww-gpu")
     (defpoll net :interval "2s"
       :initial "{\"auto\":true,\"default\":\"\",\"shown\":{\"name\":\"\",\"state\":\"down\",\"wireless\":false,\"down\":\"\",\"up\":\"\",\"address\":\"\"},\"ifaces\":[]}"
@@ -208,7 +208,13 @@ in
     (defwidget module [icon text ?class ?visible]
       (box :class "module ''${class}" :visible {visible ?: true} :orientation "h" :space-evenly false :spacing 6
         (label :class "icon" :text icon)
-        (label :text text)))
+        ; unindent would strip the padding that keeps widths fixed.
+        (label :unindent false :text text)))
+
+    ; A percentage padded to "100%" so the bar doesn't shift (the font is monospace).
+    (defwidget module-pct [icon value ?class]
+      (module :class class :icon icon
+        :text "''${value < 10 ? "  " : (value < 100 ? " " : "")}''${value}%"))
 
     (defwidget right []
       (box :orientation "h" :space-evenly false :halign "end" :spacing 4
@@ -243,12 +249,12 @@ in
                 (label :class "icon" :text "󰍹")
                 (label :text "''${o.number}")
                 (label :class "star" :visible {o.primary} :text "󰓎")))))
-        (module :class "cpu" :icon "" :text "''${round(EWW_CPU.avg, 0)}%")
-        (module :class "mem" :icon "" :text "''${round(EWW_RAM.used_mem_perc, 0)}%")
+        (module-pct :class "cpu" :icon "" :value {round(EWW_CPU.avg, 0)})
+        (module-pct :class "mem" :icon "" :value {round(EWW_RAM.used_mem_perc, 0)})
         (box :class "module gpu" :visible {gpu.ok} :orientation "h" :space-evenly false :spacing 6
           :tooltip "GPU ''${gpu.use}% · ''${gpu.temp}°C · VRAM ''${gpu.vram_text} (''${gpu.vram}%)"
           (label :class "icon" :text "󰢮")
-          (label :text "''${gpu.use}% ''${gpu.temp}°"))
+          (label :unindent false :text "''${gpu.text}"))
         (button :class "module net ''${net.shown.state == "up" ? "" : "down"}"
           :tooltip "''${net.shown.name} ''${net.shown.address}: click for all interfaces"
           :onclick "${menu} net-menu"
@@ -273,7 +279,7 @@ in
           :onscroll "${volume}/bin/eww-volume {}"
           (box :orientation "h" :space-evenly false :spacing 6
             (label :class "icon" :text {volume.muted ? "󰖁" : "󰕾"})
-            (label :text "''${volume.text}")))
+            (label :unindent false :text "''${volume.text}")))
         (module :class "bat" :icon "󰁹" :text "''${battery}%" :visible {battery != ""})
         (button :class "module clock" :tooltip "''${time.zone}: click for the calendar and time zones"
           :onclick "${cal}/bin/eww-cal today; ${menu} cal-menu"

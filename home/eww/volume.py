@@ -1,6 +1,6 @@
 """Default sink volume for the bar and its panel.
 
-Usage: eww-volume                 JSON: {"pct": N, "muted": bool, "text": "40%", "sink": "..."}
+Usage: eww-volume                 JSON: {"pct": N, "muted": bool, "text": " 40%", "sink": "..."}
        eww-volume up|down|mute    change it by 5% (up to 150%) or toggle mute
        eww-volume set N           set it to N%
 """
@@ -33,7 +33,8 @@ def state() -> str:
             "pct": pct,
             "muted": muted,
             "sink": match.group(1) if match else "",
-            "text": "muted" if muted else f"{pct}%",
+            # Padded to four characters ("100%") so the bar stays put.
+            "text": ("mute" if muted else f"{pct}%").rjust(4),
         },
         separators=(",", ":"),
         ensure_ascii=False,
