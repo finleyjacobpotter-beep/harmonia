@@ -39,6 +39,6 @@ in
   export GPG_TTY="$(tty)"
   gpg-connect-agent /bye
   if [ -z "$SSH_AUTH_SOCK" ]; then
-    export SSH_AUTH_SOCK=$(/etc/profiles/per-user/${config.home.username}/bin/gpgconf --list-dirs agent-ssh-socket)
+    export SSH_AUTH_SOCK=$(${config.programs.gpg.package}/bin/gpgconf --list-dirs agent-ssh-socket)
   fi
 ''
