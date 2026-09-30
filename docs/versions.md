@@ -25,6 +25,9 @@ only change when an input's commit is bumped; update this table when you do.
 | PipeWire / WirePlumber | 1.6.8 / 0.5.17 |
 | BlueZ / Blueman | 5.87 / 2.4.6 |
 | UPower | 1.91.4 |
+| Mesa (64- and 32-bit, radeonsi + RADV) | 26.2.3 |
+| Vulkan loader / vulkan-tools | 1.4.357.0 / 1.4.357.0 |
+| mesa-demos (`glxinfo`) | 9.0.0 |
 | polkit | 127 |
 | gnome-keyring | 50.0 |
 | dconf | 0.49.0 |
@@ -122,6 +125,7 @@ Neovim plugins:
 | Lutris (Flathub `net.lutris.Lutris`) | follows Flathub |
 | Element (Flathub `im.riot.Riot`) | follows Flathub |
 | LM Studio (Flathub `ai.lmstudio.lm-studio`) | follows Flathub |
+| Flatpak Mesa, 32-bit (`org.freedesktop.Platform.GL32.default`) | branch 25.08, follows Flathub |
 | GameMode | from the pinned nixpkgs |
 | steam-devices-udev-rules | from the pinned nixpkgs |
 
@@ -132,3 +136,4 @@ Neovim plugins:
 | LACT daemon (nixpkgs) | 0.10.1 |
 | LACT GUI (Flathub `io.github.ilya_zlobintsev.LACT`) | follows Flathub (0.10.1 on 2026-09-29) |
 | lm_sensors | 3.6.2 |
+| rocm-smi | 7.2.3 |

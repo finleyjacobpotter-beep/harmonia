@@ -51,6 +51,11 @@ in
   # itself as tainted with it, which is harmless.
   hardware.amdgpu.overdrive.enable = true;
 
-  # `sensors` to read temperatures and fan speeds.
-  environment.systemPackages = [ pkgs.lm_sensors ];
+  # `sensors` to read temperatures and fan speeds; `rocm-smi` for the AMD
+  # GPU's temperature, fan, clocks, power and VRAM use (MIT; no ROCm runtime
+  # needed, it reads the amdgpu driver's sysfs files).
+  environment.systemPackages = [
+    pkgs.lm_sensors
+    pkgs.rocmPackages.rocm-smi
+  ];
 }

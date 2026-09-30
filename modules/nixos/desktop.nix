@@ -54,7 +54,14 @@ in
     wireplumber.enable = true;
   };
 
-  hardware.graphics.enable = true;
+  # Mesa: radeonsi (OpenGL) and RADV (Vulkan) for AMD, plus Intel and
+  # nouveau. enable32Bit adds the i686 builds, which 32-bit native Linux
+  # games and Wine need. Flatpak apps don't use these: they bring their own
+  # Mesa (see modules/nixos/gaming.nix).
+  hardware.graphics = {
+    enable = true;
+    enable32Bit = true;
+  };
   hardware.bluetooth.enable = true;
   services.blueman.enable = true;
   services.upower.enable = true;
@@ -65,6 +72,12 @@ in
     enable = true;
     extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
   };
+
+  # vulkaninfo / vkcube and glxinfo / eglinfo, to check the drivers.
+  environment.systemPackages = with pkgs; [
+    vulkan-tools
+    mesa-demos
+  ];
 
   programs.dconf.enable = true;
   services.gnome.gnome-keyring.enable = true;
