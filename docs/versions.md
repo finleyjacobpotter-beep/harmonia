@@ -123,6 +123,7 @@ Neovim plugins:
 | Package | Version |
 | --- | --- |
 | Lutris (Flathub `net.lutris.Lutris`) | follows Flathub |
+| Steam (Flathub `com.valvesoftware.Steam`) | follows Flathub; the client also updates itself |
 | Element (Flathub `im.riot.Riot`) | follows Flathub |
 | LM Studio (Flathub `ai.lmstudio.lm-studio`) | follows Flathub |
 | Flatpak Mesa, 32-bit (`org.freedesktop.Platform.GL32.default`) | branch 25.08, follows Flathub |
