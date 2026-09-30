@@ -53,13 +53,14 @@ list() {
       printf "%s\t%s\t%s\t%s\t%s\n", $1, $4, $5, rate(down), rate(up)
     }
     # Bits per second, scaled to bps, kbps, Mbps or Gbps and padded to a
-    # fixed width ("  0.00 bps " to "999.99 Gbps") so the bar stays put.
+    # fixed width: the number is "0.0" to "999.9", padded to five characters
+    # ("  0.0 bps " to "999.9 Gbps") so the bar stays put.
     function rate(bytes,  v, i) {
       v = bytes * 8
       i = 1
-      while (v >= 999.995 && i < 4) { v /= 1000; i++ }
-      if (v > 999.99) v = 999.99
-      return sprintf("%6.2f %-4s", v, unit[i])
+      while (v >= 999.95 && i < 4) { v /= 1000; i++ }
+      if (v > 999.9) v = 999.9
+      return sprintf("%5.1f %-4s", v, unit[i])
     }' <<<"$cur" |
     jq -Rsc --arg shown "$shown" --arg choice "$choice" --arg default "$default" --argjson addrs "$addrs" '
       ($addrs | map({key: .ifname, value: ([.addr_info[]? | .local][0] // "")}) | from_entries) as $ip
@@ -69,7 +70,7 @@ list() {
             address: ($ip[.[0]] // ""), shown: (.[0] == $shown), default: (.[0] == $default)}] as $ifs
       | {auto: ($choice == "auto"), default: $default,
          shown: (($ifs | map(select(.shown)) | .[0])
-           // {name: "offline", state: "down", wireless: false, down: "  0.00 bps ", up: "  0.00 bps ", address: ""}),
+           // {name: "offline", state: "down", wireless: false, down: "  0.0 bps ", up: "  0.0 bps ", address: ""}),
          ifaces: $ifs}'
 }
 

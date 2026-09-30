@@ -19,7 +19,7 @@ the button again closes it too. Panels open on the primary display.
 | 󰥔 clock | `Wed Sep 30 14:16` and the time zone; opens the calendar ([calendar.md](calendar.md)) |
 
 CPU, memory, GPU, network and volume each take a fixed width, sized for
-their widest value (`100%`, `100% 200°C`, `999.99 kbps`), so the bar doesn't
+their widest value (`100%`, `100% 200°C`, `999.9 kbps`), so the bar doesn't
 shift as the numbers change. Shorter values are padded with spaces, which
 works because the bar font is monospace.
 
