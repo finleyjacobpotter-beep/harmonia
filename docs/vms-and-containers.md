@@ -55,22 +55,32 @@ host. The **caffeine** block on the left of its bar toggles that: click it and
 it reads `caffeine on` in orange, and nothing locks or blanks until you click
 it again. It resets to off when you log in again.
 
-### Reinstalling a VM from scratch
+### Removing and reinstalling the VMs from scratch
 
-To wipe a VM and install it again (its disk, UEFI variables and TPM state all
-go):
+This deletes the VMs, their disks, UEFI variables, TPM state and network
+filters (the installer ISOs stay):
 
 ```sh
 export LIBVIRT_DEFAULT_URI=qemu:///system
-virsh destroy harmonia-kali                     # only if it's running
-virsh undefine harmonia-kali --nvram --tpm      # drop the domain, UEFI vars, TPM
-sudo rm /var/lib/libvirt/images/harmonia-kali.qcow2
-sudo systemctl restart harmonia-vms             # redefines it with a new empty disk
+for vm in kali ubuntu; do
+  virsh destroy harmonia-$vm 2>/dev/null           # stop it if it's running
+  virsh undefine harmonia-$vm --nvram --tpm
+  sudo rm -f /var/lib/libvirt/images/harmonia-$vm.qcow2
+  virsh nwfilter-undefine harmonia-vm-$vm
+done
+for p in open internet-only isolated; do virsh nwfilter-undefine harmonia-$p; done
 ```
 
-Then carry on from step 2 above. `sudo harmonia-vm-fetch` only needs running
-again if you deleted the ISO. For Kali, `~/vms/kali-shared` on the host is left
-alone, so move anything out of it first if you want a clean share too.
+Then recreate them with new, empty disks and install again from step 1 above:
+
+```sh
+sudo systemctl restart harmonia-vms
+systemctl status harmonia-vms                      # active (exited)
+```
+
+To reset only one VM, list just that one in the first loop and skip the
+second. For Kali, `~/vms/kali-shared` on the host is left alone, so empty it
+too if you want a clean share.
 
 ### Adding another VM
 
