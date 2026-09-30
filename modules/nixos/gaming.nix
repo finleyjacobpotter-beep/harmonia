@@ -15,6 +15,18 @@ in
       appId = lutris;
       origin = "flathub";
     }
+    # Graphics inside the sandbox. Flatpak apps use Mesa from the Flathub
+    # runtime, not the host's, and pull in the 64-bit build
+    # (org.freedesktop.Platform.GL.default) on their own. The 32-bit build
+    # (radeonsi + RADV for i386), which 32-bit Windows games and DXVK need,
+    # isn't downloaded automatically for Lutris, so install it here. The
+    # branch follows the freedesktop runtime under Lutris's GNOME runtime
+    # (GNOME 49 = 25.08); bump it with Lutris's runtime
+    # (`flatpak info net.lutris.Lutris` shows it).
+    {
+      appId = "org.freedesktop.Platform.GL32.default//25.08";
+      origin = "flathub";
+    }
   ];
 
   # Tighten Flathub's default permissions for Lutris. Anything not listed

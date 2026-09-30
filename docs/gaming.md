@@ -72,6 +72,46 @@ cursor and DepartureMono. The sandbox can't read the host's copies, so
 `~/.var/app/net.lutris.Lutris` on every rebuild (or run `flatpak-miami-wind`).
 Games themselves draw their own UI and aren't themed.
 
+## Graphics drivers
+
+The host runs Mesa (radeonsi for OpenGL, RADV for Vulkan) with the 32-bit
+builds enabled, set in [`modules/nixos/desktop.nix`](../modules/nixos/desktop.nix).
+Check it with `vulkaninfo --summary` (the GPU should say `RADV`) and
+`glxinfo -B`.
+
+Lutris doesn't use the host's Mesa: every Flatpak gets Mesa from the Flathub
+runtime. The 64-bit build (`org.freedesktop.Platform.GL.default`) comes
+automatically; the 32-bit one (`org.freedesktop.Platform.GL32.default`), which
+32-bit Windows games and DXVK need, is installed by `gaming.nix`. Check that
+both are there with `flatpak list --runtime | grep GL`. DXVK and VKD3D turn
+Direct3D into Vulkan and are on by default in Lutris's Wine runner options.
+
+## Steam (Windows) in Lutris
+
+The Linux Steam client can't run inside this jail, but the Windows one can,
+under Wine:
+
+1. Open Lutris (`Super+o g`), click **+** and pick **Search the Lutris
+   website for installers**.
+2. Search for **Steam** and choose the **Windows** installer (not the Linux
+   one, which needs the native client).
+3. Keep the suggested install folder under `~/Games`, then click through.
+   Lutris downloads its Wine build and `SteamSetup.exe`, and runs it.
+4. When the installer finishes, start **Steam** from your Lutris library
+   and log in.
+
+Games you install from Steam live in `~/Games/steam/…` inside that Wine
+prefix, and you start them from the Steam window.
+
+If the Steam window stays black or blank, right-click Steam in Lutris →
+**Configure** → **Game options** → **Arguments**, add `-cef-disable-gpu`,
+and start it again.
+
+This is less polished than native Steam with Proton: Proton's anti-cheat
+support, Steam Input for some controllers and the Steam overlay work badly or
+not at all under Wine. It is the price of keeping Steam and its games inside
+the jail. A native Steam would need the jail's protections loosened or a VM.
+
 ## Anti-cheat
 
 Easy Anti-Cheat and BattlEye work for games whose developers enabled Linux
