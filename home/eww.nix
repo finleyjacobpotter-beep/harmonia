@@ -181,6 +181,55 @@ let
     '';
   };
 
+  # What's running: GameMode, Steam (Flathub or native), LM Studio and the
+  # models it has loaded (its API on localhost:1234, docs/lmstudio.md), and
+  # the libvirt VMs.
+  activity = pkgs.writeShellApplication {
+    name = "eww-activity";
+    runtimeInputs = with pkgs; [
+      flatpak
+      gamemode
+      procps
+      curl
+      jq
+      libvirt
+      gnugrep
+    ];
+    text = ''
+      # JSON for the bar's activity badges:
+      # {"gamemode": bool, "steam": bool,
+      #  "lmstudio": {"running": bool, "serving": bool, "first": id, "list": "id, id"},
+      #  "vms": {"count": n, "list": "name, name"}}   (running libvirt domains)
+      apps=$(flatpak ps --columns=application 2>/dev/null || true)
+      running() { grep -qx "$1" <<<"$apps"; }
+
+      gamemode=false
+      gamemoded -s 2>/dev/null | grep -q 'is active' && gamemode=true
+
+      steam=false
+      if running com.valvesoftware.Steam || pgrep -x steam >/dev/null; then steam=true; fi
+
+      lms=false
+      models='[]'
+      if running ai.lmstudio.lm-studio; then
+        lms=true
+        # LM Studio's own REST API lists every model with its load state.
+        models=$(curl -fsS -m 1 http://127.0.0.1:1234/api/v0/models 2>/dev/null |
+          jq -c '[.data[]? | select(.state == "loaded") | .id]' 2>/dev/null) || models='[]'
+        [ -n "$models" ] || models='[]'
+      fi
+
+      vms=$(virsh -c qemu:///system list --name 2>/dev/null | jq -Rsc 'split("\n") | map(select(. != ""))') || vms='[]'
+
+      jq -nc --argjson gamemode "$gamemode" --argjson steam "$steam" --argjson lms "$lms" \
+        --argjson models "$models" --argjson vms "$vms" \
+        '{gamemode: $gamemode, steam: $steam,
+          lmstudio: {running: $lms, serving: ($models | length > 0),
+                     first: ($models[0] // ""), list: ($models | join(", "))},
+          vms: {count: ($vms | length), list: ($vms | join(", "))}}'
+    '';
+  };
+
   battery = pkgs.writeShellApplication {
     name = "eww-battery";
     text = ''
@@ -200,6 +249,9 @@ in
     (deflisten mode :initial "{\"name\":\"default\",\"hint\":\"\"}" "${mode}/bin/eww-sway-mode")
     (defpoll volume :interval "2s" "${volume}/bin/eww-volume")
     (defpoll wg :interval "5s" :initial "{\"active\":0,\"tunnels\":[]}" "${wireguard}/bin/eww-wg")
+    (defpoll activity :interval "5s"
+      :initial "{\"gamemode\":false,\"steam\":false,\"lmstudio\":{\"running\":false,\"serving\":false,\"first\":\"\",\"list\":\"\"},\"vms\":{\"count\":0,\"list\":\"\"}}"
+      "${activity}/bin/eww-activity")
     (defpoll locks :interval "500ms" :initial "{\"caps\":false,\"num\":false}" "${locks}/bin/eww-locks")
     (defpoll caffeine :interval "10s" "${caffeine}/bin/eww-caffeine")
     (defpoll battery :interval "30s" "${battery}/bin/eww-battery")
@@ -233,6 +285,21 @@ in
       (box :orientation "h" :space-evenly false :halign "end" :spacing 4
         (label :class "lock caps" :visible {locks.caps} :text "CAPS")
         (label :class "lock num" :visible {locks.num} :text "NUM")
+        (box :class "module gamemode" :visible {activity.gamemode} :tooltip "GameMode is on"
+          (label :class "icon" :text "󰊗"))
+        (box :class "module steam" :visible {activity.steam} :tooltip "Steam is running"
+          (label :class "icon" :text "󰓓"))
+        (box :class "module lmstudio ''${activity.lmstudio.serving ? "serving" : ""}"
+          :visible {activity.lmstudio.running} :orientation "h" :space-evenly false :spacing 6
+          :tooltip {activity.lmstudio.serving
+            ? "LM Studio is serving: ''${activity.lmstudio.list}"
+            : "LM Studio is running, no model loaded"}
+          (label :class "icon" :text "󰚩")
+          (label :visible {activity.lmstudio.serving} :limit-width 24 :text "''${activity.lmstudio.first}"))
+        (box :class "module vms" :visible {activity.vms.count > 0} :orientation "h" :space-evenly false :spacing 6
+          :tooltip "VMs running: ''${activity.vms.list}"
+          (label :class "icon" :text "󰒋")
+          (label :text "''${activity.vms.count}"))
         (module :class "cpu" :icon "" :text "''${round(EWW_CPU.avg, 0)}%")
         (module :class "mem" :icon "" :text "''${round(EWW_RAM.used_mem_perc, 0)}%")
         (button
@@ -350,6 +417,11 @@ in
       &.vol .icon { color: $cyan; }
       &.bat .icon { color: $yellow; }
       &.clock .icon { color: $pink; }
+      &.gamemode .icon { color: $green; }
+      &.steam .icon { color: $blue; }
+      &.lmstudio .icon { color: $muted; }
+      &.lmstudio.serving .icon { color: $pink; }
+      &.vms .icon { color: $orange; }
       &.wg { color: $muted; &:hover { background-color: $surface; } }
       &.wg.on { color: $cyan; }
       &.caffeine { color: $muted; &:hover { background-color: $surface; } }

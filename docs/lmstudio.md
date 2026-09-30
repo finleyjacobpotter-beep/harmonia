@@ -49,3 +49,10 @@ LM Studio's models folder (in *My Models*) at it:
 ```nix
 services.flatpak.overrides."ai.lmstudio.lm-studio".Context.filesystems = [ "/mnt/models" ];
 ```
+
+## On the bar
+
+While LM Studio is running, a robot icon sits on the eww bar. It's grey
+until a model is loaded, then pink with the model's name, and hovering it
+lists every loaded model. This reads LM Studio's API on `localhost:1234`, so
+the name only shows while the local server (*Developer* tab) is running.
