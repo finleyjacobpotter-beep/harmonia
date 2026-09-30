@@ -21,8 +21,12 @@ no guest audio.
    ```sh
    sudo harmonia-vm-fetch          # or: sudo harmonia-vm-fetch kali
    ```
-2. Start a VM from virt-manager (`Super+o v`) and install as usual. For Kali,
-   pick **i3** on the installer's desktop-environment screen.
+2. Start a VM from virt-manager (`Super+o v`), or with
+   `virsh -c qemu:///system start harmonia-kali`, and open its display
+   (virt-manager, or a VNC viewer on the port above). The disk is empty, so it
+   boots the installer ISO; install as usual onto the 60 GB virtio disk. For
+   Kali, pick **i3** on the installer's desktop-environment screen. After the
+   install the ISO stays attached, but the disk boots first.
 3. Kali only: the VM has one **read-write** virtiofs share: `~/vms/kali-shared`
    on the host is `~/shared` in the guest. Files keep their uid, and the first
    user on both sides is uid 1000, so they belong to you on both. On every
@@ -50,6 +54,39 @@ Kali locks after 10 minutes idle and blanks the screen after 15, like the
 host. The **caffeine** block on the left of its bar toggles that: click it and
 it reads `caffeine on` in orange, and nothing locks or blanks until you click
 it again. It resets to off when you log in again.
+
+### Reinstalling a VM from scratch
+
+To wipe a VM and install it again (its disk, UEFI variables and TPM state all
+go):
+
+```sh
+export LIBVIRT_DEFAULT_URI=qemu:///system
+virsh destroy harmonia-kali                     # only if it's running
+virsh undefine harmonia-kali --nvram --tpm      # drop the domain, UEFI vars, TPM
+sudo rm /var/lib/libvirt/images/harmonia-kali.qcow2
+sudo systemctl restart harmonia-vms             # redefines it with a new empty disk
+```
+
+Then carry on from step 2 above. `sudo harmonia-vm-fetch` only needs running
+again if you deleted the ISO. For Kali, `~/vms/kali-shared` on the host is left
+alone, so move anything out of it first if you want a clean share too.
+
+### Adding another VM
+
+Add an entry to `vms` in `modules/nixos/vms.nix`, next to `kali` and `ubuntu`,
+with its own `vncPort` (5902, 5903…), `iso` (name, url, SHA256SUMS url and a
+pinned `sha256`, or `null` to trust the release's sums file) and
+`firewall.policy`. Set `share` and `bundle` to `null` unless it needs a host
+folder. Rebuild (`rebuild`), then `sudo harmonia-vm-fetch <name>` and install
+it as above. The domain is named `harmonia-<name>`.
+
+### If the harmonia-vms service fails
+
+`systemctl status harmonia-vms` and `journalctl -u harmonia-vms` show why.
+The service redefines the network filters and domains on every boot and
+rebuild, reusing their existing ids, so it's safe to restart at any time:
+`sudo systemctl restart harmonia-vms`.
 
 ## Firewall (enforced on the host)
 
