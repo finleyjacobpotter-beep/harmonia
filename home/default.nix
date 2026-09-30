@@ -10,6 +10,8 @@
     ./neovim.nix
     ./gtk.nix
     ./zen.nix
+    ./flatpak-theme.nix
+    ./element.nix
     ./tui.nix
     ./keymap.nix
     ./secrets.nix
