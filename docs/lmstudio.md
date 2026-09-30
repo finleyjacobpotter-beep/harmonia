@@ -57,5 +57,7 @@ until a model is loaded, then pink with the model's name, and hovering it
 lists every loaded model. This reads LM Studio's API on `localhost:1234`, so
 the name only shows while the local server (*Developer* tab) is running.
 
-Right-click the icon for a small menu with **Close LM Studio**, which quits
-the app (`flatpak kill ai.lmstudio.lm-studio`) and unloads its models.
+Click the icon to open a panel (like the WireGuard one) showing what it's
+serving, with a **Close** button that quits the app
+(`flatpak kill ai.lmstudio.lm-studio`) and unloads its models. The Steam
+icon opens the same kind of panel, where **Close** runs `steam -shutdown`.

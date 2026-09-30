@@ -304,17 +304,17 @@ in
         (label :class "lock num" :visible {locks.num} :text "NUM")
         (box :class "module gamemode" :visible {activity.gamemode} :tooltip "GameMode is on"
           (label :class "icon" :text "󰊗"))
-        (eventbox :visible {activity.steam}
-          :onrightclick "${pkgs.eww}/bin/eww open --toggle steam-menu"
-          (box :class "module steam" :tooltip "Steam is running (right-click for options)"
-            (label :class "icon" :text "󰓓")))
-        (eventbox :visible {activity.lmstudio.running}
-          :onrightclick "${pkgs.eww}/bin/eww open --toggle lms-menu"
-          (box :class "module lmstudio ''${activity.lmstudio.serving ? "serving" : ""}"
-            :orientation "h" :space-evenly false :spacing 6
-            :tooltip {activity.lmstudio.serving
-              ? "LM Studio is serving: ''${activity.lmstudio.list} (right-click for options)"
-              : "LM Studio is running, no model loaded (right-click for options)"}
+        (button :class "module steam" :visible {activity.steam}
+          :tooltip "Steam is running: click for options"
+          :onclick "${pkgs.eww}/bin/eww open --toggle steam-menu"
+          (label :class "icon" :text "󰓓"))
+        (button :class "module lmstudio ''${activity.lmstudio.serving ? "serving" : ""}"
+          :visible {activity.lmstudio.running}
+          :tooltip {activity.lmstudio.serving
+            ? "LM Studio is serving: ''${activity.lmstudio.list} (click for options)"
+            : "LM Studio is running, no model loaded (click for options)"}
+          :onclick "${pkgs.eww}/bin/eww open --toggle lms-menu"
+          (box :orientation "h" :space-evenly false :spacing 6
             (label :class "icon" :text "󰚩")
             (label :visible {activity.lmstudio.serving} :limit-width 24 :text "''${activity.lmstudio.first}")))
         (box :class "module vms" :visible {activity.vms.count > 0} :orientation "h" :space-evenly false :spacing 6
@@ -364,34 +364,51 @@ in
               :onclick "${wireguard}/bin/eww-wg toggle \"''${t.name}\""
               "''${t.active ? "Disconnect" : "Connect"}")))))
 
-    ; Right-click menu for the LM Studio icon.
-    (defwidget lms-menu []
-      (box :class "menu" :orientation "v" :space-evenly false :spacing 4
-        (button :class "menu-item danger"
-          :onclick "${pkgs.eww}/bin/eww close lms-menu; ${pkgs.flatpak}/bin/flatpak kill ai.lmstudio.lm-studio"
-          "Close LM Studio")
-        (button :class "menu-item" :onclick "${pkgs.eww}/bin/eww close lms-menu" "Cancel")))
+    ; Panels opened by the Steam and LM Studio buttons, laid out like the
+    ; WireGuard panel.
+    (defwidget app-panel [title name status action onclose onaction]
+      (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+        (box :orientation "h" :space-evenly false
+          (label :class "wg-title" :hexpand true :halign "start" :text title)
+          (button :class "wg-close" :onclick onclose "✕"))
+        (box :class "wg-tunnel up" :orientation "h" :space-evenly false :spacing 16
+          (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+            (label :class "wg-name" :halign "start" :text "● ''${name}")
+            (label :class "wg-detail" :halign "start" :wrap true :text status))
+          (button :class "wg-toggle" :valign "center" :onclick onaction action))))
 
-    ; Right-click menu for the Steam icon.
+    (defwidget lms-menu []
+      (app-panel
+        :title "LM Studio"
+        :name "LM Studio"
+        :status {activity.lmstudio.serving
+          ? "Serving: ''${activity.lmstudio.list}"
+          : "Running, no model loaded"}
+        :action "Close"
+        :onclose "${pkgs.eww}/bin/eww close lms-menu"
+        :onaction "${pkgs.eww}/bin/eww close lms-menu; ${pkgs.flatpak}/bin/flatpak kill ai.lmstudio.lm-studio"))
+
     (defwidget steam-menu []
-      (box :class "menu" :orientation "v" :space-evenly false :spacing 4
-        (button :class "menu-item danger"
-          :onclick "${pkgs.eww}/bin/eww close steam-menu; ${steamClose}/bin/eww-steam-close"
-          "Close Steam")
-        (button :class "menu-item" :onclick "${pkgs.eww}/bin/eww close steam-menu" "Cancel")))
+      (app-panel
+        :title "Steam"
+        :name "Steam"
+        :status "Running"
+        :action "Close"
+        :onclose "${pkgs.eww}/bin/eww close steam-menu"
+        :onaction "${pkgs.eww}/bin/eww close steam-menu; ${steamClose}/bin/eww-steam-close"))
 
     (defwindow steam-menu
       :monitor 0
       :stacking "overlay"
       :namespace "eww-menu"
-      :geometry (geometry :x "8px" :y "34px" :anchor "top right")
+      :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
       (steam-menu))
 
     (defwindow lms-menu
       :monitor 0
       :stacking "overlay"
       :namespace "eww-menu"
-      :geometry (geometry :x "8px" :y "34px" :anchor "top right")
+      :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
       (lms-menu))
 
     (defwindow wg
@@ -470,6 +487,7 @@ in
       &.clock .icon { color: $pink; }
       &.gamemode .icon { color: $green; }
       &.steam .icon { color: $blue; }
+      &.steam, &.lmstudio { &:hover { background-color: $surface; } }
       &.lmstudio .icon { color: $muted; }
       &.lmstudio.serving .icon { color: $pink; }
       &.vms .icon { color: $orange; }
@@ -485,18 +503,6 @@ in
       font-weight: bold;
       &.caps { background-color: $yellow; }
       &.num { background-color: $purple; }
-    }
-
-    .menu {
-      background-color: $bg;
-      color: $fg;
-      border: 2px solid $surface;
-      padding: 6px;
-      .menu-item {
-        padding: 4px 12px;
-        &:hover { background-color: $surface; }
-        &.danger:hover { color: $bg; background-color: $red; }
-      }
     }
 
     .wg-panel {
