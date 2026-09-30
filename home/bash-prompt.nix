@@ -38,6 +38,7 @@ in
   # Setup GPG / SSH
   export GPG_TTY="$(tty)"
   gpg-connect-agent /bye
-  export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
-
+  if [ -z "$SSH_AUTH_SOCK" ]; then
+    export SSH_AUTH_SOCK=$(${config.programs.gpg.package}/bin/gpgconf --list-dirs agent-ssh-socket)
+  fi
 ''
