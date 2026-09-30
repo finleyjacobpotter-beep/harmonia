@@ -106,8 +106,9 @@ in
       };
 
       startup = [
-        # `eww open` starts the daemon if needed
-        { command = "eww open bar"; }
+        # Reapplies the resolutions picked on the bar and opens the bar on the
+        # primary display (home/eww/display.sh); `eww open` starts the daemon.
+        { command = "eww-display start"; }
       ];
 
       # Complete keymap (sway's defaults are *replaced*, not merged): every
@@ -163,7 +164,7 @@ in
           "${mod}+d" = "exec fuzzel";
           "${mod}+Shift+c" = "reload";
           "${mod}+Shift+x" = "exec swaylock -f";
-          "${mod}+Shift+b" = "exec eww open --toggle bar";
+          "${mod}+Shift+b" = "exec eww-display toggle-bar";
 
           # notifications (mako)
           "${mod}+n" = "exec makoctl dismiss";
