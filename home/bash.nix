@@ -39,11 +39,6 @@ in
       inherit palette;
       gitPrompt = "${pkgs.git}/share/bash-completion/completions/git-prompt.sh";
     };
-    shellInit = ''
-      export GPG_TTY="$(tty)"
-      gpg-connect-agent /bye
-      export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
-    '';
   };
   # vi editing mode for bash (and everything else that uses readline).
   programs.readline = {
