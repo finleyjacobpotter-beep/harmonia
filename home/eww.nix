@@ -34,7 +34,8 @@ let
   # Emits {"name": …, "hint": …} whenever the sway binding mode changes.
   mode = pyScript "eww-sway-mode" {
     runtimeInputs = [ pkgs.sway ];
-    replace."HINTS: dict = {}" = "HINTS: dict = json.loads(${builtins.toJSON (builtins.toJSON modeHints)})";
+    replace."HINTS: dict = {}" =
+      "HINTS: dict = json.loads(${builtins.toJSON (builtins.toJSON modeHints)})";
   } ./eww/mode.py;
 
   volume = script "eww-volume" ./eww/volume.py [

@@ -14,13 +14,19 @@ name:
   replace ? { },
 }:
 source:
-pkgs.writers.writePython3Bin name {
-  inherit libraries;
-  flakeIgnore = [ "E501" ];
-  makeWrapperArgs = lib.optionals (runtimeInputs != [ ]) [
-    "--prefix"
-    "PATH"
-    ":"
-    (lib.makeBinPath runtimeInputs)
-  ];
-} (builtins.replaceStrings (lib.attrNames replace) (lib.attrValues replace) (if builtins.isPath source then builtins.readFile source else source))
+pkgs.writers.writePython3Bin name
+  {
+    inherit libraries;
+    flakeIgnore = [ "E501" ];
+    makeWrapperArgs = lib.optionals (runtimeInputs != [ ]) [
+      "--prefix"
+      "PATH"
+      ":"
+      (lib.makeBinPath runtimeInputs)
+    ];
+  }
+  (
+    builtins.replaceStrings (lib.attrNames replace) (lib.attrValues replace) (
+      if builtins.isPath source then builtins.readFile source else source
+    )
+  )

@@ -42,9 +42,9 @@ let
   # other nvim/ config files (colours, lualine theme) and the plugin pack
   # (plugins + treesitter grammars), copied as real files so the guest can
   # read them without /nix/store.
-  nvimConfigFiles = lib.filter (f: f.enable && lib.hasPrefix "nvim/" f.target && f.target != "nvim/init.lua") (
-    lib.attrValues hm.xdg.configFile
-  );
+  nvimConfigFiles = lib.filter (
+    f: f.enable && lib.hasPrefix "nvim/" f.target && f.target != "nvim/init.lua"
+  ) (lib.attrValues hm.xdg.configFile);
   nvimInit = pkgs.writeText "init.lua" hm.programs.neovim.initLua;
   nvimPack = hm.xdg.dataFile."nvim/site/pack/hm".source;
 
@@ -78,11 +78,11 @@ let
     shopt -s ${toString hmBash.shellOptions}
 
     ${lib.concatStrings (
-      lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg (toString v)}\n") hmBash.sessionVariables
+      lib.mapAttrsToList (
+        k: v: "export ${k}=${lib.escapeShellArg (toString v)}\n"
+      ) hmBash.sessionVariables
     )}
-    ${lib.concatStrings (
-      lib.mapAttrsToList (k: v: "alias ${k}=${lib.escapeShellArg v}\n") kaliAliases
-    )}
+    ${lib.concatStrings (lib.mapAttrsToList (k: v: "alias ${k}=${lib.escapeShellArg v}\n") kaliAliases)}
     [ -r /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
     eval "$(dircolors -b)"
 
@@ -103,9 +103,10 @@ let
   # Run inside Kali: installs i3 and the tools the config uses, then copies
   # everything into place (existing files are kept as *.bak).
   kaliInstall = pkgs.writeScript "install.py" (
-    builtins.replaceStrings [ ''HOST_SHARE = "the host's share"'' ] [ ''HOST_SHARE = "${kaliRwShare}"'' ] (
-      builtins.readFile ../../vms/kali-install.py
-    )
+    builtins.replaceStrings
+      [ ''HOST_SHARE = "the host's share"'' ]
+      [ ''HOST_SHARE = "${kaliRwShare}"'' ]
+      (builtins.readFile ../../vms/kali-install.py)
   );
 
   # Everything install.py copies, put into the read-write share on boot.
@@ -238,7 +239,9 @@ let
   policyXml = lib.mapAttrs (p: xml: pkgs.writeText "harmonia-${p}.xml" xml) firewall.policyFilters;
   vmFilterXml =
     name: vm: policy:
-    pkgs.writeText "harmonia-vm-${name}-${policy}.xml" (firewall.vmFilter name (vm.firewall // { inherit policy; }));
+    pkgs.writeText "harmonia-vm-${name}-${policy}.xml" (
+      firewall.vmFilter name (vm.firewall // { inherit policy; })
+    );
 
   # What vms/harmonia-vms.py needs to know about this build.
   vmsConfig = pkgs.writeText "harmonia-vms.json" (
