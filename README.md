@@ -33,7 +33,8 @@ vms/kali-i3.nix                i3, i3status and caffeine bar for the Kali VM (Al
 vms/firewall.nix               host-enforced VM firewall policies (libvirt nwfilter)
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio/vms, cpu, mem, wireguard, caffeine, volume, battery, clock)
+  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio/vms, displays, cpu, mem, gpu, network, wireguard, caffeine, volume, battery, clock + calendar)
+  eww/                         the bar's longer scripts (displays, network, gpu, volume, clock, calendar)
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
   secrets.nix                  gpg, gpg-agent, pass, ykman, bw, bao
@@ -95,6 +96,8 @@ Run it as your normal user: `bash scripts/ubuntu-install.sh`.
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
 - [VMs and containers](docs/vms-and-containers.md): libvirt, the Kali and Ubuntu VMs, their firewall, podman
+- [The bar](docs/bar.md): what each part of the eww bar shows, its panels, displays and resolutions
+- [Calendar](docs/calendar.md): the clock's calendar, time zones and CalDAV sync with vdirsyncer
 - [WireGuard](docs/wireguard.md): importing tunnels and the bar panel
 - [Secrets](docs/secrets.md): gpg, pass, YubiKey, Bitwarden, OpenBao and `secrets-backup`
 - [Theme](docs/theme.md): Miami Wind colours, Tulasi icons, the wallpaper
