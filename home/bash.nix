@@ -1,4 +1,4 @@
-{ pkgs, palette, ... }:
+{ pkgs, palette, config, ... }:
 let
   p = palette;
 in
@@ -38,7 +38,7 @@ in
     initExtra = import ./bash-prompt.nix {
       inherit palette;
       gitPrompt = "${pkgs.git}/share/bash-completion/completions/git-prompt.sh";
-      gpg = "${pkgs.gpg2}";
+      gpg = config.programs.gpg.package;
     };
   };
   # vi editing mode for bash (and everything else that uses readline).
