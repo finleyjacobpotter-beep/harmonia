@@ -1,24 +1,26 @@
 # Local secrets: gpg + gpg-agent, pass, ykman, Bitwarden CLI and the OpenBao
-# CLI, plus the `secrets-backup` command (home/secrets-backup.sh), which bundles pass,
+# CLI, plus the `secrets-backup` command (home/secrets-backup.py), which bundles pass,
 # Bitwarden and gpg keys into one passphrase-encrypted tarball. See docs/secrets.md.
-{ pkgs, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
+let
+  pyScript = import ../lib/python-script.nix { inherit pkgs lib; };
+in
 {
   home.packages = with pkgs; [
     yubikey-manager # ykman
     bitwarden-cli # bw
     openbao # bao
-    (writeShellApplication {
-      name = "secrets-backup";
+    (pyScript "secrets-backup" {
       runtimeInputs = [
         gnupg
         bitwarden-cli
-        jq
-        gnutar
-        gzip
-        coreutils
       ];
-      text = builtins.readFile ./secrets-backup.sh;
-    })
+    } ./secrets-backup.py)
   ];
 
   programs.gpg = {

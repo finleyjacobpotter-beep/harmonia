@@ -31,22 +31,25 @@ modules/nixos/
   wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
 vms/kali-i3.nix                i3, i3status and caffeine bar for the Kali VM (Alt modifier)
 vms/firewall.nix               host-enforced VM firewall policies (libvirt nwfilter)
+vms/harmonia-vms.py            harmonia-vms, harmonia-vm-fetch and harmonia-vm-firewall
+vms/kali-install.py            run inside the Kali VM to set up i3, neovim and bash
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
   eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio/vms, displays, cpu, mem, gpu, network, wireguard, caffeine, volume, battery, clock + calendar)
-  eww/                         the bar's longer scripts (displays, network, gpu, volume, clock, calendar)
+  eww/                         the bar's scripts, in Python (displays, network, gpu, volume, clock, calendar, …)
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
   secrets.nix                  gpg, gpg-agent, pass, ykman, bw, bao
-  secrets-backup.sh            the `secrets-backup` command
+  secrets-backup.py            the `secrets-backup` command
   flatpak-theme.nix            the desktop GTK theme copied into the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
+lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          the rest of the documentation (linked below)
 scripts/install.py             base NixOS install from the minimal ISO (docs/install.md)
-scripts/ubuntu-install.sh      Ubuntu: Blender + Blender MCP, Godot 4 + Godot MCP, Tau, Caffeine
+scripts/ubuntu-install.py      Ubuntu: Blender + Blender MCP, Godot 4 + Godot MCP, Tau, Caffeine
 ```
 
 ## Install
@@ -77,13 +80,13 @@ walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
 
 ### Ubuntu
 
-[`scripts/ubuntu-install.sh`](scripts/ubuntu-install.sh) is separate from the
+[`scripts/ubuntu-install.py`](scripts/ubuntu-install.py) is separate from the
 NixOS setup: on an Ubuntu GNOME desktop it installs Blender with
 [Blender MCP](https://github.com/ahujasid/blender-mcp), Godot 4 with
 [Godot MCP](https://github.com/Coding-Solo/godot-mcp), Hugging Face's
 [Tau](https://github.com/huggingface/tau) coding agent (via pipx), and the
 [Caffeine](https://extensions.gnome.org/extension/517/caffeine/) extension.
-Run it as your normal user: `bash scripts/ubuntu-install.sh`.
+Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 
 ## Documentation
 

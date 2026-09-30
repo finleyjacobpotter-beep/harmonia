@@ -107,7 +107,7 @@ in
 
       startup = [
         # Reapplies the resolutions picked on the bar and opens the bar on the
-        # primary display (home/eww/display.sh); `eww open` starts the daemon.
+        # primary display (home/eww/display.py); `eww open` starts the daemon.
         { command = "eww-display start"; }
       ];
 
