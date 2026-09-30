@@ -42,6 +42,7 @@ list() {
       n = split(old, lines, "\n")
       for (i = 1; i <= n; i++) { split(lines[i], f, " "); rx[f[1]] = f[2]; tx[f[1]] = f[3] }
       dt = (last > 0 && now > last) ? (now - last) / 1e9 : 0
+      split("bps kbps Mbps Gbps", unit, " ")
     }
     {
       down = 0; up = 0
@@ -49,14 +50,17 @@ list() {
         if ($2 >= rx[$1]) down = ($2 - rx[$1]) / dt
         if ($3 >= tx[$1]) up = ($3 - tx[$1]) / dt
       }
-      printf "%s\t%s\t%s\t%s\t%s\n", $1, $4, $5, mbps(down), mbps(up)
+      printf "%s\t%s\t%s\t%s\t%s\n", $1, $4, $5, rate(down), rate(up)
     }
-    # Megabits per second, capped and padded to a fixed width ("   0.00" to
-    # "9999.99") so the bar stays put as rates change.
-    function mbps(bytes,  m) {
-      m = bytes * 8 / 1e6
-      if (m > 9999.99) m = 9999.99
-      return sprintf("%7.2f Mbps", m)
+    # Bits per second, scaled to bps, kbps, Mbps or Gbps and padded to a
+    # fixed width: the number is "0.0" to "999.9", padded to five characters
+    # ("  0.0 bps " to "999.9 Gbps") so the bar stays put.
+    function rate(bytes,  v, i) {
+      v = bytes * 8
+      i = 1
+      while (v >= 999.95 && i < 4) { v /= 1000; i++ }
+      if (v > 999.9) v = 999.9
+      return sprintf("%5.1f %-4s", v, unit[i])
     }' <<<"$cur" |
     jq -Rsc --arg shown "$shown" --arg choice "$choice" --arg default "$default" --argjson addrs "$addrs" '
       ($addrs | map({key: .ifname, value: ([.addr_info[]? | .local][0] // "")}) | from_entries) as $ip
@@ -66,7 +70,7 @@ list() {
             address: ($ip[.[0]] // ""), shown: (.[0] == $shown), default: (.[0] == $default)}] as $ifs
       | {auto: ($choice == "auto"), default: $default,
          shown: (($ifs | map(select(.shown)) | .[0])
-           // {name: "offline", state: "down", wireless: false, down: "   0.00 Mbps", up: "   0.00 Mbps", address: ""}),
+           // {name: "offline", state: "down", wireless: false, down: "  0.0 bps ", up: "  0.0 bps ", address: ""}),
          ifaces: $ifs}'
 }
 
