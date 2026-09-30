@@ -17,6 +17,9 @@ custom, and drag the curve points. Apply, and the daemon keeps the curve across 
 RX 7000/9000 cards only take a custom curve with amdgpu overdrive enabled,
 which `hardware.amdgpu.overdrive.enable` does (it needs one reboot).
 
+`rocm-smi` prints the GPU's temperature, fan speed, clocks, power draw and
+VRAM use from a terminal (`watch rocm-smi` to follow it live).
+
 To pin the curve in the flake, copy `/etc/lact/config.yaml` into
 `services.lact.settings` in `fans.nix` (YAML keys become Nix attributes) and
 rebuild. The GUI can't change it after that; edit `fans.nix` instead.

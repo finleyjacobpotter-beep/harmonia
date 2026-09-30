@@ -136,3 +136,4 @@ Neovim plugins:
 | LACT daemon (nixpkgs) | 0.10.1 |
 | LACT GUI (Flathub `io.github.ilya_zlobintsev.LACT`) | follows Flathub (0.10.1 on 2026-09-29) |
 | lm_sensors | 3.6.2 |
+| rocm-smi | 7.2.3 |
