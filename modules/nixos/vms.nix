@@ -1,4 +1,5 @@
-# Two libvirt VMs on qemu:///system, both with a plain VGA adapter and a VNC
+# Two libvirt VMs on qemu:///system, both booting UEFI (OVMF, secure boot
+# off) with an emulated TPM 2.0 (swtpm), a plain VGA adapter and a VNC
 # display on localhost (open them in virt-manager, or point any VNC viewer at
 # 127.0.0.1 and the VM's vncPort below):
 #
@@ -247,6 +248,9 @@ let
             <target type="virtio" name="org.qemu.guest_agent.0"/>
           </channel>
           <input type="tablet" bus="usb"/>
+          <tpm model="tpm-crb">
+            <backend type="emulator" version="2.0"/>
+          </tpm>
           <rng model="virtio">
             <backend model="random">/dev/urandom</backend>
           </rng>

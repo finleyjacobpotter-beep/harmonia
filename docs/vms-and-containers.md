@@ -5,10 +5,11 @@ root. Containers use rootless **podman** (with `podman-compose` and `buildah`);
 there is no Docker daemon and no `docker` alias.
 
 Two VMs are defined on `qemu:///system` at boot (`modules/nixos/vms.nix`), both
-with UEFI, a plain VGA adapter and a VNC display that listens on localhost
-only. virt-manager opens it as usual, or point any VNC viewer at the port below
-(from another machine, tunnel it: `ssh -L 5900:127.0.0.1:5900 host`). There is
-no 3D acceleration and no guest audio.
+booting UEFI (secure boot off) with an emulated TPM 2.0 (swtpm), a plain VGA
+adapter and a VNC display that listens on localhost only. virt-manager opens it
+as usual, or point any VNC viewer at the port below (from another machine,
+tunnel it: `ssh -L 5900:127.0.0.1:5900 host`). There is no 3D acceleration and
+no guest audio.
 
 | VM | Desktop | RAM / vCPUs / disk | VNC |
 | --- | --- | --- | --- |
