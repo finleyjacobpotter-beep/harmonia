@@ -56,3 +56,6 @@ While LM Studio is running, a robot icon sits on the eww bar. It's grey
 until a model is loaded, then pink with the model's name, and hovering it
 lists every loaded model. This reads LM Studio's API on `localhost:1234`, so
 the name only shows while the local server (*Developer* tab) is running.
+
+Right-click the icon for a small menu with **Close LM Studio**, which quits
+the app (`flatpak kill ai.lmstudio.lm-studio`) and unloads its models.

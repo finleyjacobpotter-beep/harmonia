@@ -289,13 +289,15 @@ in
           (label :class "icon" :text "󰊗"))
         (box :class "module steam" :visible {activity.steam} :tooltip "Steam is running"
           (label :class "icon" :text "󰓓"))
-        (box :class "module lmstudio ''${activity.lmstudio.serving ? "serving" : ""}"
-          :visible {activity.lmstudio.running} :orientation "h" :space-evenly false :spacing 6
-          :tooltip {activity.lmstudio.serving
-            ? "LM Studio is serving: ''${activity.lmstudio.list}"
-            : "LM Studio is running, no model loaded"}
-          (label :class "icon" :text "󰚩")
-          (label :visible {activity.lmstudio.serving} :limit-width 24 :text "''${activity.lmstudio.first}"))
+        (eventbox :visible {activity.lmstudio.running}
+          :onrightclick "${pkgs.eww}/bin/eww open --toggle lms-menu"
+          (box :class "module lmstudio ''${activity.lmstudio.serving ? "serving" : ""}"
+            :orientation "h" :space-evenly false :spacing 6
+            :tooltip {activity.lmstudio.serving
+              ? "LM Studio is serving: ''${activity.lmstudio.list} (right-click for options)"
+              : "LM Studio is running, no model loaded (right-click for options)"}
+            (label :class "icon" :text "󰚩")
+            (label :visible {activity.lmstudio.serving} :limit-width 24 :text "''${activity.lmstudio.first}")))
         (box :class "module vms" :visible {activity.vms.count > 0} :orientation "h" :space-evenly false :spacing 6
           :tooltip "VMs running: ''${activity.vms.list}"
           (label :class "icon" :text "󰒋")
@@ -342,6 +344,21 @@ in
             (button :class "wg-toggle" :valign "center"
               :onclick "${wireguard}/bin/eww-wg toggle \"''${t.name}\""
               "''${t.active ? "Disconnect" : "Connect"}")))))
+
+    ; Right-click menu for the LM Studio icon.
+    (defwidget lms-menu []
+      (box :class "menu" :orientation "v" :space-evenly false :spacing 4
+        (button :class "menu-item danger"
+          :onclick "${pkgs.eww}/bin/eww close lms-menu; ${pkgs.flatpak}/bin/flatpak kill ai.lmstudio.lm-studio"
+          "Close LM Studio")
+        (button :class "menu-item" :onclick "${pkgs.eww}/bin/eww close lms-menu" "Cancel")))
+
+    (defwindow lms-menu
+      :monitor 0
+      :stacking "overlay"
+      :namespace "eww-menu"
+      :geometry (geometry :x "8px" :y "34px" :anchor "top right")
+      (lms-menu))
 
     (defwindow wg
       :monitor 0
@@ -434,6 +451,18 @@ in
       font-weight: bold;
       &.caps { background-color: $yellow; }
       &.num { background-color: $purple; }
+    }
+
+    .menu {
+      background-color: $bg;
+      color: $fg;
+      border: 2px solid $surface;
+      padding: 6px;
+      .menu-item {
+        padding: 4px 12px;
+        &:hover { background-color: $surface; }
+        &.danger:hover { color: $bg; background-color: $red; }
+      }
     }
 
     .wg-panel {
