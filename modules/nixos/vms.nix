@@ -1,5 +1,7 @@
-# Two libvirt VMs on qemu:///system, both with a virtio GPU (virgl 3D over a
-# local SPICE display, opened with virt-manager):
+# Two libvirt VMs on qemu:///system, both booting UEFI (OVMF, secure boot
+# off) with an emulated TPM 2.0 (swtpm), a plain VGA adapter and a VNC
+# display on localhost (open them in virt-manager, or point any VNC viewer at
+# 127.0.0.1 and the VM's vncPort below):
 #
 #   harmonia-kali    Kali Linux, installed with the i3 desktop. Has a
 #                    read-write virtiofs share with the host (tag "shared",
@@ -168,6 +170,7 @@ let
     kali = {
       memory = 4096;
       vcpus = 4;
+      vncPort = 5900;
       disk = "60G";
       iso = {
         name = "kali-linux-2026.2-installer-amd64.iso";
@@ -185,6 +188,7 @@ let
     ubuntu = {
       memory = 6144;
       vcpus = 4;
+      vncPort = 5901;
       disk = "60G";
       iso = {
         name = "ubuntu-26.04.1-desktop-amd64.iso";
@@ -234,24 +238,19 @@ let
             <model type="virtio"/>
             <filterref filter="harmonia-vm-${name}"/>
           </interface>
-          <graphics type="spice">
-            <listen type="none"/>
-            <gl enable="yes"/>
+          <graphics type="vnc" port="${toString vm.vncPort}" autoport="no">
+            <listen type="address" address="127.0.0.1"/>
           </graphics>
           <video>
-            <model type="virtio" heads="1" primary="yes">
-              <acceleration accel3d="yes"/>
-            </model>
+            <model type="vga" vram="16384" heads="1" primary="yes"/>
           </video>
-          <channel type="spicevmc">
-            <target type="virtio" name="com.redhat.spice.0"/>
-          </channel>
           <channel type="unix">
             <target type="virtio" name="org.qemu.guest_agent.0"/>
           </channel>
           <input type="tablet" bus="usb"/>
-          <sound model="ich9"/>
-          <audio id="1" type="spice"/>
+          <tpm model="tpm-crb">
+            <backend type="emulator" version="2.0"/>
+          </tpm>
           <rng model="virtio">
             <backend model="random">/dev/urandom</backend>
           </rng>
