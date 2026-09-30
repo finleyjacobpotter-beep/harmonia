@@ -230,6 +230,23 @@ let
     '';
   };
 
+  # Quit Steam the way its own menu does (steam -shutdown), for whichever
+  # install is running: Flathub or native.
+  steamClose = pkgs.writeShellApplication {
+    name = "eww-steam-close";
+    runtimeInputs = with pkgs; [
+      flatpak
+      gnugrep
+    ];
+    text = ''
+      if flatpak ps --columns=application 2>/dev/null | grep -qx com.valvesoftware.Steam; then
+        flatpak run com.valvesoftware.Steam -shutdown
+      elif command -v steam >/dev/null; then
+        steam -shutdown
+      fi
+    '';
+  };
+
   battery = pkgs.writeShellApplication {
     name = "eww-battery";
     text = ''
@@ -287,8 +304,10 @@ in
         (label :class "lock num" :visible {locks.num} :text "NUM")
         (box :class "module gamemode" :visible {activity.gamemode} :tooltip "GameMode is on"
           (label :class "icon" :text "󰊗"))
-        (box :class "module steam" :visible {activity.steam} :tooltip "Steam is running"
-          (label :class "icon" :text "󰓓"))
+        (eventbox :visible {activity.steam}
+          :onrightclick "${pkgs.eww}/bin/eww open --toggle steam-menu"
+          (box :class "module steam" :tooltip "Steam is running (right-click for options)"
+            (label :class "icon" :text "󰓓")))
         (eventbox :visible {activity.lmstudio.running}
           :onrightclick "${pkgs.eww}/bin/eww open --toggle lms-menu"
           (box :class "module lmstudio ''${activity.lmstudio.serving ? "serving" : ""}"
@@ -352,6 +371,21 @@ in
           :onclick "${pkgs.eww}/bin/eww close lms-menu; ${pkgs.flatpak}/bin/flatpak kill ai.lmstudio.lm-studio"
           "Close LM Studio")
         (button :class "menu-item" :onclick "${pkgs.eww}/bin/eww close lms-menu" "Cancel")))
+
+    ; Right-click menu for the Steam icon.
+    (defwidget steam-menu []
+      (box :class "menu" :orientation "v" :space-evenly false :spacing 4
+        (button :class "menu-item danger"
+          :onclick "${pkgs.eww}/bin/eww close steam-menu; ${steamClose}/bin/eww-steam-close"
+          "Close Steam")
+        (button :class "menu-item" :onclick "${pkgs.eww}/bin/eww close steam-menu" "Cancel")))
+
+    (defwindow steam-menu
+      :monitor 0
+      :stacking "overlay"
+      :namespace "eww-menu"
+      :geometry (geometry :x "8px" :y "34px" :anchor "top right")
+      (steam-menu))
 
     (defwindow lms-menu
       :monitor 0
