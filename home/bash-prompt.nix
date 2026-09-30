@@ -1,7 +1,7 @@
 # The Miami Wind bash prompt and less/man colours. Shared by home/bash.nix
 # and the Kali VM's bashrc (modules/nixos/vms.nix), which differ only in
 # where git's prompt helper lives.
-{ palette, gitPrompt }:
+{ palette, gitPrompt, gpg }:
 let
   p = palette;
   # 24-bit colour escape for a palette entry, wrapped for PS1.
@@ -39,6 +39,6 @@ in
   export GPG_TTY="$(tty)"
   gpg-connect-agent /bye
   if [ -z "$SSH_AUTH_SOCK" ]; then
-    export SSH_AUTH_SOCK=$(${config.programs.gpg.package}/bin/gpgconf --list-dirs agent-ssh-socket)
+    export SSH_AUTH_SOCK=$(${gpg}/bin/gpgconf --list-dirs agent-ssh-socket)
   fi
 ''
