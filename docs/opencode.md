@@ -9,13 +9,15 @@ configured by [`home/opencode.nix`](../home/opencode.nix). Start it with
 
 | Provider | Model | Needs |
 | --- | --- | --- |
-| LM Studio (default) | `lmstudio/ornith-small` | LM Studio's local server running (*Developer* tab, `localhost:1234`) with the model loaded |
+| LM Studio (default) | `lmstudio/qwopus3.5-9b-v3` | LM Studio's local server running (*Developer* tab, `localhost:1234`) with the model loaded |
 | Anthropic (Claude) | any `anthropic/...` model | an API key in pass |
 
-`ornith-small` is the API identifier set in LM Studio for
-[`ornith-ai/Ornith-1.5-9B-GGUF`](https://huggingface.co/ornith-ai/Ornith-1.5-9B-GGUF)
-at Q4_K_M. Download that model in LM Studio and keep the identifier, or change
-the key in `home/opencode.nix` to match.
+The model is
+[`Jackrong/Qwopus3.5-9B-v3-GGUF`](https://huggingface.co/Jackrong/Qwopus3.5-9B-v3-GGUF)
+at Q4_K_M. Download it in LM Studio, then check its API identifier (the
+model's settings, or `GET localhost:1234/v1/models`): it must be
+`qwopus3.5-9b-v3`. Set that identifier in LM Studio, or change the key in
+`home/opencode.nix` to match.
 
 ## API keys in pass
 

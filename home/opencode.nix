@@ -31,16 +31,16 @@ let
   config = pkgs.writeText "opencode.json" (
     builtins.toJSON {
       "$schema" = "https://opencode.ai/config.json";
-      model = "lmstudio/ornith-small";
+      model = "lmstudio/qwopus3.5-9b-v3";
       provider = {
         # LM Studio's local server (Developer tab), localhost:1234. The model
-        # key is the API identifier given in LM Studio to
-        # ornith-ai/Ornith-1.5-9B-GGUF (Q4_K_M).
+        # key is LM Studio's API identifier for Jackrong/Qwopus3.5-9B-v3-GGUF
+        # (Q4_K_M).
         lmstudio = {
           npm = "@ai-sdk/openai-compatible";
           name = "LM Studio (local)";
           options.baseURL = "http://127.0.0.1:1234/v1";
-          models.ornith-small.name = "Ornith 1.5 9B (Q4_K_M)";
+          models."qwopus3.5-9b-v3".name = "Qwopus 3.5 9B v3 (Q4_K_M)";
         };
         # The key comes from pass through the launcher below, never from disk.
         anthropic.options.apiKey = "{env:ANTHROPIC_API_KEY}";
