@@ -126,6 +126,9 @@ let
   # Quit Steam the way its own menu does, Flathub or native.
   steamClose = script "eww-steam-close" ./eww/steam-close.py [ pkgs.flatpak ];
 
+  # CPU, memory, disk and network per libvirt VM, for the VM panel.
+  vms = script "eww-vms" ./eww/vms.py [ pkgs.libvirt ];
+
   battery = script "eww-battery" ./eww/battery.py [ ];
 in
 {
@@ -182,6 +185,10 @@ in
     (defpoll activity :interval "5s"
       :initial "{\"gamemode\":false,\"steam\":false,\"lmstudio\":{\"running\":false,\"serving\":false,\"first\":\"\",\"list\":\"\"},\"vms\":{\"count\":0,\"list\":\"\"}}"
       "${activity}/bin/eww-activity")
+    ; Polled only while the VM panel is open (the bar badge sets vms_open).
+    (defvar vms_open false)
+    (defpoll vms :interval "2s" :run-while vms_open :initial "{\"running\":0,\"vms\":[]}"
+      "${vms}/bin/eww-vms")
     (defpoll locks :interval "500ms" :initial "{\"caps\":false,\"num\":false}" "${locks}/bin/eww-locks")
     (defpoll caffeine :interval "10s" "${caffeine}/bin/eww-caffeine")
     (defpoll battery :interval "30s" "${battery}/bin/eww-battery")
@@ -243,10 +250,12 @@ in
           (box :orientation "h" :space-evenly false :spacing 6
             (label :class "icon" :text "󰚩")
             (label :visible {activity.lmstudio.serving} :limit-width 24 :text "''${activity.lmstudio.first}")))
-        (box :class "module vms" :visible {activity.vms.count > 0} :orientation "h" :space-evenly false :spacing 6
-          :tooltip "VMs running: ''${activity.vms.list}"
-          (label :class "icon" :text "󰒋")
-          (label :text "''${activity.vms.count}"))
+        (button :class "module vms" :visible {activity.vms.count > 0}
+          :tooltip "VMs running: ''${activity.vms.list} (click for utilization)"
+          :onclick "${eww} update vms_open=''${!vms_open}; ${menu} vms-menu"
+          (box :orientation "h" :space-evenly false :spacing 6
+            (label :class "icon" :text "󰒋")
+            (label :text "''${activity.vms.count}")))
         ; In its own box: eww adds a for loop's new children at the end of its parent.
         (box :orientation "h" :space-evenly false :spacing 4
           (for o in {displays.outputs}
@@ -372,6 +381,33 @@ in
         :action "Close"
         :onclose "${pkgs.eww}/bin/eww close steam-menu"
         :onaction "${pkgs.eww}/bin/eww close steam-menu; ${steamClose}/bin/eww-steam-close"))
+
+    ; VMs: CPU and memory bars, disk and network rates for each running
+    ; libvirt VM, and the state of the others.
+    (defwidget vm-meter [name value text]
+      (box :orientation "v" :space-evenly false :spacing 2
+        (box :orientation "h" :space-evenly false
+          (label :class "wg-detail" :hexpand true :halign "start" :text name)
+          (label :class "wg-detail" :text text))
+        (progress :class "vm-meter ''${value >= 90 ? "high" : ""}" :orientation "h" :value value)))
+
+    (defwidget vms-panel []
+      (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+        (box :orientation "h" :space-evenly false
+          (label :class "wg-title" :hexpand true :halign "start" :text "VMs")
+          (button :class "wg-close" :onclick "${eww} close vms-menu; ${eww} update vms_open=false" "✕"))
+        (label :class "wg-detail" :visible {arraylength(vms.vms) == 0} :halign "start" :wrap true
+          :text "No VMs defined. See docs/vms-and-containers.md.")
+        (for vm in {vms.vms}
+          (box :class "wg-tunnel ''${vm.running ? "up" : "down"}" :orientation "v" :space-evenly false :spacing 6
+            (box :orientation "h" :space-evenly false
+              (label :class "wg-name" :hexpand true :halign "start" :text "''${vm.running ? "●" : "○"} ''${vm.name}")
+              (label :class "wg-detail" :text "''${vm.state}"))
+            (box :visible {vm.cpu_text != ""} :orientation "v" :space-evenly false :spacing 6
+              (vm-meter :name "CPU" :value {vm.cpu} :text "''${vm.cpu_text}")
+              (vm-meter :name "Memory''${vm.mem_source == "host" ? " (host)" : ""}" :value {vm.mem} :text "''${vm.mem_text}")
+              (label :class "wg-detail" :halign "start" :text "Disk ''${vm.disk_text}")
+              (label :class "wg-detail" :halign "start" :text "Net ''${vm.net_text}"))))))
 
     ; Network: every interface's rates, and which one the bar shows.
     (defwidget net-panel []
@@ -538,6 +574,13 @@ in
       :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
       (display-panel))
 
+    (defwindow vms-menu
+      :monitor 0
+      :stacking "overlay"
+      :namespace "eww-menu"
+      :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
+      (vms-panel))
+
     (defwindow steam-menu
       :monitor 0
       :stacking "overlay"
@@ -629,7 +672,7 @@ in
       &.clock .icon { color: $pink; }
       &.gamemode .icon { color: $green; }
       &.steam .icon { color: $blue; }
-      &.steam, &.lmstudio { &:hover { background-color: $surface; } }
+      &.steam, &.lmstudio, &.vms { &:hover { background-color: $surface; } }
       &.lmstudio .icon { color: $muted; }
       &.lmstudio.serving .icon { color: $pink; }
       &.vms .icon { color: $orange; }
@@ -694,6 +737,12 @@ in
       .cal-dot { font-size: ${toString (p.font.size - 4)}pt; }
       .cal-day-title { color: $cyan; }
       .cal-event { background-color: $bg-alt; padding: 4px 8px; }
+
+      .vm-meter {
+        trough { background-color: $surface; min-height: 6px; min-width: 300px; }
+        progress { background-color: $cyan; min-height: 6px; }
+        &.high progress { background-color: $orange; }
+      }
 
       .power-action { padding: 8px 12px; }
 
