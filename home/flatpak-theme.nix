@@ -17,6 +17,7 @@
 }:
 let
   p = palette;
+  pyScript = import ../lib/python-script.nix { inherit pkgs lib; };
 
   apps = [
     "net.lutris.Lutris"
@@ -40,34 +41,63 @@ let
   gtk3Css = pkgs.writeText "flatpak-gtk3.css" config.gtk.gtk3.extraCss;
   gtk4Css = pkgs.writeText "flatpak-gtk4.css" config.gtk.gtk4.extraCss;
 
-  sync = pkgs.writeShellApplication {
-    name = "flatpak-miami-wind";
-    text = ''
-      # copy <store dir> <dest dir>: real files, recopied only when the
-      # store path changes.
-      copy() {
-        if [ "$(cat "$2/.source" 2>/dev/null || true)" != "$1" ]; then
-          mkdir -p "$(dirname "$2")"
-          tmp=$(mktemp -d "$(dirname "$2")/.copy.XXXXXX")
-          cp -r --no-preserve=mode,ownership "$1/." "$tmp/"
-          echo "$1" > "$tmp/.source"
-          rm -rf "$2"
-          mv "$tmp" "$2"
-        fi
-      }
+  sync = pyScript "flatpak-miami-wind" { } ''
+    """Copy the desktop's GTK theme, icons and cursor into each flatpak app's
+    own data and config dirs (see home/flatpak-theme.nix)."""
 
-      for id in ${lib.escapeShellArgs apps}; do
-        app="$HOME/.var/app/$id"
-        copy ${theme}/share/themes/adw-gtk3-dark "$app/data/themes/adw-gtk3-dark"
-        copy ${tulasi}/share/icons/Tulasi "$app/data/icons/Tulasi"
-        copy ${cursor}/share/icons/Bibata-Modern-Classic "$app/data/icons/Bibata-Modern-Classic"
-        install -Dm644 ${gtkSettings} "$app/config/gtk-3.0/settings.ini"
-        install -Dm644 ${gtk3Css} "$app/config/gtk-3.0/gtk.css"
-        install -Dm644 ${gtkSettings} "$app/config/gtk-4.0/settings.ini"
-        install -Dm644 ${gtk4Css} "$app/config/gtk-4.0/gtk.css"
-      done
-    '';
-  };
+    import os
+    import shutil
+    import tempfile
+    from pathlib import Path
+
+    APPS = [${lib.concatMapStringsSep ", " (a: ''"${a}"'') apps}]
+
+
+    def install(src: str, dest: Path) -> None:
+        """A real, writable copy (install -Dm644), replacing whatever is there."""
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if dest.is_symlink() or dest.exists():
+            dest.unlink()
+        shutil.copyfile(src, dest)
+        dest.chmod(0o644)
+
+
+    def copy_tree(src: Path, dest: Path) -> None:
+        """cp -r --no-preserve=mode,ownership: links stay links, the rest is writable."""
+        for root, dirs, files in os.walk(src):
+            target = dest / Path(root).relative_to(src)
+            target.mkdir(parents=True, exist_ok=True)
+            for name in dirs + files:
+                path = Path(root, name)
+                if path.is_symlink():
+                    (target / name).symlink_to(os.readlink(path))
+                elif path.is_file():
+                    shutil.copyfile(path, target / name)
+
+
+    def copy(src: str, dest: Path) -> None:
+        """Real files, recopied only when the store path changes."""
+        marker = dest / ".source"
+        if marker.is_file() and marker.read_text().strip() == src:
+            return
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = Path(tempfile.mkdtemp(prefix=".copy.", dir=dest.parent))
+        copy_tree(Path(src), tmp)
+        (tmp / ".source").write_text(src + "\n")
+        shutil.rmtree(dest, ignore_errors=True)
+        tmp.rename(dest)
+
+
+    for app_id in APPS:
+        app = Path.home() / ".var/app" / app_id
+        copy("${theme}/share/themes/adw-gtk3-dark", app / "data/themes/adw-gtk3-dark")
+        copy("${tulasi}/share/icons/Tulasi", app / "data/icons/Tulasi")
+        copy("${cursor}/share/icons/Bibata-Modern-Classic", app / "data/icons/Bibata-Modern-Classic")
+        install("${gtkSettings}", app / "config/gtk-3.0/settings.ini")
+        install("${gtk3Css}", app / "config/gtk-3.0/gtk.css")
+        install("${gtkSettings}", app / "config/gtk-4.0/settings.ini")
+        install("${gtk4Css}", app / "config/gtk-4.0/gtk.css")
+  '';
 in
 {
   home.packages = [ sync ];
