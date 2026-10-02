@@ -6,8 +6,9 @@ the button again closes it too. Panels open on the primary display.
 
 | On the bar | Click |
 |---|---|
+|  logo (top left) | opens the session panel: **Lock** (swaylock), **Log out** (exits sway) and **Power off**. `Super+Shift+e` has the same actions from the keyboard, plus suspend and reboot |
 | **CAPS** / **NUM** | shown while Caps Lock or Num Lock is on |
-| GameMode, Steam, LM Studio, VMs | shown while running; Steam and LM Studio open a panel with **Close** ([lmstudio.md](lmstudio.md)) |
+| GameMode, Steam, LM Studio, VMs | shown while running; Steam and LM Studio open a panel with **Close** ([lmstudio.md](lmstudio.md)); VMs opens the VM panel (below) |
 | 󰍹 **2** | how many displays there are; opens the display settings window (below) |
 | CPU, memory | |
 | 󰢮 GPU | load and temperature from `rocm-smi`; the tooltip adds VRAM use |
@@ -55,3 +56,22 @@ returns.
 has no primary display, so this only decides where the bar goes; the
 resolutions and positions are ordinary `swaymsg output` settings, and anything set in
 `home/sway.nix` still applies first.
+
+## VMs
+
+The 󰒋 badge shows how many libvirt VMs are running. Clicking it opens a
+panel with every VM on `qemu:///system`, running ones first. Each running
+VM shows:
+
+- **CPU**: how busy its vCPUs are, where 100% means all of them.
+- **Memory**: what the guest itself reports as in use, out of what it can
+  see. The VMs in `modules/nixos/vms.nix` report this every 5 seconds
+  through their balloon device. A VM that doesn't (no balloon driver, or
+  defined elsewhere) shows **Memory (host)** instead: how much of its RAM
+  the host has actually handed it.
+- **Disk** read and write rates, and **Net** download and upload rates,
+  summed over its disks and interfaces.
+
+The panel refreshes every 2 seconds, and only while it is open. Rates are
+the change since the previous refresh, so the first refresh after a VM
+starts shows `…`.

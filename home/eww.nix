@@ -43,6 +43,9 @@ let
     pkgs.eww
   ];
 
+  # CPU model, temperature and load average for the CPU tooltip.
+  cpu = script "eww-cpu" ./eww/cpu.py [ ];
+
   # GPU load, temperature and VRAM from rocm-smi (modules/nixos/fans.nix).
   gpu = script "eww-gpu" ./eww/gpu.py [ pkgs.rocmPackages.rocm-smi ];
 
@@ -170,6 +173,9 @@ let
   # Quit Steam the way its own menu does, Flathub or native.
   steamClose = script "eww-steam-close" ./eww/steam-close.py [ pkgs.flatpak ];
 
+  # CPU, memory, disk and network per libvirt VM, for the VM panel.
+  vms = script "eww-vms" ./eww/vms.py [ pkgs.libvirt ];
+
   battery = script "eww-battery" ./eww/battery.py [ ];
 in
 {
@@ -224,6 +230,7 @@ in
     (deflisten mode :initial "{\"name\":\"default\",\"hint\":\"\"}" "${mode}/bin/eww-sway-mode")
     (defpoll volume :interval "2s" :initial "{\"pct\":0,\"muted\":false,\"sink\":\"\",\"text\":\"\"}"
       "${volume}/bin/eww-volume")
+    (defpoll cpuinfo :interval "5s" :initial "{\"model\":\"\",\"temp\":\"\",\"load\":\"\"}" "${cpu}/bin/eww-cpu")
     (defpoll gpu :interval "3s" :initial "{\"ok\":false,\"use\":0,\"temp\":0,\"vram\":0,\"vram_text\":\"\",\"text\":\"\"}"
       "${gpu}/bin/eww-gpu")
     (defpoll net :interval "2s"
@@ -234,6 +241,10 @@ in
     (defpoll activity :interval "5s"
       :initial "{\"gamemode\":false,\"steam\":false,\"lmstudio\":{\"running\":false,\"serving\":false,\"first\":\"\",\"list\":\"\"},\"vms\":{\"count\":0,\"list\":\"\"}}"
       "${activity}/bin/eww-activity")
+    ; Polled only while the VM panel is open (the bar badge sets vms_open).
+    (defvar vms_open false)
+    (defpoll vms :interval "2s" :run-while vms_open :initial "{\"running\":0,\"vms\":[]}"
+      "${vms}/bin/eww-vms")
     (defpoll locks :interval "500ms" :initial "{\"caps\":false,\"num\":false}" "${locks}/bin/eww-locks")
     (defpoll caffeine :interval "10s" "${caffeine}/bin/eww-caffeine")
     (defpoll battery :interval "30s" "${battery}/bin/eww-battery")
@@ -253,7 +264,9 @@ in
 
     (defwidget left []
       (box :orientation "h" :space-evenly false :halign "start" :spacing 12
-        (label :class "logo" :text "")
+        (button :class "logo-button" :tooltip "Lock, log out or power off"
+          :onclick "${menu} power-menu"
+          (label :class "logo" :text ""))
         (workspaces)
         (box :class "mode" :visible {mode.name != "default"} :orientation "h" :space-evenly false :spacing 8
           (label :class "mode-name" :text "''${mode.name}")
@@ -262,15 +275,16 @@ in
     (defwidget center []
       (label :class "title" :limit-width 80 :text title))
 
-    (defwidget module [icon text ?class ?visible]
-      (box :class "module ''${class}" :visible {visible ?: true} :orientation "h" :space-evenly false :spacing 6
+    (defwidget module [icon text ?class ?visible ?tooltip]
+      (box :class "module ''${class}" :visible {visible ?: true} :tooltip {tooltip ?: ""}
+        :orientation "h" :space-evenly false :spacing 6
         (label :class "icon" :text icon)
         ; unindent would strip the padding that keeps widths fixed.
         (label :unindent false :text text)))
 
     ; A percentage padded to "100%" so the bar doesn't shift (the font is monospace).
-    (defwidget module-pct [icon value ?class]
-      (module :class class :icon icon
+    (defwidget module-pct [icon value ?class ?tooltip]
+      (module :class class :icon icon :tooltip tooltip
         :text "''${value < 10 ? "  " : (value < 100 ? " " : "")}''${value}%"))
 
     (defwidget right []
@@ -292,18 +306,23 @@ in
           (box :orientation "h" :space-evenly false :spacing 6
             (label :class "icon" :text "󰚩")
             (label :visible {activity.lmstudio.serving} :limit-width 24 :text "''${activity.lmstudio.first}")))
-        (box :class "module vms" :visible {activity.vms.count > 0} :orientation "h" :space-evenly false :spacing 6
-          :tooltip "VMs running: ''${activity.vms.list}"
-          (label :class "icon" :text "󰒋")
-          (label :text "''${activity.vms.count}"))
+        (button :class "module vms" :visible {activity.vms.count > 0}
+          :tooltip "VMs running: ''${activity.vms.list} (click for utilization)"
+          :onclick "${eww} update vms_open=''${!vms_open}; ${menu} vms-menu"
+          (box :orientation "h" :space-evenly false :spacing 6
+            (label :class "icon" :text "󰒋")
+            (label :text "''${activity.vms.count}")))
         (button :class "module display"
           :tooltip "''${arraylength(displays.outputs)} display''${arraylength(displays.outputs) == 1 ? "" : "s"}, primary ''${displays.primary}. Click for display settings"
           :onclick "${displaySettings}/bin/display-settings --toggle"
           (box :orientation "h" :space-evenly false :spacing 4
             (label :class "icon" :text "󰍹")
             (label :text "''${arraylength(displays.outputs)}")))
-        (module-pct :class "cpu" :icon "" :value {round(EWW_CPU.avg, 0)})
-        (module-pct :class "mem" :icon "" :value {round(EWW_RAM.used_mem_perc, 0)})
+        (module-pct :class "cpu" :icon "" :value {round(EWW_CPU.avg, 0)}
+          :tooltip "CPU ''${round(EWW_CPU.avg, 0)}%''${cpuinfo.temp} · ''${arraylength(EWW_CPU.cores)} threads · ''${round(EWW_CPU.cores[0].freq / 1000, 1)} GHz · load ''${cpuinfo.load}
+''${cpuinfo.model}")
+        (module-pct :class "mem" :icon "" :value {round(EWW_RAM.used_mem_perc, 0)}
+          :tooltip "RAM ''${round(EWW_RAM.used_mem / 1073741824, 1)}/''${round(EWW_RAM.total_mem / 1073741824, 1)} GiB (''${round(EWW_RAM.used_mem_perc, 0)}%) · ''${round(EWW_RAM.available_mem / 1073741824, 1)} GiB available · swap ''${round((EWW_RAM.total_swap - EWW_RAM.free_swap) / 1073741824, 1)}/''${round(EWW_RAM.total_swap / 1073741824, 1)} GiB")
         (box :class "module gpu" :visible {gpu.ok} :orientation "h" :space-evenly false :spacing 6
           :tooltip "GPU ''${gpu.use}% · ''${gpu.temp}°C · VRAM ''${gpu.vram_text} (''${gpu.vram}%)"
           (label :class "icon" :text "󰢮")
@@ -366,6 +385,22 @@ in
               :onclick "${wireguard}/bin/eww-wg toggle \"''${t.name}\""
               "''${t.active ? "Disconnect" : "Connect"}")))))
 
+    ; Session: opened by the logo at the top left.
+    (defwidget power-action [icon name onclick]
+      (button :class "wg-toggle power-action" :onclick "${eww} close power-menu; ''${onclick}"
+        (box :orientation "h" :space-evenly false :spacing 10
+          (label :class "icon" :text icon)
+          (label :halign "start" :text name))))
+
+    (defwidget power-panel []
+      (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+        (box :orientation "h" :space-evenly false
+          (label :class "wg-title" :hexpand true :halign "start" :text "Session")
+          (button :class "wg-close" :onclick "${eww} close power-menu" "✕"))
+        (power-action :icon "󰌾" :name "Lock" :onclick "${pkgs.swaylock}/bin/swaylock -f")
+        (power-action :icon "󰍃" :name "Log out" :onclick "${pkgs.sway}/bin/swaymsg exit")
+        (power-action :icon "󰐥" :name "Power off" :onclick "${pkgs.systemd}/bin/systemctl poweroff")))
+
     ; Panels opened by the Steam and LM Studio buttons, laid out like the
     ; WireGuard panel.
     (defwidget app-panel [title name status action onclose onaction]
@@ -398,6 +433,33 @@ in
         :action "Close"
         :onclose "${pkgs.eww}/bin/eww close steam-menu"
         :onaction "${pkgs.eww}/bin/eww close steam-menu; ${steamClose}/bin/eww-steam-close"))
+
+    ; VMs: CPU and memory bars, disk and network rates for each running
+    ; libvirt VM, and the state of the others.
+    (defwidget vm-meter [name value text]
+      (box :orientation "v" :space-evenly false :spacing 2
+        (box :orientation "h" :space-evenly false
+          (label :class "wg-detail" :hexpand true :halign "start" :text name)
+          (label :class "wg-detail" :text text))
+        (progress :class "vm-meter ''${value >= 90 ? "high" : ""}" :orientation "h" :value value)))
+
+    (defwidget vms-panel []
+      (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+        (box :orientation "h" :space-evenly false
+          (label :class "wg-title" :hexpand true :halign "start" :text "VMs")
+          (button :class "wg-close" :onclick "${eww} close vms-menu; ${eww} update vms_open=false" "✕"))
+        (label :class "wg-detail" :visible {arraylength(vms.vms) == 0} :halign "start" :wrap true
+          :text "No VMs defined. See docs/vms-and-containers.md.")
+        (for vm in {vms.vms}
+          (box :class "wg-tunnel ''${vm.running ? "up" : "down"}" :orientation "v" :space-evenly false :spacing 6
+            (box :orientation "h" :space-evenly false
+              (label :class "wg-name" :hexpand true :halign "start" :text "''${vm.running ? "●" : "○"} ''${vm.name}")
+              (label :class "wg-detail" :text "''${vm.state}"))
+            (box :visible {vm.cpu_text != ""} :orientation "v" :space-evenly false :spacing 6
+              (vm-meter :name "CPU" :value {vm.cpu} :text "''${vm.cpu_text}")
+              (vm-meter :name "Memory''${vm.mem_source == "host" ? " (host)" : ""}" :value {vm.mem} :text "''${vm.mem_text}")
+              (label :class "wg-detail" :halign "start" :text "Disk ''${vm.disk_text}")
+              (label :class "wg-detail" :halign "start" :text "Net ''${vm.net_text}"))))))
 
     ; Network: every interface's rates, and which one the bar shows.
     (defwidget net-panel []
@@ -489,6 +551,13 @@ in
             (label :class "wg-detail" :text "''${e.time}")
             (label :hexpand true :halign "start" :limit-width 36 :text "''${e.summary}")))))
 
+    (defwindow power-menu
+      :monitor 0
+      :stacking "overlay"
+      :namespace "eww-menu"
+      :geometry (geometry :x "8px" :y "34px" :width "220px" :anchor "top left")
+      (power-panel))
+
     (defwindow net-menu
       :monitor 0
       :stacking "overlay"
@@ -509,6 +578,13 @@ in
       :namespace "eww-menu"
       :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
       (cal-panel))
+
+    (defwindow vms-menu
+      :monitor 0
+      :stacking "overlay"
+      :namespace "eww-menu"
+      :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
+      (vms-panel))
 
     (defwindow steam-menu
       :monitor 0
@@ -573,6 +649,7 @@ in
       font-size: ${toString (p.font.size + 3)}pt;
       padding: 0 6px;
     }
+    .logo-button:hover .logo { color: $pink; }
 
     .ws {
       padding: 0 8px;
@@ -600,7 +677,7 @@ in
       &.clock .icon { color: $pink; }
       &.gamemode .icon { color: $green; }
       &.steam .icon { color: $blue; }
-      &.steam, &.lmstudio { &:hover { background-color: $surface; } }
+      &.steam, &.lmstudio, &.vms { &:hover { background-color: $surface; } }
       &.lmstudio .icon { color: $muted; }
       &.lmstudio.serving .icon { color: $pink; }
       &.vms .icon { color: $orange; }
@@ -663,6 +740,15 @@ in
       .cal-dot { font-size: ${toString (p.font.size - 4)}pt; }
       .cal-day-title { color: $cyan; }
       .cal-event { background-color: $bg-alt; padding: 4px 8px; }
+
+      .vm-meter {
+        trough { background-color: $surface; min-height: 6px; min-width: 300px; }
+        progress { background-color: $cyan; min-height: 6px; }
+        &.high progress { background-color: $orange; }
+      }
+
+      .power-action { padding: 8px 12px; }
+
     }
   '';
 }
