@@ -43,6 +43,9 @@ let
     pkgs.eww
   ];
 
+  # CPU model, temperature and load average for the CPU tooltip.
+  cpu = script "eww-cpu" ./eww/cpu.py [ ];
+
   # GPU load, temperature and VRAM from rocm-smi (modules/nixos/fans.nix).
   gpu = script "eww-gpu" ./eww/gpu.py [ pkgs.rocmPackages.rocm-smi ];
 
@@ -167,6 +170,7 @@ in
     (deflisten mode :initial "{\"name\":\"default\",\"hint\":\"\"}" "${mode}/bin/eww-sway-mode")
     (defpoll volume :interval "2s" :initial "{\"pct\":0,\"muted\":false,\"sink\":\"\",\"text\":\"\"}"
       "${volume}/bin/eww-volume")
+    (defpoll cpuinfo :interval "5s" :initial "{\"model\":\"\",\"temp\":\"\",\"load\":\"\"}" "${cpu}/bin/eww-cpu")
     (defpoll gpu :interval "3s" :initial "{\"ok\":false,\"use\":0,\"temp\":0,\"vram\":0,\"vram_text\":\"\",\"text\":\"\"}"
       "${gpu}/bin/eww-gpu")
     (defpoll net :interval "2s"
@@ -206,15 +210,16 @@ in
     (defwidget center []
       (label :class "title" :limit-width 80 :text title))
 
-    (defwidget module [icon text ?class ?visible]
-      (box :class "module ''${class}" :visible {visible ?: true} :orientation "h" :space-evenly false :spacing 6
+    (defwidget module [icon text ?class ?visible ?tooltip]
+      (box :class "module ''${class}" :visible {visible ?: true} :tooltip {tooltip ?: ""}
+        :orientation "h" :space-evenly false :spacing 6
         (label :class "icon" :text icon)
         ; unindent would strip the padding that keeps widths fixed.
         (label :unindent false :text text)))
 
     ; A percentage padded to "100%" so the bar doesn't shift (the font is monospace).
-    (defwidget module-pct [icon value ?class]
-      (module :class class :icon icon
+    (defwidget module-pct [icon value ?class ?tooltip]
+      (module :class class :icon icon :tooltip tooltip
         :text "''${value < 10 ? "  " : (value < 100 ? " " : "")}''${value}%"))
 
     (defwidget right []
@@ -250,8 +255,11 @@ in
                 (label :class "icon" :text "󰍹")
                 (label :text "''${o.number}")
                 (label :class "star" :visible {o.primary} :text "󰓎")))))
-        (module-pct :class "cpu" :icon "" :value {round(EWW_CPU.avg, 0)})
-        (module-pct :class "mem" :icon "" :value {round(EWW_RAM.used_mem_perc, 0)})
+        (module-pct :class "cpu" :icon "" :value {round(EWW_CPU.avg, 0)}
+          :tooltip "CPU ''${round(EWW_CPU.avg, 0)}%''${cpuinfo.temp} · ''${arraylength(EWW_CPU.cores)} threads · ''${round(EWW_CPU.cores[0].freq / 1000, 1)} GHz · load ''${cpuinfo.load}
+''${cpuinfo.model}")
+        (module-pct :class "mem" :icon "" :value {round(EWW_RAM.used_mem_perc, 0)}
+          :tooltip "RAM ''${round(EWW_RAM.used_mem / 1073741824, 1)}/''${round(EWW_RAM.total_mem / 1073741824, 1)} GiB (''${round(EWW_RAM.used_mem_perc, 0)}%) · ''${round(EWW_RAM.available_mem / 1073741824, 1)} GiB available · swap ''${round((EWW_RAM.total_swap - EWW_RAM.free_swap) / 1073741824, 1)}/''${round(EWW_RAM.total_swap / 1073741824, 1)} GiB")
         (box :class "module gpu" :visible {gpu.ok} :orientation "h" :space-evenly false :spacing 6
           :tooltip "GPU ''${gpu.use}% · ''${gpu.temp}°C · VRAM ''${gpu.vram_text} (''${gpu.vram}%)"
           (label :class "icon" :text "󰢮")
