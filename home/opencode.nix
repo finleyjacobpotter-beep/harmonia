@@ -34,12 +34,13 @@ let
       model = "lmstudio/ornith-small";
       provider = {
         # LM Studio's local server (Developer tab), localhost:1234. The model
-        # key must match the model's API identifier in LM Studio.
+        # key is the API identifier given in LM Studio to
+        # ornith-ai/Ornith-1.5-9B-GGUF (Q4_K_M).
         lmstudio = {
           npm = "@ai-sdk/openai-compatible";
           name = "LM Studio (local)";
           options.baseURL = "http://127.0.0.1:1234/v1";
-          models.ornith-small.name = "Ornith small";
+          models.ornith-small.name = "Ornith 1.5 9B (Q4_K_M)";
         };
         # The key comes from pass through the launcher below, never from disk.
         anthropic.options.apiKey = "{env:ANTHROPIC_API_KEY}";

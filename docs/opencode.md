@@ -12,10 +12,10 @@ configured by [`home/opencode.nix`](../home/opencode.nix). Start it with
 | LM Studio (default) | `lmstudio/ornith-small` | LM Studio's local server running (*Developer* tab, `localhost:1234`) with the model loaded |
 | Anthropic (Claude) | any `anthropic/...` model | an API key in pass |
 
-The LM Studio model key must match the model's API identifier in LM Studio.
-If LM Studio shows a different identifier (for example `ornith-1.0-9b`),
-either set the identifier to `ornith-small` in LM Studio's model settings or
-change the key in `home/opencode.nix`.
+`ornith-small` is the API identifier set in LM Studio for
+[`ornith-ai/Ornith-1.5-9B-GGUF`](https://huggingface.co/ornith-ai/Ornith-1.5-9B-GGUF)
+at Q4_K_M. Download that model in LM Studio and keep the identifier, or change
+the key in `home/opencode.nix` to match.
 
 ## API keys in pass
 
