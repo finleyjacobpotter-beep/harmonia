@@ -82,7 +82,7 @@ def major(version_output):
 def install_packages():
     step("Installing base packages")
     run("sudo", "apt-get", "update")
-    run("sudo", "apt-get", "install", "-y", "unzip", "pipx")
+    run("sudo", "apt-get", "install", "-y", "curl", "unzip", "jq", "pipx")
 
     # The Godot MCP server runs on Node; older Ubuntu releases ship a Node
     # too old for it, so fall back to the Node snap.
@@ -128,7 +128,7 @@ def install_godot(tmp, arch):
     url = next((a["browser_download_url"] for a in release["assets"] if a["name"] == f"{binary}.zip"), None)
     if not url:
         die(f"no {binary}.zip in Godot release {tag}")
-    print(f"Downloading {url}", flush=True)
+    print(f"Downloading {url}", file=sys.stderr, flush=True)
     archive = tmp / "godot.zip"
     archive.write_bytes(fetch(url))
     with zipfile.ZipFile(archive) as z:

@@ -33,14 +33,14 @@ os.environ["LIBVIRT_DEFAULT_URI"] = "qemu:///system"
 
 
 def die(message: str) -> None:
-    print(f"{COMMAND}: {message}", file=sys.stderr)
+    print(message, file=sys.stderr)
     sys.exit(1)
 
 
 def virsh(*args: str, check: bool = True) -> subprocess.CompletedProcess:
     result = subprocess.run(["virsh", *args], capture_output=True, text=True)
     if check and result.returncode != 0:
-        die(f"virsh {' '.join(args)}: {result.stderr.strip()}")
+        die(f"{COMMAND}: virsh {' '.join(args)}: {result.stderr.strip()}")
     return result
 
 
@@ -102,10 +102,18 @@ def define_all(config: dict) -> None:
             copy_bundle(vm["bundle"], vm["share"], config["username"])
 
 
+def get(url: str) -> urllib.request.addinfourl:
+    try:
+        return urllib.request.urlopen(url)
+    except OSError as e:
+        die(f"{COMMAND}: {url}: {getattr(e, 'reason', e)}")
+        raise
+
+
 def download(url: str, dest: Path) -> str:
     """Download url to dest with a progress line, and return its sha256."""
     digest = hashlib.sha256()
-    with urllib.request.urlopen(url) as response, dest.open("wb") as out:
+    with get(url) as response, dest.open("wb") as out:
         total = int(response.headers.get("Content-Length") or 0)
         done = 0
         while chunk := response.read(1 << 20):
@@ -123,7 +131,6 @@ def fetch(config: dict, names: list[str]) -> None:
     for vm in names or list(config["vms"]):
         if vm not in config["vms"]:
             die(f"unknown VM: {vm} (expected: {' '.join(config['vms'])})")
-    for vm in names or list(config["vms"]):
         iso = config["vms"][vm]["iso"]
         dest = Path(config["imageDir"], iso["name"])
         if dest.exists():
@@ -131,25 +138,20 @@ def fetch(config: dict, names: list[str]) -> None:
             continue
         expected = iso["sha256"]
         if not expected:
-            with urllib.request.urlopen(iso["sums"]) as response:
+            with get(iso["sums"]) as response:
                 sums = response.read().decode()
-            for line in sums.splitlines():
-                fields = line.split()
-                if len(fields) >= 2 and fields[1] in (iso["name"], "*" + iso["name"]):
-                    expected = fields[0]
-                    break
-            else:
-                die(f"{iso['name']} is not listed in {iso['sums']}")
-            print(f"{iso['name']}: no pinned checksum, using {iso['sums']}: {expected}")
+            listed = [f[0] for f in map(str.split, sums.splitlines()) if len(f) >= 2 and f[1] in (iso["name"], "*" + iso["name"])]
+            expected = "\n".join(listed)
+            print(f"{iso['name']}: no pinned checksum, using {iso['sums']}: {expected}", flush=True)
         dest.parent.mkdir(parents=True, exist_ok=True)
         partial = dest.with_name(dest.name + ".part")
-        print(f"{iso['name']}: downloading {iso['url']}")
         actual = download(iso["url"], partial)
+        # Reported like `sha256sum -c`; a bad download is left as .part.
         if actual != expected:
-            partial.unlink()
-            die(f"{iso['name']}: checksum mismatch (expected {expected}, got {actual})")
+            print(f"{partial}: FAILED")
+            die("sha256sum: WARNING: 1 computed checksum did NOT match")
+        print(f"{partial}: OK")
         partial.rename(dest)
-        print(f"{iso['name']}: OK")
 
 
 def firewall(config: dict, args: list[str]) -> None:

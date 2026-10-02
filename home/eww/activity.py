@@ -14,11 +14,13 @@ import urllib.request
 LMSTUDIO_MODELS = "http://127.0.0.1:1234/api/v0/models"
 
 
-def output(*args: str) -> str:
+def output(*args: str, check: bool = False) -> str:
+    """A command's output ("" if it is missing, or with check, if it fails)."""
     try:
-        return subprocess.run(args, capture_output=True, text=True).stdout
+        result = subprocess.run(args, capture_output=True, text=True)
     except OSError:
         return ""
+    return "" if check and result.returncode != 0 else result.stdout
 
 
 def loaded_models() -> list[str]:
@@ -42,7 +44,7 @@ def main() -> None:
     steam = "com.valvesoftware.Steam" in apps or native_steam
     lms = "ai.lmstudio.lm-studio" in apps
     models = loaded_models() if lms else []
-    vms = [line for line in output("virsh", "-c", "qemu:///system", "list", "--name").splitlines() if line]
+    vms = [line for line in output("virsh", "-c", "qemu:///system", "list", "--name", check=True).splitlines() if line]
     print(
         json.dumps(
             {

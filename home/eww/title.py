@@ -23,7 +23,9 @@ def emit() -> None:
     except ValueError:
         tree = {}
     focused = next((node for node in objects(tree) if node.get("focused") is True), {})
-    print((focused.get("name") or "")[:80], flush=True)
+    # The first 80 bytes, as `cut -c1-80` did, without splitting a character.
+    title = (focused.get("name") or "").encode()[:80].decode(errors="ignore")
+    print(title, flush=True)
 
 
 def main() -> None:
