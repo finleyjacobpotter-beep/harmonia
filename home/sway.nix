@@ -107,7 +107,7 @@ in
 
       startup = [
         # Reapplies the resolutions picked on the bar and opens the bar on the
-        # primary display (home/eww/display.sh); `eww open` starts the daemon.
+        # primary display (home/eww/display.py); `eww open` starts the daemon.
         { command = "eww-display start"; }
       ];
 
@@ -261,6 +261,7 @@ in
     extraConfig = ''
       for_window [app_id="pavucontrol"] floating enable
       for_window [app_id="blueman-manager"] floating enable
+      for_window [app_id="harmonia.display-settings"] floating enable, move position center
       for_window [app_id="^(btop|pulsemixer|bluetuith|nmtui)$"] floating enable, resize set 60 ppt 60 ppt, move position center
       for_window [app_id="app.zen_browser.zen" title="^Picture-in-Picture$"] floating enable, sticky enable
       for_window [class=".*"] inhibit_idle fullscreen
