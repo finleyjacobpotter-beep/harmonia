@@ -35,8 +35,8 @@ vms/harmonia-vms.py            harmonia-vms, harmonia-vm-fetch and harmonia-vm-f
 vms/kali-install.py            run inside the Kali VM to set up i3, neovim and bash
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio/vms, displays, cpu, mem, gpu, network, wireguard, caffeine, volume, battery, clock + calendar)
-  eww/                         the bar's scripts, in Python (displays, network, gpu, volume, clock, calendar, …)
+  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio/vms, display settings, cpu, mem, gpu, network, wireguard, caffeine, volume, battery, clock + calendar)
+  eww/                         the bar's scripts, in Python (displays, network, gpu, volume, clock, calendar, …), and the display settings window
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
   secrets.nix                  gpg, gpg-agent, pass, ykman, bw, bao
@@ -99,7 +99,7 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
 - [VMs and containers](docs/vms-and-containers.md): libvirt, the Kali and Ubuntu VMs, their firewall, podman
-- [The bar](docs/bar.md): what each part of the eww bar shows, its panels, displays and resolutions
+- [The bar](docs/bar.md): what each part of the eww bar shows, its panels, and the display settings window
 - [Calendar](docs/calendar.md): the clock's calendar, time zones and CalDAV sync with vdirsyncer
 - [WireGuard](docs/wireguard.md): importing tunnels and the bar panel
 - [Secrets](docs/secrets.md): gpg, pass, YubiKey, Bitwarden, OpenBao and `secrets-backup`

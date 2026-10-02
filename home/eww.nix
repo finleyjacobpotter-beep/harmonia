@@ -80,12 +80,59 @@ let
     cal
   ];
 
-  # One icon per display, its resolution, and which one is primary (has the bar).
+  # Each display's saved resolution and position, and which one is primary
+  # (has the bar).
   display = script "eww-display" ./eww/display.py [
     pkgs.sway
     pkgs.eww
   ];
   menu = "${display}/bin/eww-display menu";
+
+  # The display settings window: layout, resolution, on/off and primary in
+  # one place, opened from the bar's display button (or fuzzel).
+  displaySettings = pyScript "display-settings" {
+    runtimeInputs = [
+      pkgs.sway
+      display
+    ];
+    libraries = [ pkgs.python3Packages.pygobject3 ];
+    wrapperArgs = [
+      "--prefix"
+      "GI_TYPELIB_PATH"
+      ":"
+      (lib.makeSearchPath "lib/girepository-1.0" (
+        map lib.getLib (
+          with pkgs;
+          [
+            gtk3
+            pango
+            gdk-pixbuf
+            atk
+            harfbuzz
+            glib
+            gobject-introspection
+          ]
+        )
+      ))
+      # Image loaders for the GTK theme's icons.
+      "--set-default"
+      "GDK_PIXBUF_MODULE_FILE"
+      "${pkgs.librsvg}/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache"
+    ];
+    replace."COLORS = {\"bg\": \"#181825\", \"surface\": \"#313244\", \"fg\": \"#cdd6f4\", \"muted\": \"#7f849c\", \"pink\": \"#f472b6\", \"cyan\": \"#22d3ee\"}" =
+      "COLORS = json.loads(${
+        builtins.toJSON (
+          builtins.toJSON {
+            bg = p.bgAlt;
+            surface = p.surface;
+            fg = p.fg;
+            muted = p.muted;
+            pink = p.pink;
+            cyan = p.cyan;
+          }
+        )
+      })";
+  } ./eww/display-settings.py;
 
   # Caffeine: stopping swayidle (home/sway.nix) turns off the lock and blank
   # timers until it is started again. The bar button toggles it.
@@ -126,12 +173,22 @@ let
   battery = script "eww-battery" ./eww/battery.py [ ];
 in
 {
-  # eww-display is also run by sway at startup (home/sway.nix).
+  # eww-display is also run by sway at startup (home/sway.nix), and
+  # display-settings from fuzzel (the entry below).
   home.packages = [
     pkgs.eww
     display
+    displaySettings
     pkgs.vdirsyncer
   ];
+
+  xdg.desktopEntries.display-settings = {
+    name = "Displays";
+    comment = "Arrange displays, pick resolutions and the primary display";
+    exec = "display-settings";
+    icon = "preferences-desktop-display";
+    categories = [ "Settings" ];
+  };
 
   # CalDAV sync for the calendar panel: vdirsyncer with your own config in
   # ~/.config/vdirsyncer/config (docs/calendar.md), every 15 minutes. It
@@ -172,8 +229,7 @@ in
     (defpoll net :interval "2s"
       :initial "{\"auto\":true,\"default\":\"\",\"shown\":{\"name\":\"\",\"state\":\"down\",\"wireless\":false,\"down\":\"\",\"up\":\"\",\"address\":\"\"},\"ifaces\":[]}"
       "${net}/bin/eww-net")
-    (deflisten displays :initial "{\"primary\":\"\",\"outputs\":[],\"selected\":[]}" "${display}/bin/eww-display watch")
-    (defvar display_modes_open false)
+    (deflisten displays :initial "{\"primary\":\"\",\"outputs\":[]}" "${display}/bin/eww-display watch")
     (defpoll wg :interval "5s" :initial "{\"active\":0,\"tunnels\":[]}" "${wireguard}/bin/eww-wg")
     (defpoll activity :interval "5s"
       :initial "{\"gamemode\":false,\"steam\":false,\"lmstudio\":{\"running\":false,\"serving\":false,\"first\":\"\",\"list\":\"\"},\"vms\":{\"count\":0,\"list\":\"\"}}"
@@ -240,16 +296,12 @@ in
           :tooltip "VMs running: ''${activity.vms.list}"
           (label :class "icon" :text "󰒋")
           (label :text "''${activity.vms.count}"))
-        ; In its own box: eww adds a for loop's new children at the end of its parent.
-        (box :orientation "h" :space-evenly false :spacing 4
-          (for o in {displays.outputs}
-            (button :class "module display ''${o.primary ? "primary" : ""} ''${o.active ? "" : "off"}"
-              :tooltip "Display ''${o.number}: ''${o.name} ''${o.title}, ''${o.current}''${o.primary ? ", primary (has the bar)" : ""}. Click to change"
-              :onclick "${display}/bin/eww-display select ''${o.name}"
-              (box :orientation "h" :space-evenly false :spacing 4
-                (label :class "icon" :text "󰍹")
-                (label :text "''${o.number}")
-                (label :class "star" :visible {o.primary} :text "󰓎")))))
+        (button :class "module display"
+          :tooltip "''${arraylength(displays.outputs)} display''${arraylength(displays.outputs) == 1 ? "" : "s"}, primary ''${displays.primary}. Click for display settings"
+          :onclick "${displaySettings}/bin/display-settings --toggle"
+          (box :orientation "h" :space-evenly false :spacing 4
+            (label :class "icon" :text "󰍹")
+            (label :text "''${arraylength(displays.outputs)}")))
         (module-pct :class "cpu" :icon "" :value {round(EWW_CPU.avg, 0)})
         (module-pct :class "mem" :icon "" :value {round(EWW_RAM.used_mem_perc, 0)})
         (box :class "module gpu" :visible {gpu.ok} :orientation "h" :space-evenly false :spacing 6
@@ -437,46 +489,6 @@ in
             (label :class "wg-detail" :text "''${e.time}")
             (label :hexpand true :halign "start" :limit-width 36 :text "''${e.summary}")))))
 
-    ; Display: primary (has the bar), on/off, and a resolution dropdown, for
-    ; the display whose bar icon was clicked.
-    (defwidget display-panel []
-      (box :class "wg-panel" :orientation "v" :space-evenly false
-        (for o in {displays.selected}
-          (box :orientation "v" :space-evenly false :spacing 10
-            (box :orientation "h" :space-evenly false
-              (label :class "wg-title" :hexpand true :halign "start" :text "Display ''${o.number}")
-              (button :class "wg-close" :onclick "${eww} close display-menu" "✕"))
-            (box :class "wg-tunnel ''${o.active ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
-              (box :orientation "v" :space-evenly false :hexpand true :spacing 2
-                (label :class "wg-name" :halign "start"
-                  :text "''${o.active ? "●" : "○"} ''${o.name}''${o.primary ? " · primary" : ""}")
-                (label :class "wg-detail" :halign "start" :visible {o.title != ""} :text "''${o.title}")
-                (label :class "wg-detail" :halign "start"
-                  :text {o.primary ? "Has the bar" : (o.active ? "No bar" : "Off")}))
-              (box :orientation "v" :space-evenly false :valign "center" :spacing 6
-                (button :class "wg-toggle" :visible {!o.primary && o.active}
-                  :onclick "${display}/bin/eww-display primary ''${o.name}" "Make primary")
-                (button :class "wg-toggle" :visible {!o.primary}
-                  :onclick "${display}/bin/eww-display power ''${o.name} ''${o.active ? "off" : "on"}"
-                  "''${o.active ? "Turn off" : "Turn on"}")))
-            (box :visible {o.active} :orientation "v" :space-evenly false :spacing 4
-              (label :class "wg-detail" :halign "start" :text "Resolution")
-              (button :class "display-drop"
-                :onclick "${display}/bin/eww-display dropdown"
-                (box :orientation "h" :space-evenly false
-                  (label :hexpand true :halign "start" :text "''${o.current}")
-                  (label :text {display_modes_open ? "󰅃" : "󰅀"})))
-              (box :orientation "v" :space-evenly false
-                (scroll :vscroll true :hscroll false
-                  :height {display_modes_open ? min(240, arraylength(o.modes) * 30) : 0}
-                  (box :orientation "v" :space-evenly false
-                    ; Built only while open: GTK windows grow but never shrink, so
-                    ; hidden rows would still take up room.
-                    (for m in {display_modes_open ? o.modes : []}
-                      (button :class "display-mode ''${m.id == o.current_id ? "current" : ""}"
-                        :onclick "${display}/bin/eww-display mode ''${o.name} ''${m.id}"
-                        (label :halign "start" :text "''${m.label}")))))))))))
-
     (defwindow net-menu
       :monitor 0
       :stacking "overlay"
@@ -497,13 +509,6 @@ in
       :namespace "eww-menu"
       :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
       (cal-panel))
-
-    (defwindow display-menu
-      :monitor 0
-      :stacking "overlay"
-      :namespace "eww-menu"
-      :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-      (display-panel))
 
     (defwindow steam-menu
       :monitor 0
@@ -607,9 +612,7 @@ in
       &.net .icon { color: $blue; }
       &.net.down { color: $muted; }
       &.vol.muted { color: $muted; .icon { color: $muted; } }
-      &.display .icon { color: $muted; }
-      &.display.primary .icon, .star { color: $pink; }
-      &.display.off { color: $muted; }
+      &.display .icon { color: $pink; }
       &.display, &.net, &.vol, &.clock { &:hover { background-color: $surface; } }
       .tz { color: $muted; }
     }
@@ -660,17 +663,6 @@ in
       .cal-dot { font-size: ${toString (p.font.size - 4)}pt; }
       .cal-day-title { color: $cyan; }
       .cal-event { background-color: $bg-alt; padding: 4px 8px; }
-
-      .display-drop {
-        background-color: $bg-alt;
-        padding: 6px 10px;
-        &:hover { background-color: $surface; }
-      }
-      .display-mode {
-        padding: 4px 10px;
-        &:hover { background-color: $surface; }
-        &.current { color: $cyan; }
-      }
     }
   '';
 }

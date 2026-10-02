@@ -1,16 +1,19 @@
-"""Displays for the bar: one icon per sway output, a panel per display to pick
-its resolution, and which display is primary (the one with the bar).
+"""Displays: their saved resolution and position, and which one is primary
+(the one with the bar). The settings window (display-settings.py) changes
+them through `eww-display apply`.
 
 Usage: eww-display              JSON: {"primary": name, "outputs": [...]}
        eww-display watch        the same on every output change (for deflisten);
-                                also reapplies saved resolutions to displays as they
-                                connect and moves the bar if the primary one comes or goes
-       eww-display start        apply saved resolutions and open the bar (sway startup)
-       eww-display mode NAME MODE   set and remember a resolution, e.g. 2560x1440@143.998Hz
+                                also reapplies saved resolutions and positions to
+                                displays as they connect and moves the bar if the
+                                primary one comes or goes
+       eww-display start        apply saved settings and open the bar (sway startup)
+       eww-display apply JSON   set and remember every display at once:
+                                {"primary": NAME, "outputs": {NAME: {"enabled": true,
+                                 "mode": "2560x1440@143.998Hz", "x": 0, "y": 0}}}
+       eww-display mode NAME MODE   set and remember a resolution
        eww-display primary NAME     move the bar (and its panels) to NAME, remembered
        eww-display power NAME on|off
-       eww-display select NAME      open (or close) NAME's panel from its bar icon
-       eww-display dropdown         open or close the resolution list in that panel
        eww-display menu WINDOW      toggle one of the bar's panels on the primary display
        eww-display toggle-bar
 """
@@ -25,10 +28,10 @@ from pathlib import Path
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "eww"
 PRIMARY_FILE = STATE_DIR / "primary-display"
 MODES_FILE = STATE_DIR / "display-modes.json"
+LAYOUT_FILE = STATE_DIR / "display-layout.json"
 RUN_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp"))
 SEEN_FILE = RUN_DIR / "eww-display.seen"
 LAST_FILE = RUN_DIR / "eww-display.primary"
-SEL_FILE = RUN_DIR / "eww-display.selected"
 
 
 def read(path: Path) -> str:
@@ -61,11 +64,18 @@ def outputs() -> list:
         return []
 
 
-def saved_modes() -> dict:
+def load(path: Path) -> dict:
     try:
-        return json.loads(MODES_FILE.read_text())
+        return json.loads(path.read_text())
     except (OSError, ValueError):
         return {}
+
+
+def save(path: Path, data: dict) -> None:
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.name}.{os.getpid()}")
+    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    tmp.replace(path)
 
 
 def primary(outs: list) -> str:
@@ -91,7 +101,6 @@ def mode_label(m: dict) -> str:
 def listing(outs: list | None = None) -> str:
     outs = outputs() if outs is None else outs
     first = primary(outs)
-    sel = read(SEL_FILE)
     entries = []
     for i, o in enumerate(outs):
         # One entry per mode (the first by id, as jq's unique_by), biggest and fastest first.
@@ -113,13 +122,7 @@ def listing(outs: list | None = None) -> str:
             }
         )
     return json.dumps(
-        {
-            "primary": first,
-            "outputs": entries,
-            # The display whose panel is open, as a list of zero or one for the
-            # panel to loop over (it only builds that one).
-            "selected": [e for e in entries if e["name"] == sel],
-        },
+        {"primary": first, "outputs": entries},
         separators=(",", ":"),
         ensure_ascii=False,
     )
@@ -135,18 +138,63 @@ def key(outs: list, name: str) -> str:
 
 
 def apply_saved(outs: list) -> None:
-    """Give newly connected displays their saved resolution (once per
-    connection, so a mode sway can't do doesn't loop)."""
+    """Give newly connected displays their saved resolution and position (once
+    per connection, so a mode sway can't do doesn't loop)."""
     seen = read(SEEN_FILE).splitlines()
     now_on = [o["name"] for o in outs if o.get("active")]
-    saved = saved_modes()
+    modes, layout = load(MODES_FILE), load(LAYOUT_FILE)
     for name in now_on:
         if name in seen:
             continue
-        mode = saved.get(key(outs, name))
-        if mode:
-            swaymsg("output", name, "mode", mode)
+        k = key(outs, name)
+        args = []
+        if modes.get(k):
+            args += ["mode", modes[k]]
+        if layout.get(k):
+            args += ["position", *(str(int(v)) for v in layout[k])]
+        if args:
+            swaymsg("output", name, *args)
     SEEN_FILE.write_text("\n".join(now_on) + "\n")
+
+
+def apply(wanted: dict) -> None:
+    """Set every display in one sway command (so a layout never passes through
+    an overlapping state), then remember resolutions, positions and primary."""
+    outs = outputs()
+    names = {o["name"] for o in outs}
+    settings = {n: v for n, v in (wanted.get("outputs") or {}).items() if n in names}
+    # Turn displays on before turning others off, so there is always one on.
+    ordered = sorted(settings.items(), key=lambda item: not item[1].get("enabled", True))
+    commands = []
+    for name, v in ordered:
+        if not v.get("enabled", True):
+            commands.append(f"output {name} disable")
+            continue
+        command = f"output {name} enable"
+        if v.get("mode"):
+            command += f" mode {v['mode']}"
+        if "x" in v and "y" in v:
+            command += f" position {int(v['x'])} {int(v['y'])}"
+        commands.append(command)
+    if commands:
+        swaymsg("; ".join(commands))
+
+    modes, layout = load(MODES_FILE), load(LAYOUT_FILE)
+    for name, v in settings.items():
+        if not v.get("enabled", True):
+            continue
+        k = key(outs, name)
+        if v.get("mode"):
+            modes[k] = v["mode"]
+        if "x" in v and "y" in v:
+            layout[k] = [int(v["x"]), int(v["y"])]
+    save(MODES_FILE, modes)
+    save(LAYOUT_FILE, layout)
+    if wanted.get("primary") in names:
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        PRIMARY_FILE.write_text(wanted["primary"] + "\n")
+    follow_primary(outputs())
+    eww("update", f"displays={listing()}")
 
 
 def open_bar(screen: str) -> None:
@@ -164,11 +212,6 @@ def follow_primary(outs: list) -> None:
         if window and window != "bar":
             eww("close", window)
     open_bar(want)
-
-
-def reopen_panel() -> None:
-    """GTK windows grow but don't shrink: reopen the panel after closing the list."""
-    eww("open", "display-menu", "--screen", primary(outputs()))
 
 
 def watch() -> None:
@@ -191,41 +234,14 @@ def main(args: list[str]) -> None:
         SEEN_FILE.unlink(missing_ok=True)
         apply_saved(outputs())
         open_bar(primary(outputs()))
+    elif command == "apply" and rest:
+        apply(json.loads(rest[0]))
     elif command == "mode" and len(rest) == 2:
-        name, mode = rest
-        STATE_DIR.mkdir(parents=True, exist_ok=True)
-        modes = saved_modes()
-        modes[key(outputs(), name)] = mode
-        tmp = MODES_FILE.with_name(f"{MODES_FILE.name}.{os.getpid()}")
-        tmp.write_text(json.dumps(modes, indent=2, ensure_ascii=False) + "\n")
-        tmp.replace(MODES_FILE)
-        swaymsg("output", name, "mode", mode)
-        eww("update", "display_modes_open=false", f"displays={listing()}")
-        reopen_panel()
-    elif command == "dropdown":
-        if eww("get", "display_modes_open").strip() == "true":
-            eww("update", "display_modes_open=false")
-            reopen_panel()
-        else:
-            eww("update", "display_modes_open=true")
+        apply({"outputs": {rest[0]: {"mode": rest[1]}}})
     elif command == "primary" and rest:
-        STATE_DIR.mkdir(parents=True, exist_ok=True)
-        PRIMARY_FILE.write_text(rest[0] + "\n")
-        eww("close", "display-menu")
-        follow_primary(outputs())
-        eww("update", f"displays={listing()}")
+        apply({"primary": rest[0]})
     elif command == "power" and len(rest) == 2:
-        swaymsg("output", rest[0], "enable" if rest[1] == "on" else "disable")
-        eww("update", f"displays={listing()}")
-        reopen_panel()
-    elif command == "select" and rest:
-        panel_open = any(line.endswith(": display-menu") for line in eww("active-windows").splitlines())
-        if read(SEL_FILE) == rest[0] and panel_open:
-            eww("close", "display-menu")
-        else:
-            SEL_FILE.write_text(rest[0] + "\n")
-            eww("update", "display_modes_open=false", f"displays={listing()}")
-            reopen_panel()
+        apply({"outputs": {rest[0]: {"enabled": rest[1] == "on"}}})
     elif command == "menu" and rest:
         eww("open", "--toggle", rest[0], "--screen", primary(outputs()))
     elif command == "toggle-bar":

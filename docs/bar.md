@@ -8,7 +8,7 @@ the button again closes it too. Panels open on the primary display.
 |---|---|
 | **CAPS** / **NUM** | shown while Caps Lock or Num Lock is on |
 | GameMode, Steam, LM Studio, VMs | shown while running; Steam and LM Studio open a panel with **Close** ([lmstudio.md](lmstudio.md)) |
-| 󰍹 **1** 󰓎, 󰍹 **2** | one icon per display, the star marks the primary one; opens its panel (below) |
+| 󰍹 **2** | how many displays there are; opens the display settings window (below) |
 | CPU, memory | |
 | 󰢮 GPU | load and temperature from `rocm-smi`; the tooltip adds VRAM use |
 | 󰈀 / 󰖩 network | the shown interface with its download and upload rate, switching between bps, kbps, Mbps and Gbps; opens a panel listing every interface's rates, where **Show** picks the one on the bar (**Automatic** follows the default route) |
@@ -25,21 +25,33 @@ works because the bar font is monospace.
 
 ## Displays
 
-Every display sway sees gets an icon, numbered in sway's order; plugging in
-another monitor adds its icon straight away. Clicking one opens its panel:
+The display button on the bar opens one window for all of them (also in
+fuzzel as **Displays**, or `display-settings`; the button closes it again):
 
-- **Resolution** is a dropdown of every mode the monitor offers. Picking
-  one applies it at once and remembers it for that monitor (by make, model
-  and serial, so it follows the monitor to another port) in
-  `~/.local/state/eww/display-modes.json`. It is applied again whenever
-  that monitor is connected and when sway starts.
-- **Make primary** moves the bar, and the panels, to that display. It is
-  remembered in `~/.local/state/eww/primary-display`; if the primary
-  display is unplugged, the bar moves to the first one left and comes back
-  when it returns.
-- **Turn off** / **Turn on** switch a display that isn't the primary one.
+- **Layout**: every display that is on, drawn to scale. Drag one to move
+  it; on release it snaps beside the others, lining up with their edges
+  when close, so the pointer can always cross from one to the next. Click
+  a display to change it in the form below.
+- **On** turns the selected display on or off (the primary one stays on).
+- **Resolution** lists every mode the monitor offers, biggest and fastest
+  first.
+- **Primary** moves the bar, and its panels, to that display.
+
+Nothing changes until **Apply**, which sets every display in one go.
+After a new resolution, or a display turned on or off, a dialog asks to
+keep it and reverts by itself after 15 seconds, in case the picture is
+gone. **Reset** drops what hasn't been applied yet.
+
+What you apply is remembered per monitor (by make, model and serial, so it
+follows the monitor to another port): resolutions in
+`~/.local/state/eww/display-modes.json`, positions in
+`~/.local/state/eww/display-layout.json`, and the primary display in
+`~/.local/state/eww/primary-display`. They are applied again whenever that
+monitor is connected and when sway starts. If the primary display is
+unplugged, the bar moves to the first one left and comes back when it
+returns.
 
 `Super+Shift+b` hides and shows the bar on the primary display. Sway itself
 has no primary display, so this only decides where the bar goes; the
-resolutions are ordinary `swaymsg output` settings, and anything set in
+resolutions and positions are ordinary `swaymsg output` settings, and anything set in
 `home/sway.nix` still applies first.

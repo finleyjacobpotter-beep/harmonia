@@ -5,25 +5,29 @@
 #   pyScript "eww-volume" { runtimeInputs = [ pkgs.wireplumber ]; } ./eww/volume.py
 #
 # The source is a path or a string. `replace` swaps literal strings in it,
-# e.g. a placeholder constant for a store path.
+# e.g. a placeholder constant for a store path. `wrapperArgs` are more
+# makeWrapper arguments, e.g. GI_TYPELIB_PATH for a GTK window.
 { pkgs, lib }:
 name:
 {
   runtimeInputs ? [ ],
   libraries ? [ ],
   replace ? { },
+  wrapperArgs ? [ ],
 }:
 source:
 pkgs.writers.writePython3Bin name
   {
     inherit libraries;
     flakeIgnore = [ "E501" ];
-    makeWrapperArgs = lib.optionals (runtimeInputs != [ ]) [
-      "--prefix"
-      "PATH"
-      ":"
-      (lib.makeBinPath runtimeInputs)
-    ];
+    makeWrapperArgs =
+      lib.optionals (runtimeInputs != [ ]) [
+        "--prefix"
+        "PATH"
+        ":"
+        (lib.makeBinPath runtimeInputs)
+      ]
+      ++ wrapperArgs;
   }
   (
     builtins.replaceStrings (lib.attrNames replace) (lib.attrValues replace) (
