@@ -28,10 +28,55 @@ let
     cmd
   ];
 
+  local = "lmstudio/qwopus3.5-9b-v3";
+  opus = "anthropic/claude-opus-5-5";
+  sonnet = "anthropic/claude-sonnet-5-5";
+
+  # oh-my-openagent: Claude for planning, orchestration and review, the local
+  # model for searching and small edits. Claude agents fall back to the local
+  # model when there's no API key or the call fails.
+  claude = model: {
+    inherit model;
+    fallback_models = [ local ];
+  };
+  omo = pkgs.writeText "oh-my-openagent.json" (
+    builtins.toJSON {
+      "$schema" = "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/v5.1.11/assets/oh-my-opencode.schema.json";
+      # The version is pinned in opencode.json's plugin list below.
+      auto_update = false;
+      telemetry = false;
+      agents = {
+        sisyphus = claude opus;
+        prometheus = claude opus;
+        oracle = claude opus;
+        hephaestus = claude sonnet;
+        atlas = claude sonnet;
+        metis = claude sonnet;
+        momus = claude sonnet;
+        multimodal-looker = claude sonnet;
+        sisyphus-junior.model = local;
+        explore.model = local;
+        librarian.model = local;
+      };
+      categories = {
+        ultrabrain = claude opus;
+        deep = claude sonnet;
+        visual-engineering = claude sonnet;
+        artistry = claude sonnet;
+        unspecified-high = claude sonnet;
+        quick.model = local;
+        writing.model = local;
+        unspecified-low.model = local;
+      };
+    }
+  );
+
   config = pkgs.writeText "opencode.json" (
     builtins.toJSON {
       "$schema" = "https://opencode.ai/config.json";
-      model = "lmstudio/qwopus3.5-9b-v3";
+      model = local;
+      # opencode installs plugins itself (with its bundled bun) on first run.
+      plugin = [ "oh-my-openagent@5.1.11" ];
       provider = {
         # LM Studio's local server (Developer tab), localhost:1234. The model
         # key is LM Studio's API identifier for Jackrong/Qwopus3.5-9B-v3-GGUF
@@ -90,5 +135,6 @@ in
   # replaced on the next switch; change this file instead.
   home.activation.opencodeConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run install -Dm644 ${config} "$HOME/.var/app/${app}/config/opencode/opencode.json"
+    run install -Dm644 ${omo} "$HOME/.var/app/${app}/config/opencode/oh-my-openagent.json"
   '';
 }

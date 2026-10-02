@@ -44,7 +44,7 @@ home/                          home-manager, one file per program
   secrets-backup.py            the `secrets-backup` command
   flatpak-theme.nix            the desktop GTK theme copied into the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
-  opencode.nix                 opencode: LM Studio + Claude providers, keys from pass, Blender and Godot MCP servers
+  opencode.nix                 opencode: LM Studio + Claude providers, keys from pass, oh-my-openagent, Blender and Godot MCP servers
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
