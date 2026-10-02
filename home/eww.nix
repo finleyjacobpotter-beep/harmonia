@@ -10,45 +10,18 @@ let
   p = palette;
   eww = "${pkgs.eww}/bin/eww";
 
-  # The longer bar scripts live in home/eww/.
+  pyScript = import ../lib/python-script.nix { inherit pkgs lib; };
+
+  # The bar scripts live in home/eww/, one Python file per command.
   script =
     name: file: runtimeInputs:
-    pkgs.writeShellApplication {
-      inherit name runtimeInputs;
-      text = builtins.readFile file;
-    };
+    pyScript name { inherit runtimeInputs; } file;
 
   # Emits the workspace list as JSON on every sway workspace event.
-  workspaces = pkgs.writeShellApplication {
-    name = "eww-sway-workspaces";
-    runtimeInputs = with pkgs; [
-      sway
-      jq
-    ];
-    text = ''
-      emit() {
-        swaymsg -t get_workspaces | jq -c 'sort_by(.num) | map({name, focused, urgent})'
-      }
-      emit
-      swaymsg -t subscribe -m '["workspace", "output"]' | while read -r _; do emit; done
-    '';
-  };
+  workspaces = script "eww-sway-workspaces" ./eww/workspaces.py [ pkgs.sway ];
 
   # Emits the focused window's title whenever focus or titles change.
-  title = pkgs.writeShellApplication {
-    name = "eww-sway-title";
-    runtimeInputs = with pkgs; [
-      sway
-      jq
-    ];
-    text = ''
-      emit() {
-        swaymsg -t get_tree | jq -r '[.. | objects | select(.focused? == true) | .name // ""][0] // ""' | cut -c1-80
-      }
-      emit
-      swaymsg -t subscribe -m '["window", "workspace"]' | while read -r _; do emit; done
-    '';
-  };
+  title = script "eww-sway-title" ./eww/title.py [ pkgs.sway ];
 
   # Key hints for sway's modes (home/sway.nix), shown while a mode is active.
   modeHints = {
@@ -59,289 +32,104 @@ let
   };
 
   # Emits {"name": …, "hint": …} whenever the sway binding mode changes.
-  mode = pkgs.writeShellApplication {
-    name = "eww-sway-mode";
-    runtimeInputs = with pkgs; [
-      sway
-      jq
-    ];
-    text = ''
-      hints=${lib.escapeShellArg (builtins.toJSON modeHints)}
-      echo '{"name":"default","hint":""}'
-      swaymsg -t subscribe -m '["mode"]' \
-        | jq --unbuffered -c --argjson h "$hints" '{name: .change, hint: ($h[.change] // "")}'
-    '';
-  };
+  mode = pyScript "eww-sway-mode" {
+    runtimeInputs = [ pkgs.sway ];
+    replace."HINTS: dict = {}" =
+      "HINTS: dict = json.loads(${builtins.toJSON (builtins.toJSON modeHints)})";
+  } ./eww/mode.py;
 
-  volume = script "eww-volume" ./eww/volume.sh (
-    with pkgs;
-    [
-      wireplumber
-      gawk
-      gnused
-      jq
-      eww
-    ]
-  );
-
-  # GPU load, temperature and VRAM from rocm-smi (modules/nixos/fans.nix).
-  gpu = script "eww-gpu" ./eww/gpu.sh [
-    pkgs.rocmPackages.rocm-smi
-    pkgs.jq
+  volume = script "eww-volume" ./eww/volume.py [
+    pkgs.wireplumber
+    pkgs.eww
   ];
 
+  # CPU model, temperature and load average for the CPU tooltip.
+  cpu = script "eww-cpu" ./eww/cpu.py [ ];
+
+  # GPU load, temperature and VRAM from rocm-smi (modules/nixos/fans.nix).
+  gpu = script "eww-gpu" ./eww/gpu.py [ pkgs.rocmPackages.rocm-smi ];
+
   # Up/down rates of one interface for the bar, all of them for its panel.
-  net = script "eww-net" ./eww/net.sh (
-    with pkgs;
-    [
-      iproute2
-      gawk
-      jq
-      coreutils
-      eww
-    ]
-  );
+  net = script "eww-net" ./eww/net.py [
+    pkgs.iproute2
+    pkgs.eww
+  ];
 
   # The month grid with CalDAV event dots (synced by vdirsyncer, below).
-  cal =
-    pkgs.writers.writePython3Bin "eww-cal"
-      {
-        libraries = with pkgs.python3Packages; [
-          icalendar
-          recurring-ical-events
-        ];
-        flakeIgnore = [ "E501" ];
-      }
-      (
-        builtins.replaceStrings
-          [ ''COLORS = ["#ff5faf", "#5fd7ff", "#ffd75f"]'' ''EWW = "eww"'' ]
-          [
-            "COLORS = [${
-              lib.concatMapStringsSep ", " (c: ''"${c}"'') [
-                p.pink
-                p.cyan
-                p.yellow
-                p.purple
-                p.green
-                p.orange
-                p.blue
-              ]
-            }]"
-            ''EWW = "${eww}"''
-          ]
-          (builtins.readFile ./eww/cal.py)
-      );
+  cal = pyScript "eww-cal" {
+    libraries = with pkgs.python3Packages; [
+      icalendar
+      recurring-ical-events
+    ];
+    replace = {
+      "COLORS = [\"#ff5faf\", \"#5fd7ff\", \"#ffd75f\"]" = "COLORS = [${
+        lib.concatMapStringsSep ", " (c: ''"${c}"'') [
+          p.pink
+          p.cyan
+          p.yellow
+          p.purple
+          p.green
+          p.orange
+          p.blue
+        ]
+      }]";
+      "EWW = \"eww\"" = ''EWW = "${eww}"'';
+    };
+  } ./eww/cal.py;
 
   # "Wed Sep 30 14:16" in the time zone picked in the calendar panel.
-  clock = script "eww-clock" ./eww/clock.sh [
-    pkgs.coreutils
-    pkgs.jq
+  clock = script "eww-clock" ./eww/clock.py [
     pkgs.eww
     cal
   ];
 
   # One icon per display, its resolution, and which one is primary (has the bar).
-  display = script "eww-display" ./eww/display.sh (
-    with pkgs;
-    [
-      sway
-      jq
-      gnugrep
-      coreutils
-      eww
-    ]
-  );
+  display = script "eww-display" ./eww/display.py [
+    pkgs.sway
+    pkgs.eww
+  ];
   menu = "${display}/bin/eww-display menu";
 
   # Caffeine: stopping swayidle (home/sway.nix) turns off the lock and blank
   # timers until it is started again. The bar button toggles it.
-  caffeine = pkgs.writeShellApplication {
-    name = "eww-caffeine";
-    runtimeInputs = with pkgs; [
-      systemd
-      eww
-    ];
-    text = ''
-      state() {
-        if systemctl --user is-active --quiet swayidle.service; then echo off; else echo on; fi
-      }
-      if [ "''${1:-}" = toggle ]; then
-        if [ "$(state)" = off ]; then
-          systemctl --user stop swayidle.service
-        else
-          systemctl --user start swayidle.service
-        fi
-        eww update caffeine="$(state)"
-      else
-        state
-      fi
-    '';
-  };
+  caffeine = script "eww-caffeine" ./eww/caffeine.py [
+    pkgs.systemd
+    pkgs.eww
+  ];
 
   # WireGuard tunnels (NetworkManager connections of type wireguard, see
   # modules/nixos/wireguard.nix) for the bar button and its panel.
-  wireguard = pkgs.writeShellApplication {
-    name = "eww-wg";
+  wireguard = pyScript "eww-wg" {
     runtimeInputs = with pkgs; [
       networkmanager
       iproute2
-      jq
-      gawk
-      coreutils
       eww
     ];
-    text = ''
-      # Usage: eww-wg            JSON for the bar: {"active": N, "tunnels": [...]}
-      #        eww-wg toggle NAME  bring a NetworkManager WireGuard connection up/down
-      wg_show() { # wg_show endpoints|latest-handshakes: "iface<TAB>peer<TAB>value" lines, or nothing
-        /run/wrappers/bin/sudo -n ${pkgs.wireguard-tools}/bin/wg show all "$1" 2>/dev/null || true
-      }
+    replace."WG = \"wg\"" = ''WG = "${pkgs.wireguard-tools}/bin/wg"'';
+  } ./eww/wg.py;
 
-      list() {
-        endpoints=$(wg_show endpoints)
-        handshakes=$(wg_show latest-handshakes)
-        now=$(date +%s)
-        nmcli -t -f NAME,TYPE,DEVICE connection show |
-          while IFS=: read -r name type dev; do
-            [ "$type" = wireguard ] || continue
-            address=$(nmcli -g ipv4.addresses connection show "$name" | cut -d, -f1)
-            rx=""; tx=""; endpoint=""; handshake=""
-            if [ -n "$dev" ]; then
-              read -r rx tx < <(ip -j -s link show dev "$dev" | jq -r '.[0].stats64 | "\(.rx.bytes) \(.tx.bytes)"')
-              rx=$(numfmt --to=iec-i --suffix=B "$rx"); tx=$(numfmt --to=iec-i --suffix=B "$tx")
-              endpoint=$(awk -v d="$dev" '$1 == d { print $3; exit }' <<<"$endpoints")
-              last=$(awk -v d="$dev" '$1 == d { print $3; exit }' <<<"$handshakes")
-              if [ -z "$last" ]; then handshake="unknown"
-              elif [ "$last" -eq 0 ]; then handshake="never"
-              else
-                ago=$((now - last))
-                if [ "$ago" -lt 120 ]; then handshake="''${ago}s ago"; else handshake="$((ago / 60))m ago"; fi
-              fi
-            fi
-            jq -nc --arg name "$name" --arg dev "$dev" --arg address "$address" \
-              --arg endpoint "$endpoint" --arg rx "$rx" --arg tx "$tx" --arg handshake "$handshake" \
-              '{name: $name, active: ($dev != ""), device: $dev, address: $address,
-                endpoint: $endpoint, rx: $rx, tx: $tx, handshake: $handshake}'
-          done |
-          jq -sc '{active: (map(select(.active)) | length), tunnels: .}'
-      }
+  # Caps Lock / Num Lock state from the keyboard LEDs.
+  locks = script "eww-locks" ./eww/locks.py [ ];
 
-      case "''${1:-}" in
-        toggle)
-          name=$2
-          if [ -n "$(nmcli -g GENERAL.STATE connection show --active "$name" 2>/dev/null)" ]; then
-            nmcli connection down id "$name" >/dev/null
-          else
-            nmcli connection up id "$name" >/dev/null
-          fi
-          eww update wg="$(list)"
-          ;;
-        *) list ;;
-      esac
-    '';
-  };
-
-  # Caps Lock / Num Lock state from the keyboard LEDs (world-readable), as
-  # {"caps": bool, "num": bool}. Any keyboard with the LED lit counts.
-  locks = pkgs.writeShellApplication {
-    name = "eww-locks";
-    text = ''
-      lit() {
-        for led in /sys/class/leds/*::"$1"/brightness; do
-          [ -r "$led" ] && [ "$(cat "$led")" != 0 ] && { echo true; return; }
-        done
-        echo false
-      }
-      printf '{"caps":%s,"num":%s}\n' "$(lit capslock)" "$(lit numlock)"
-    '';
-  };
-
-  # What's running: GameMode, Steam (Flathub or native), LM Studio and the
-  # models it has loaded (its API on localhost:1234, docs/lmstudio.md), and
+  # What's running: GameMode, Steam, LM Studio and its loaded models, and
   # the libvirt VMs.
-  activity = pkgs.writeShellApplication {
-    name = "eww-activity";
-    runtimeInputs = with pkgs; [
+  activity = script "eww-activity" ./eww/activity.py (
+    with pkgs;
+    [
       flatpak
       gamemode
       procps
-      curl
-      jq
       libvirt
-      gnugrep
-    ];
-    text = ''
-      # JSON for the bar's activity badges:
-      # {"gamemode": bool, "steam": bool,
-      #  "lmstudio": {"running": bool, "serving": bool, "first": id, "list": "id, id"},
-      #  "vms": {"count": n, "list": "name, name"}}   (running libvirt domains)
-      apps=$(flatpak ps --columns=application 2>/dev/null || true)
-      running() { grep -qx "$1" <<<"$apps"; }
+    ]
+  );
 
-      gamemode=false
-      gamemoded -s 2>/dev/null | grep -q 'is active' && gamemode=true
-
-      steam=false
-      if running com.valvesoftware.Steam || pgrep -x steam >/dev/null; then steam=true; fi
-
-      lms=false
-      models='[]'
-      if running ai.lmstudio.lm-studio; then
-        lms=true
-        # LM Studio's own REST API lists every model with its load state.
-        models=$(curl -fsS -m 1 http://127.0.0.1:1234/api/v0/models 2>/dev/null |
-          jq -c '[.data[]? | select(.state == "loaded") | .id]' 2>/dev/null) || models='[]'
-        [ -n "$models" ] || models='[]'
-      fi
-
-      vms=$(virsh -c qemu:///system list --name 2>/dev/null | jq -Rsc 'split("\n") | map(select(. != ""))') || vms='[]'
-
-      jq -nc --argjson gamemode "$gamemode" --argjson steam "$steam" --argjson lms "$lms" \
-        --argjson models "$models" --argjson vms "$vms" \
-        '{gamemode: $gamemode, steam: $steam,
-          lmstudio: {running: $lms, serving: ($models | length > 0),
-                     first: ($models[0] // ""), list: ($models | join(", "))},
-          vms: {count: ($vms | length), list: ($vms | join(", "))}}'
-    '';
-  };
+  # Quit Steam the way its own menu does, Flathub or native.
+  steamClose = script "eww-steam-close" ./eww/steam-close.py [ pkgs.flatpak ];
 
   # CPU, memory, disk and network per libvirt VM, for the VM panel.
-  vms = pkgs.writers.writePython3Bin "eww-vms" {
-    flakeIgnore = [ "E501" ];
-    makeWrapperArgs = [
-      "--prefix"
-      "PATH"
-      ":"
-      (lib.makeBinPath [ pkgs.libvirt ])
-    ];
-  } (builtins.readFile ./eww/vms.py);
+  vms = script "eww-vms" ./eww/vms.py [ pkgs.libvirt ];
 
-  # Quit Steam the way its own menu does (steam -shutdown), for whichever
-  # install is running: Flathub or native.
-  steamClose = pkgs.writeShellApplication {
-    name = "eww-steam-close";
-    runtimeInputs = with pkgs; [
-      flatpak
-      gnugrep
-    ];
-    text = ''
-      if flatpak ps --columns=application 2>/dev/null | grep -qx com.valvesoftware.Steam; then
-        flatpak run com.valvesoftware.Steam -shutdown
-      elif command -v steam >/dev/null; then
-        steam -shutdown
-      fi
-    '';
-  };
-
-  battery = pkgs.writeShellApplication {
-    name = "eww-battery";
-    text = ''
-      for b in /sys/class/power_supply/BAT*; do
-        [ -r "$b/capacity" ] && { cat "$b/capacity"; exit 0; }
-      done
-      echo ""
-    '';
-  };
+  battery = script "eww-battery" ./eww/battery.py [ ];
 in
 {
   # eww-display is also run by sway at startup (home/sway.nix).
@@ -385,6 +173,7 @@ in
     (deflisten mode :initial "{\"name\":\"default\",\"hint\":\"\"}" "${mode}/bin/eww-sway-mode")
     (defpoll volume :interval "2s" :initial "{\"pct\":0,\"muted\":false,\"sink\":\"\",\"text\":\"\"}"
       "${volume}/bin/eww-volume")
+    (defpoll cpuinfo :interval "5s" :initial "{\"model\":\"\",\"temp\":\"\",\"load\":\"\"}" "${cpu}/bin/eww-cpu")
     (defpoll gpu :interval "3s" :initial "{\"ok\":false,\"use\":0,\"temp\":0,\"vram\":0,\"vram_text\":\"\",\"text\":\"\"}"
       "${gpu}/bin/eww-gpu")
     (defpoll net :interval "2s"
@@ -419,7 +208,9 @@ in
 
     (defwidget left []
       (box :orientation "h" :space-evenly false :halign "start" :spacing 12
-        (label :class "logo" :text "")
+        (button :class "logo-button" :tooltip "Lock, log out or power off"
+          :onclick "${menu} power-menu"
+          (label :class "logo" :text ""))
         (workspaces)
         (box :class "mode" :visible {mode.name != "default"} :orientation "h" :space-evenly false :spacing 8
           (label :class "mode-name" :text "''${mode.name}")
@@ -428,15 +219,16 @@ in
     (defwidget center []
       (label :class "title" :limit-width 80 :text title))
 
-    (defwidget module [icon text ?class ?visible]
-      (box :class "module ''${class}" :visible {visible ?: true} :orientation "h" :space-evenly false :spacing 6
+    (defwidget module [icon text ?class ?visible ?tooltip]
+      (box :class "module ''${class}" :visible {visible ?: true} :tooltip {tooltip ?: ""}
+        :orientation "h" :space-evenly false :spacing 6
         (label :class "icon" :text icon)
         ; unindent would strip the padding that keeps widths fixed.
         (label :unindent false :text text)))
 
     ; A percentage padded to "100%" so the bar doesn't shift (the font is monospace).
-    (defwidget module-pct [icon value ?class]
-      (module :class class :icon icon
+    (defwidget module-pct [icon value ?class ?tooltip]
+      (module :class class :icon icon :tooltip tooltip
         :text "''${value < 10 ? "  " : (value < 100 ? " " : "")}''${value}%"))
 
     (defwidget right []
@@ -474,8 +266,11 @@ in
                 (label :class "icon" :text "󰍹")
                 (label :text "''${o.number}")
                 (label :class "star" :visible {o.primary} :text "󰓎")))))
-        (module-pct :class "cpu" :icon "" :value {round(EWW_CPU.avg, 0)})
-        (module-pct :class "mem" :icon "" :value {round(EWW_RAM.used_mem_perc, 0)})
+        (module-pct :class "cpu" :icon "" :value {round(EWW_CPU.avg, 0)}
+          :tooltip "CPU ''${round(EWW_CPU.avg, 0)}%''${cpuinfo.temp} · ''${arraylength(EWW_CPU.cores)} threads · ''${round(EWW_CPU.cores[0].freq / 1000, 1)} GHz · load ''${cpuinfo.load}
+''${cpuinfo.model}")
+        (module-pct :class "mem" :icon "" :value {round(EWW_RAM.used_mem_perc, 0)}
+          :tooltip "RAM ''${round(EWW_RAM.used_mem / 1073741824, 1)}/''${round(EWW_RAM.total_mem / 1073741824, 1)} GiB (''${round(EWW_RAM.used_mem_perc, 0)}%) · ''${round(EWW_RAM.available_mem / 1073741824, 1)} GiB available · swap ''${round((EWW_RAM.total_swap - EWW_RAM.free_swap) / 1073741824, 1)}/''${round(EWW_RAM.total_swap / 1073741824, 1)} GiB")
         (box :class "module gpu" :visible {gpu.ok} :orientation "h" :space-evenly false :spacing 6
           :tooltip "GPU ''${gpu.use}% · ''${gpu.temp}°C · VRAM ''${gpu.vram_text} (''${gpu.vram}%)"
           (label :class "icon" :text "󰢮")
@@ -537,6 +332,22 @@ in
             (button :class "wg-toggle" :valign "center"
               :onclick "${wireguard}/bin/eww-wg toggle \"''${t.name}\""
               "''${t.active ? "Disconnect" : "Connect"}")))))
+
+    ; Session: opened by the logo at the top left.
+    (defwidget power-action [icon name onclick]
+      (button :class "wg-toggle power-action" :onclick "${eww} close power-menu; ''${onclick}"
+        (box :orientation "h" :space-evenly false :spacing 10
+          (label :class "icon" :text icon)
+          (label :halign "start" :text name))))
+
+    (defwidget power-panel []
+      (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+        (box :orientation "h" :space-evenly false
+          (label :class "wg-title" :hexpand true :halign "start" :text "Session")
+          (button :class "wg-close" :onclick "${eww} close power-menu" "✕"))
+        (power-action :icon "󰌾" :name "Lock" :onclick "${pkgs.swaylock}/bin/swaylock -f")
+        (power-action :icon "󰍃" :name "Log out" :onclick "${pkgs.sway}/bin/swaymsg exit")
+        (power-action :icon "󰐥" :name "Power off" :onclick "${pkgs.systemd}/bin/systemctl poweroff")))
 
     ; Panels opened by the Steam and LM Studio buttons, laid out like the
     ; WireGuard panel.
@@ -728,6 +539,13 @@ in
                         :onclick "${display}/bin/eww-display mode ''${o.name} ''${m.id}"
                         (label :halign "start" :text "''${m.label}")))))))))))
 
+    (defwindow power-menu
+      :monitor 0
+      :stacking "overlay"
+      :namespace "eww-menu"
+      :geometry (geometry :x "8px" :y "34px" :width "220px" :anchor "top left")
+      (power-panel))
+
     (defwindow net-menu
       :monitor 0
       :stacking "overlay"
@@ -826,6 +644,7 @@ in
       font-size: ${toString (p.font.size + 3)}pt;
       padding: 0 6px;
     }
+    .logo-button:hover .logo { color: $pink; }
 
     .ws {
       padding: 0 8px;
@@ -924,6 +743,8 @@ in
         progress { background-color: $cyan; min-height: 6px; }
         &.high progress { background-color: $orange; }
       }
+
+      .power-action { padding: 8px 12px; }
 
       .display-drop {
         background-color: $bg-alt;

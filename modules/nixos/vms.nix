@@ -7,7 +7,7 @@
 #                    read-write virtiofs share with the host (tag "shared",
 #                    ~/vms/kali-shared on the host, ~/shared in the guest).
 #                    On every boot the harmonia-vms service puts an install
-#                    script there (harmonia/install.sh) with the i3 config
+#                    script there (harmonia/install.py) with the i3 config
 #                    from vms/kali-i3.nix, the bash setup and this flake's
 #                    neovim config.
 #
@@ -18,6 +18,9 @@
 # The domains and their empty disks are created by the harmonia-vms service
 # on boot. The installer ISOs are several GB, so they are not part of the
 # build: `sudo harmonia-vm-fetch` downloads the pinned versions and checks them.
+#
+# harmonia-vms, harmonia-vm-fetch and harmonia-vm-firewall are one Python
+# script (vms/harmonia-vms.py), all three on your PATH.
 {
   config,
   lib,
@@ -29,6 +32,7 @@
 }:
 let
   imageDir = "/var/lib/libvirt/images";
+  pyScript = import ../../lib/python-script.nix { inherit pkgs lib; };
   hm = config.home-manager.users.${username};
 
   kaliI3 = import ../../vms/kali-i3.nix { inherit palette keys; };
@@ -38,9 +42,9 @@ let
   # other nvim/ config files (colours, lualine theme) and the plugin pack
   # (plugins + treesitter grammars), copied as real files so the guest can
   # read them without /nix/store.
-  nvimConfigFiles = lib.filter (f: f.enable && lib.hasPrefix "nvim/" f.target && f.target != "nvim/init.lua") (
-    lib.attrValues hm.xdg.configFile
-  );
+  nvimConfigFiles = lib.filter (
+    f: f.enable && lib.hasPrefix "nvim/" f.target && f.target != "nvim/init.lua"
+  ) (lib.attrValues hm.xdg.configFile);
   nvimInit = pkgs.writeText "init.lua" hm.programs.neovim.initLua;
   nvimPack = hm.xdg.dataFile."nvim/site/pack/hm".source;
 
@@ -74,11 +78,11 @@ let
     shopt -s ${toString hmBash.shellOptions}
 
     ${lib.concatStrings (
-      lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg (toString v)}\n") hmBash.sessionVariables
+      lib.mapAttrsToList (
+        k: v: "export ${k}=${lib.escapeShellArg (toString v)}\n"
+      ) hmBash.sessionVariables
     )}
-    ${lib.concatStrings (
-      lib.mapAttrsToList (k: v: "alias ${k}=${lib.escapeShellArg v}\n") kaliAliases
-    )}
+    ${lib.concatStrings (lib.mapAttrsToList (k: v: "alias ${k}=${lib.escapeShellArg v}\n") kaliAliases)}
     [ -r /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
     eval "$(dircolors -b)"
 
@@ -99,49 +103,14 @@ let
 
   # Run inside Kali: installs i3 and the tools the config uses, then copies
   # everything into place (existing files are kept as *.bak).
-  kaliInstall = pkgs.writeText "install.sh" ''
-    #!/bin/sh
-    # Usage (in the Kali guest; see docs/vms-and-containers.md):
-    #   mkdir -p ~/shared && sudo mount -t virtiofs shared ~/shared
-    #   sh ~/shared/harmonia/install.sh
-    set -eu
-    src=$(dirname "$(readlink -f "$0")")
+  kaliInstall = pkgs.writeScript "install.py" (
+    builtins.replaceStrings
+      [ ''HOST_SHARE = "the host's share"'' ]
+      [ ''HOST_SHARE = "${kaliRwShare}"'' ]
+      (builtins.readFile ../../vms/kali-install.py)
+  );
 
-    sudo apt-get update
-    sudo apt-get install -y kali-desktop-i3 i3status rofi dunst feh maim xclip \
-      i3lock xss-lock x11-xserver-utils python3 alacritty neovim ripgrep \
-      fd-find git bash-completion fzf tmux ranger
-
-    put() { # put <source> <dest>
-      mkdir -p "$(dirname "$2")"
-      [ -e "$2" ] && rm -rf "$2.bak" && mv "$2" "$2.bak"
-      cp -rL "$1" "$2"
-      chmod -R u+w "$2"
-    }
-    put "$src/i3/config"        "$HOME/.config/i3/config"
-    put "$src/i3status/config"  "$HOME/.config/i3status/config"
-    put "$src/harmonia-status"  "$HOME/.local/bin/harmonia-status"
-    chmod +x "$HOME/.local/bin/harmonia-status"
-    put "$src/wallpaper.png"    "$HOME/.local/share/harmonia/wallpaper.png"
-    put "$src/nvim/config"      "$HOME/.config/nvim"
-    put "$src/nvim/pack"        "$HOME/.local/share/nvim/site/pack/hm"
-    put "$src/bash/bashrc"      "$HOME/.bashrc"
-    put "$src/bash/inputrc"     "$HOME/.inputrc"
-
-    # bash instead of Kali's default zsh
-    [ "$(getent passwd "$USER" | cut -d: -f7)" = /bin/bash ] || sudo chsh -s /bin/bash "$USER"
-
-    # Mount the read-write share (host: ${kaliRwShare}) at ~/shared on boot.
-    mkdir -p "$HOME/shared"
-    grep -q '^shared ' /etc/fstab ||
-      echo "shared $HOME/shared virtiofs defaults,nofail 0 0" | sudo tee -a /etc/fstab >/dev/null
-    sudo systemctl daemon-reload
-
-    echo "Done. Log out and pick i3 at the login screen; the i3 modifier is Alt."
-    echo "~/shared is the read-write share with the host; re-run this script after a host rebuild to update."
-  '';
-
-  # Everything install.sh copies, put into the read-write share on boot.
+  # Everything install.py copies, put into the read-write share on boot.
   kaliBundle = pkgs.runCommand "harmonia-kali-bundle" { } ''
     mkdir -p $out/i3 $out/i3status $out/nvim/config $out/bash
     cp ${pkgs.writeText "harmonia-status" kaliI3.status} $out/harmonia-status
@@ -150,7 +119,7 @@ let
     cp ${pkgs.writeText "i3-config" kaliI3.i3} $out/i3/config
     cp ${pkgs.writeText "i3status-config" kaliI3.i3status} $out/i3status/config
     cp ${../../assets/wallpaper.png} $out/wallpaper.png
-    cp ${kaliInstall} $out/install.sh
+    cp ${kaliInstall} $out/install.py
 
     cp ${nvimInit} $out/nvim/config/init.lua
     ${lib.concatMapStrings (f: ''
@@ -275,118 +244,49 @@ let
   policyXml = lib.mapAttrs (p: xml: pkgs.writeText "harmonia-${p}.xml" xml) firewall.policyFilters;
   vmFilterXml =
     name: vm: policy:
-    pkgs.writeText "harmonia-vm-${name}-${policy}.xml" (firewall.vmFilter name (vm.firewall // { inherit policy; }));
+    pkgs.writeText "harmonia-vm-${name}-${policy}.xml" (
+      firewall.vmFilter name (vm.firewall // { inherit policy; })
+    );
 
-  # Our XML has no <uuid>, so libvirt makes up a new one on every define and
-  # then refuses it for an existing name ("already exists with uuid ...").
-  # These reuse the existing object's uuid, so redefining updates it in place.
-  defineHelpers = ''
-    define_filter() { # define_filter <name> <xml>
-      local uuid tmp
-      if uuid=$(virsh nwfilter-dumpxml "$1" 2>/dev/null | grep -o '<uuid>[^<]*</uuid>'); then
-        tmp=$(mktemp)
-        sed "0,\\|<filter [^>]*>|s||&$uuid|" "$2" >"$tmp"
-        virsh nwfilter-define "$tmp" >/dev/null
-        rm -f "$tmp"
-      else
-        virsh nwfilter-define "$2" >/dev/null
-      fi
+  # What vms/harmonia-vms.py needs to know about this build.
+  vmsConfig = pkgs.writeText "harmonia-vms.json" (
+    builtins.toJSON {
+      inherit imageDir username;
+      policies = map (p: {
+        name = p;
+        xml = policyXml.${p};
+      }) firewall.policies;
+      vms = lib.mapAttrs (name: vm: {
+        inherit (vm) iso disk share;
+        bundle = if vm.bundle == null then null else "${vm.bundle}";
+        domain = domainXml name vm;
+        policy = vm.firewall.policy;
+        filters = lib.genAttrs firewall.policies (vmFilterXml name vm);
+      }) vms;
     }
-    define_domain() { # define_domain <name> <xml>
-      local uuid tmp
-      if uuid=$(virsh domuuid "$1" 2>/dev/null) && [ -n "$uuid" ]; then
-        tmp=$(mktemp)
-        sed "0,\\|<name>[^<]*</name>|s||&<uuid>$uuid</uuid>|" "$2" >"$tmp"
-        virsh define "$tmp" >/dev/null
-        rm -f "$tmp"
-      else
-        virsh define "$2" >/dev/null
-      fi
-    }
-  '';
+  );
 
-  defineFilters = ''
-    ${lib.concatMapStrings (p: "define_filter harmonia-${p} ${policyXml.${p}}\n") firewall.policies}
-  '';
-
-  vmFirewall = pkgs.writeShellApplication {
-    name = "harmonia-vm-firewall";
-    runtimeInputs = [
-      config.virtualisation.libvirtd.package
-      pkgs.coreutils
-      pkgs.gnugrep
-      pkgs.gnused
-    ];
-    text = ''
-      ${defineHelpers}
-      # Usage: harmonia-vm-firewall                 show each VM's policy
-      #        harmonia-vm-firewall VM POLICY       switch it now (${toString firewall.policies})
-      # Takes effect on a running VM at once. The policy in modules/nixos/vms.nix
-      # comes back on the next boot or rebuild.
-      export LIBVIRT_DEFAULT_URI=qemu:///system
-      show() {
-        for vm in ${toString (lib.attrNames vms)}; do
-          policy=$(virsh nwfilter-dumpxml "harmonia-vm-$vm" 2>/dev/null |
-            grep -o 'filter="harmonia-[a-z-]*"' | sed 's/filter="harmonia-//; s/"//') || true
-          echo "$vm: ''${policy:-not defined}"
-        done
-      }
-      if [ $# -eq 0 ]; then show; exit 0; fi
-      [ $# -eq 2 ] || { echo "usage: harmonia-vm-firewall [VM POLICY]" >&2; exit 1; }
-      case "$1/$2" in
-        ${lib.concatStrings (
-          lib.concatLists (
-            lib.mapAttrsToList (
-              name: vm:
-              map (policy: ''
-                ${name}/${policy}) define_filter harmonia-vm-${name} ${vmFilterXml name vm policy} ;;
-              '') firewall.policies
-            ) vms
-          )
-        )}
-        *) echo "unknown VM or policy (VMs: ${toString (lib.attrNames vms)}; policies: ${toString firewall.policies})" >&2; exit 1 ;;
-      esac
-      show
-    '';
-  };
-
-  fetch = pkgs.writeShellApplication {
-    name = "harmonia-vm-fetch";
-    runtimeInputs = with pkgs; [
-      curl
-      coreutils
-      gawk
-    ];
-    text = ''
-      # Usage: sudo harmonia-vm-fetch [kali|ubuntu]   (default: both)
-      fetch() { # fetch <name> <url> <sums-url> <sha256 or "">
-        dest=${imageDir}/$1
-        if [ -e "$dest" ]; then echo "$1: already downloaded"; return; fi
-        expected=$4
-        if [ -z "$expected" ]; then
-          expected=$(curl -fsSL "$3" | awk -v n="$1" '$2 == n || $2 == "*" n { print $1 }')
-          echo "$1: no pinned checksum, using $3: $expected"
-        fi
-        curl -fL --output "$dest.part" "$2"
-        echo "$expected  $dest.part" | sha256sum -c -
-        mv "$dest.part" "$dest"
-      }
-      [ $# -gt 0 ] || set -- ${toString (lib.attrNames vms)}
-      for vm in "$@"; do
-        case $vm in
-          ${lib.concatStrings (
-            lib.mapAttrsToList (name: vm: ''
-              ${name}) fetch ${vm.iso.name} ${vm.iso.url} ${vm.iso.sums} "${toString vm.iso.sha256}" ;;
-            '') vms
-          )}
-          *) echo "unknown VM: $vm (expected: ${toString (lib.attrNames vms)})" >&2; exit 1 ;;
-        esac
-      done
-    '';
-  };
+  # harmonia-vms (run by the service below), harmonia-vm-fetch and
+  # harmonia-vm-firewall: the same script, told which one it is.
+  vmsCommand =
+    name:
+    pyScript name {
+      runtimeInputs = [
+        config.virtualisation.libvirtd.package
+        pkgs.qemu_kvm
+      ];
+      replace = {
+        "COMMAND = \"harmonia-vms\"" = ''COMMAND = "${name}"'';
+        "CONFIG_FILE = \"harmonia-vms.json\"" = ''CONFIG_FILE = "${vmsConfig}"'';
+      };
+    } ../../vms/harmonia-vms.py;
+  defineVms = vmsCommand "harmonia-vms";
+  fetch = vmsCommand "harmonia-vm-fetch";
+  vmFirewall = vmsCommand "harmonia-vm-firewall";
 in
 {
   environment.systemPackages = [
+    defineVms
     fetch
     vmFirewall
   ];
@@ -403,39 +303,10 @@ in
     after = [ "libvirtd.service" ];
     requires = [ "libvirtd.service" ];
     wantedBy = [ "multi-user.target" ];
-    path = [
-      config.virtualisation.libvirtd.package
-      pkgs.qemu_kvm
-      pkgs.gnugrep
-      pkgs.gnused
-    ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
+      ExecStart = "${defineVms}/bin/harmonia-vms";
     };
-    script = ''
-      ${defineHelpers}
-      mkdir -p ${imageDir}
-      if virsh net-info default >/dev/null 2>&1; then
-        virsh net-autostart default
-        virsh net-start default 2>/dev/null || true
-      fi
-      ${defineFilters}
-      ${lib.concatStrings (
-        lib.mapAttrsToList (name: vm: ''
-          define_filter harmonia-vm-${name} ${vmFilterXml name vm vm.firewall.policy}
-          [ -e ${imageDir}/harmonia-${name}.qcow2 ] ||
-            qemu-img create -f qcow2 ${imageDir}/harmonia-${name}.qcow2 ${vm.disk}
-          define_domain harmonia-${name} ${domainXml name vm}
-          ${lib.optionalString (vm.bundle != null) ''
-            mkdir -p ${vm.share}
-            rm -rf ${vm.share}/harmonia
-            cp -rL ${vm.bundle} ${vm.share}/harmonia
-            chmod -R u+w ${vm.share}/harmonia
-            chown -R ${username}:users ${vm.share}/harmonia
-          ''}
-        '') vms
-      )}
-    '';
   };
 }
