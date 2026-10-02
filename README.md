@@ -42,6 +42,7 @@ home/                          home-manager, one file per program
   secrets-backup.sh            the `secrets-backup` command
   flatpak-theme.nix            the desktop GTK theme copied into the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
+  opencode.nix                 opencode: LM Studio + Claude providers, keys from pass, Blender and Godot MCP servers
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
@@ -95,6 +96,7 @@ Run it as your normal user: `bash scripts/ubuntu-install.sh`.
 - [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
+- [opencode](docs/opencode.md): providers, keys in pass, and the Blender and Godot MCP servers
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
 - [VMs and containers](docs/vms-and-containers.md): libvirt, the Kali and Ubuntu VMs, their firewall, podman
 - [The bar](docs/bar.md): what each part of the eww bar shows, its panels, displays and resolutions
