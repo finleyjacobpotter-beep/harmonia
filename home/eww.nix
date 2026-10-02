@@ -404,7 +404,9 @@ in
 
     (defwidget left []
       (box :orientation "h" :space-evenly false :halign "start" :spacing 12
-        (label :class "logo" :text "")
+        (button :class "logo-button" :tooltip "Lock, log out or power off"
+          :onclick "${menu} power-menu"
+          (label :class "logo" :text ""))
         (workspaces)
         (box :class "mode" :visible {mode.name != "default"} :orientation "h" :space-evenly false :spacing 8
           (label :class "mode-name" :text "''${mode.name}")
@@ -520,6 +522,22 @@ in
             (button :class "wg-toggle" :valign "center"
               :onclick "${wireguard}/bin/eww-wg toggle \"''${t.name}\""
               "''${t.active ? "Disconnect" : "Connect"}")))))
+
+    ; Session: opened by the logo at the top left.
+    (defwidget power-action [icon name onclick]
+      (button :class "wg-toggle power-action" :onclick "${eww} close power-menu; ''${onclick}"
+        (box :orientation "h" :space-evenly false :spacing 10
+          (label :class "icon" :text icon)
+          (label :halign "start" :text name))))
+
+    (defwidget power-panel []
+      (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+        (box :orientation "h" :space-evenly false
+          (label :class "wg-title" :hexpand true :halign "start" :text "Session")
+          (button :class "wg-close" :onclick "${eww} close power-menu" "✕"))
+        (power-action :icon "󰌾" :name "Lock" :onclick "${pkgs.swaylock}/bin/swaylock -f")
+        (power-action :icon "󰍃" :name "Log out" :onclick "${pkgs.sway}/bin/swaymsg exit")
+        (power-action :icon "󰐥" :name "Power off" :onclick "${pkgs.systemd}/bin/systemctl poweroff")))
 
     ; Panels opened by the Steam and LM Studio buttons, laid out like the
     ; WireGuard panel.
@@ -684,6 +702,13 @@ in
                         :onclick "${display}/bin/eww-display mode ''${o.name} ''${m.id}"
                         (label :halign "start" :text "''${m.label}")))))))))))
 
+    (defwindow power-menu
+      :monitor 0
+      :stacking "overlay"
+      :namespace "eww-menu"
+      :geometry (geometry :x "8px" :y "34px" :width "220px" :anchor "top left")
+      (power-panel))
+
     (defwindow net-menu
       :monitor 0
       :stacking "overlay"
@@ -775,6 +800,7 @@ in
       font-size: ${toString (p.font.size + 3)}pt;
       padding: 0 6px;
     }
+    .logo-button:hover .logo { color: $pink; }
 
     .ws {
       padding: 0 8px;
@@ -867,6 +893,8 @@ in
       .cal-dot { font-size: ${toString (p.font.size - 4)}pt; }
       .cal-day-title { color: $cyan; }
       .cal-event { background-color: $bg-alt; padding: 4px 8px; }
+
+      .power-action { padding: 8px 12px; }
 
       .display-drop {
         background-color: $bg-alt;
