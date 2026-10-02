@@ -35,12 +35,15 @@ in
 
   services.gpg-agent = {
     enable = true;
+    enableSshSupport = true;
     enableBashIntegration = true;
     # In-terminal passphrase prompt, keyboard only like the rest of the desktop.
     pinentry.package = pkgs.pinentry-curses;
     defaultCacheTtl = 600;
     maxCacheTtl = 7200;
   };
+
+  services.ssh-agent.enable = false;
 
   programs.password-store = {
     enable = true;

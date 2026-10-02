@@ -197,7 +197,7 @@ def main(args: list[str]) -> None:
         modes = saved_modes()
         modes[key(outputs(), name)] = mode
         tmp = MODES_FILE.with_name(f"{MODES_FILE.name}.{os.getpid()}")
-        tmp.write_text(json.dumps(modes, indent=2) + "\n")
+        tmp.write_text(json.dumps(modes, indent=2, ensure_ascii=False) + "\n")
         tmp.replace(MODES_FILE)
         swaymsg("output", name, "mode", mode)
         eww("update", "display_modes_open=false", f"displays={listing()}")

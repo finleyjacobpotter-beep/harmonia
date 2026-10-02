@@ -1,5 +1,5 @@
 """GPU load, temperature and VRAM from rocm-smi (modules/nixos/fans.nix), as
-{"ok": bool, "use": %, "temp": °C, "vram": %, "vram_text": "6.1/16.0 GiB",
+{"ok": bool, "use": %, "temp": °C, "vram": %, "vram_text": "6.1/16 GiB",
  "text": " 37%  52°C"} (padded to a fixed width for the bar).
 With several GPUs, the one with the most VRAM is shown.
 """
@@ -33,7 +33,9 @@ def pick(card: dict, pattern: str) -> float | int | None:
 
 
 def gib(n: float) -> str:
-    return f"{rounded(n / 1073741824 * 10) / 10:.1f}"
+    """GiB to one decimal, printed like jq: 6.1, 16."""
+    x = rounded(n / 1073741824 * 10) / 10
+    return str(int(x)) if x.is_integer() else str(x)
 
 
 def stats(data: dict) -> dict:
@@ -82,7 +84,7 @@ def main() -> None:
         data = json.loads(out) if out.strip() else {}
     except ValueError:
         data = {}
-    print(json.dumps(stats(data) if isinstance(data, dict) else EMPTY, separators=(",", ":")))
+    print(json.dumps(stats(data) if isinstance(data, dict) else EMPTY, separators=(",", ":"), ensure_ascii=False))
 
 
 if __name__ == "__main__":

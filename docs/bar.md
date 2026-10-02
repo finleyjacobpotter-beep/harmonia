@@ -6,6 +6,7 @@ the button again closes it too. Panels open on the primary display.
 
 | On the bar | Click |
 |---|---|
+|  logo (top left) | opens the session panel: **Lock** (swaylock), **Log out** (exits sway) and **Power off**. `Super+Shift+e` has the same actions from the keyboard, plus suspend and reboot |
 | **CAPS** / **NUM** | shown while Caps Lock or Num Lock is on |
 | GameMode, Steam, LM Studio, VMs | shown while running; Steam and LM Studio open a panel with **Close** ([lmstudio.md](lmstudio.md)) |
 | 󰍹 **1** 󰓎, 󰍹 **2** | one icon per display, the star marks the primary one; opens its panel (below) |

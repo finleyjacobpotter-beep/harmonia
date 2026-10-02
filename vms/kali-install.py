@@ -46,9 +46,9 @@ def put(src: str, dest: Path) -> None:
         shutil.copytree(source, dest)
     else:
         shutil.copy2(source, dest)
-    for root, dirs, files in os.walk(dest):
-        for path in [root] + [os.path.join(root, f) for f in files]:
-            os.chmod(path, os.stat(path).st_mode | 0o200)
+    paths = [dest] + [Path(root, n) for root, dirs, files in os.walk(dest) for n in dirs + files]
+    for path in paths:
+        path.chmod(path.stat().st_mode | 0o200)
 
 
 def main() -> None:
@@ -79,7 +79,7 @@ def main() -> None:
     run("sudo", "systemctl", "daemon-reload")
 
     print("Done. Log out and pick i3 at the login screen; the i3 modifier is Alt.")
-    print(f"~/shared is the read-write share with the host ({HOST_SHARE}); re-run this script after a host rebuild to update.")
+    print("~/shared is the read-write share with the host; re-run this script after a host rebuild to update.")
 
 
 if __name__ == "__main__":
