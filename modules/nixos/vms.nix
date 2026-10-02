@@ -255,6 +255,10 @@ let
           <rng model="virtio">
             <backend model="random">/dev/urandom</backend>
           </rng>
+          <!-- Guest memory stats every 5s, for the bar's VM panel. -->
+          <memballoon model="virtio">
+            <stats period="5"/>
+          </memballoon>
           ${lib.optionalString (vm.share != null) ''
             <filesystem type="mount" accessmode="passthrough">
               <driver type="virtiofs"/>
