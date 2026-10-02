@@ -11,6 +11,7 @@
 }:
 let
   p = palette;
+  pyScript = import ../lib/python-script.nix { inherit pkgs lib; };
 
   userChrome = pkgs.writeText "userChrome.css" ''
     /* Miami Wind for Zen */
@@ -125,40 +126,72 @@ let
     gtk-font-name=${p.font.name} ${toString (p.font.size - 1)}
   '';
 
-  sync = pkgs.writeShellApplication {
-    name = "zen-miami-wind";
-    text = ''
-      app="$HOME/.var/app/app.zen_browser.zen"
+  sync = pyScript "zen-miami-wind" { } ''
+    """Copy the Miami Wind theme into the Zen flatpak's own data dir: Tulasi
+    icons, GTK settings, and userChrome.css, userContent.css, user.js and
+    Vimium into every Zen profile."""
 
-      # Tulasi as real files (the sandbox can't follow links into
-      # /nix/store); recopied only when the theme changes.
-      icons="$app/data/icons"
-      if [ "$(cat "$icons/.tulasi-source" 2>/dev/null || true)" != "${tulasi}" ]; then
-        mkdir -p "$icons"
-        tmp=$(mktemp -d "$icons/.tulasi.XXXXXX")
-        cp -r --no-preserve=mode,ownership "${tulasi}/share/icons/Tulasi/." "$tmp/"
-        rm -rf "$icons/Tulasi"
-        mv "$tmp" "$icons/Tulasi"
-        echo "${tulasi}" > "$icons/.tulasi-source"
-        echo "zen-miami-wind: installed Tulasi icons into the sandbox"
-      fi
-      install -Dm644 ${gtkSettings} "$app/config/gtk-3.0/settings.ini"
+    import os
+    import shutil
+    import sys
+    import tempfile
+    from pathlib import Path
 
-      root="$app/.zen"
-      if [ ! -d "$root" ]; then
-        echo "zen-miami-wind: no Zen profile yet — start Zen once, then re-run." >&2
-        exit 0
-      fi
-      for profile in "$root"/*/; do
-        [ -f "$profile/prefs.js" ] || [ -f "$profile/times.json" ] || continue
-        install -Dm644 ${userChrome} "$profile/chrome/userChrome.css"
-        install -Dm644 ${userContent} "$profile/chrome/userContent.css"
-        install -Dm644 ${userJs} "$profile/user.js"
-        install -Dm644 ${vimium.xpi} "$profile/extensions/${vimium.id}.xpi"
-        echo "zen-miami-wind: themed $profile"
-      done
-    '';
-  };
+    TULASI = "${tulasi}"
+    APP = Path.home() / ".var/app/app.zen_browser.zen"
+
+
+    def install(src: str, dest: Path) -> None:
+        """A real, writable copy (install -Dm644), replacing whatever is there."""
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if dest.is_symlink() or dest.exists():
+            dest.unlink()
+        shutil.copyfile(src, dest)
+        dest.chmod(0o644)
+
+
+    def copy_tree(src: Path, dest: Path) -> None:
+        """cp -r --no-preserve=mode,ownership: links stay links, the rest is writable."""
+        for root, dirs, files in os.walk(src):
+            target = dest / Path(root).relative_to(src)
+            target.mkdir(parents=True, exist_ok=True)
+            for name in dirs + files:
+                path = Path(root, name)
+                if path.is_symlink():
+                    (target / name).symlink_to(os.readlink(path))
+                elif path.is_file():
+                    shutil.copyfile(path, target / name)
+
+
+    # Tulasi as real files (the sandbox can't follow links into /nix/store);
+    # recopied only when the theme changes.
+    icons = APP / "data/icons"
+    marker = icons / ".tulasi-source"
+    if not marker.is_file() or marker.read_text().strip() != TULASI:
+        icons.mkdir(parents=True, exist_ok=True)
+        tmp = Path(tempfile.mkdtemp(prefix=".tulasi.", dir=icons))
+        copy_tree(Path(TULASI, "share/icons/Tulasi"), tmp)
+        shutil.rmtree(icons / "Tulasi", ignore_errors=True)
+        tmp.rename(icons / "Tulasi")
+        marker.write_text(TULASI + "\n")
+        print("zen-miami-wind: installed Tulasi icons into the sandbox")
+    install("${gtkSettings}", APP / "config/gtk-3.0/settings.ini")
+
+    root = APP / ".zen"
+    if not root.is_dir():
+        print("zen-miami-wind: no Zen profile yet — start Zen once, then re-run.", file=sys.stderr)
+        sys.exit(0)
+    for profile in sorted(root.iterdir()):
+        if not profile.is_dir():
+            continue
+        if not ((profile / "prefs.js").is_file() or (profile / "times.json").is_file()):
+            continue
+        install("${userChrome}", profile / "chrome/userChrome.css")
+        install("${userContent}", profile / "chrome/userContent.css")
+        install("${userJs}", profile / "user.js")
+        install("${vimium.xpi}", profile / "extensions/${vimium.id}.xpi")
+        print(f"zen-miami-wind: themed {profile}/")
+  '';
 in
 {
   home.packages = [ sync ];

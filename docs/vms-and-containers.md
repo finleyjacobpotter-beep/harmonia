@@ -34,7 +34,7 @@ no guest audio.
    (`~/vms/kali-shared/harmonia/`). The first time, inside the guest run:
    ```sh
    mkdir -p ~/shared && sudo mount -t virtiofs shared ~/shared
-   sh ~/shared/harmonia/install.sh
+   python3 ~/shared/harmonia/install.py
    ```
    It installs i3's helpers (rofi, dunst, feh, maim, i3lock, xss-lock…) plus
    neovim, ripgrep, fd, fzf, tmux and ranger, and copies the configs into place
@@ -96,7 +96,8 @@ it as above. The domain is named `harmonia-<name>`.
 `systemctl status harmonia-vms` and `journalctl -u harmonia-vms` show why.
 The service redefines the network filters and domains on every boot and
 rebuild, reusing their existing ids, so it's safe to restart at any time:
-`sudo systemctl restart harmonia-vms`.
+`sudo systemctl restart harmonia-vms`, or run the same step in the terminal
+with `sudo harmonia-vms` to see its errors directly.
 
 ## Firewall (enforced on the host)
 
