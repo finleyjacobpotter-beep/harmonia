@@ -4,7 +4,7 @@
 icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, **libvirt**, **podman**, and **Zen browser**, **Lutris**, **Steam**, **Element** and **LM Studio** jailed in Flatpak —
+**neovim**, **libvirt**, **podman**, and **Zen browser**, **Lutris**, **Steam**, **Element**, **LM Studio**, **Blender**, **Godot** and **opencode** jailed in Flatpak —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -24,6 +24,7 @@ modules/nixos/
   steam.nix                    Steam from Flathub, locked down, sharing only ~/Games with Lutris
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
+  studio.nix                   Blender, Godot and opencode from Flathub, sharing only ~/Projects
   fans.nix                     LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
   virtualisation.nix           libvirtd/KVM, virt-manager, rootless podman + buildah
   vms.nix                      Kali (i3) and Ubuntu (GNOME) libvirt VMs, VGA + VNC
@@ -132,7 +133,8 @@ harmonia stands on other people's work:
 - **[Departure Mono](https://departuremono.com/)** via
   [Nerd Fonts](https://www.nerdfonts.com/): the font.
 - **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
-  Flatpak setup for Zen, Lutris, Steam, Element and LM Studio.
+  Flatpak setup for Zen, Lutris, Steam, Element, LM Studio, Blender, Godot
+  and opencode.
 
 ## License
 

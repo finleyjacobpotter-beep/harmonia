@@ -15,6 +15,7 @@
     ../../modules/nixos/steam.nix
     ../../modules/nixos/element.nix
     ../../modules/nixos/lmstudio.nix
+    ../../modules/nixos/studio.nix
     ../../modules/nixos/fans.nix
     ../../modules/nixos/virtualisation.nix
     ../../modules/nixos/vms.nix

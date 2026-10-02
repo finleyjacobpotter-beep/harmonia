@@ -1,4 +1,9 @@
-{ pkgs, username, ... }:
+{
+  pkgs,
+  lib,
+  username,
+  ...
+}:
 {
   imports = [
     ./sway.nix
@@ -31,8 +36,19 @@
     createDirectories = true;
   };
 
-  # E-book library and reader (GPL; built without unrar, so no unfree bits).
-  home.packages = [ pkgs.calibre ];
+  # ~/Projects is the only host directory Blender, Godot and opencode can see
+  # (modules/nixos/studio.nix).
+  home.activation.projectsDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run mkdir -p "$HOME/Projects"
+  '';
+
+  home.packages = [
+    # E-book library and reader (GPL; built without unrar, so no unfree bits).
+    pkgs.calibre
+    # Python package manager; provides `uv` and `uvx` (run a tool from PyPI
+    # without installing it).
+    pkgs.uv
+  ];
 
   home.stateVersion = "26.05";
 }

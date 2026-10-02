@@ -233,6 +233,9 @@ in
             "Shift+g" = run "flatpak run com.valvesoftware.Steam";
             c = run "flatpak run im.riot.Riot";
             l = run "flatpak run ai.lmstudio.lm-studio";
+            "Shift+b" = run "flatpak run org.blender.Blender";
+            d = run "flatpak run org.godotengine.Godot";
+            o = run "flatpak run ai.opencode.opencode";
           };
           media = leave // {
             k = "exec ${volUp}";
