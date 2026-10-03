@@ -190,6 +190,31 @@ let
       vmModes vm
     );
 
+  # The same, padded to the VM's longest short word so the bar doesn't shift
+  # when the mode changes (the bar font is monospaced).
+  shortText =
+    vm:
+    let
+      width = lib.foldl' lib.max 0 (map (m: lib.stringLength m.short) (vmModes vm));
+      pad = t: t + lib.concatStrings (lib.replicate (width - lib.stringLength t) " ");
+    in
+    lib.foldr (m: rest: ''(${vm}.mode == "${m.name}" ? "${pad m.short}" : ${rest})'') ''"${pad ""}"'' (
+      vmModes vm
+    );
+
+  # A VM's bar badge: the same server icon for each, in the VM's own colour
+  # while it runs, a green asterisk while its VPN is up, and the firewall
+  # mode. Every part keeps its width, so the bar never moves.
+  vmBadge = vm: tooltip: ''
+    (button :class "module vm ${vm} ''${${vm}.running ? "running" : "stopped"} ''${${vm}.running && ${vm}.fresh && ${vm}.vpn.up ? "vpn" : ""}"
+      :tooltip ${tooltip}
+      :onclick "${menu} ${vm}-menu"
+      (box :orientation "h" :space-evenly false :spacing 2
+        (label :class "icon" :text "󰒋")
+        (label :class "vm-vpn" :text "*")
+        (label :class "vm-mode mode-''${${vm}.mode}" :xalign 0 :text "''${${shortText vm}}")))
+  '';
+
   # The firewall dropdown in a VM's panel: the current mode, and the list of
   # modes when it is opened.
   firewallDropdown = vm: ''
@@ -345,27 +370,15 @@ in
               (box :orientation "h" :space-evenly false :spacing 6
                 (label :class "icon" :text "󰚩")
                 (label :visible {activity.lmstudio.serving} :limit-width 24 :text "''${activity.lmstudio.first}")))
-            ; The microVMs, always shown: the icon is grey while the VM is
-            ; stopped and green while it runs, followed by its firewall mode.
-            ; Nike's text also says whether its traffic goes through the VPN.
-            (button :class "module vm nike ''${nike.running ? "running" : "stopped"} ''${nike.fresh ? (nike.vpn.via_vpn ? "vpn" : "direct") : ""}"
-              :tooltip {(!nike.running ? "Nike is stopped"
+            ; The microVMs, always shown (vmBadge): grey while stopped,
+            ; Nike orange and Zelus cyan while running.
+            ${vmBadge "nike" ''
+              {(!nike.running ? "Nike is stopped"
                 : (!nike.fresh ? "Nike is starting"
                   : (nike.vpn.via_vpn ? "Nike: outbound through the VPN"
-                    : "Nike: outbound NOT through a VPN")))
-                + " · firewall: ''${${modeText "nike" "label"}} (click for details)"}
-              :onclick "${menu} nike-menu"
-              (box :orientation "h" :space-evenly false :spacing 6
-                (label :class "icon" :text "󰒋")
-                (label :class "vm-state" :visible {nike.running}
-                  :text {!nike.fresh ? "nike" : (nike.vpn.via_vpn ? "vpn" : "no vpn")})
-                (label :class "vm-mode mode-''${nike.mode}" :text "''${${modeText "nike" "short"}}")))
-            (button :class "module vm zelus ''${zelus.running ? "running" : "stopped"}"
-              :tooltip "Zelus is ''${zelus.running ? (zelus.fresh ? "running" : "starting") : "stopped"} · firewall: ''${${modeText "zelus" "label"}} (click for details)"
-              :onclick "${menu} zelus-menu"
-              (box :orientation "h" :space-evenly false :spacing 6
-                (label :class "icon" :text "󰅩")
-                (label :class "vm-mode mode-''${zelus.mode}" :text "''${${modeText "zelus" "short"}}")))
+                    : (nike.vpn.up ? "Nike: VPN up, but outbound NOT through it" : "Nike: outbound NOT through a VPN"))))
+                + " · firewall: ''${${modeText "nike" "label"}} (click for details)"}''}
+            ${vmBadge "zelus" ''"Zelus is ''${zelus.running ? (zelus.fresh ? "running" : "starting") : "stopped"}''${zelus.running && zelus.fresh && zelus.vpn.up ? " · VPN up" : ""} · firewall: ''${${modeText "zelus" "label"}} (click for details)"''}
             (button :class "module display"
               :tooltip "''${arraylength(displays.outputs)} display''${arraylength(displays.outputs) == 1 ? "" : "s"}, primary ''${displays.primary}. Click for display settings"
               :onclick "${displaySettings}/bin/display-settings --toggle"
@@ -775,9 +788,11 @@ in
       &.lmstudio .icon { color: $muted; }
       &.lmstudio.serving .icon { color: $pink; }
       &.vm .icon { color: $muted; }
-      &.vm.running .icon { color: $green; }
-      &.nike.vpn .vm-state { color: $green; }
-      &.nike.direct .vm-state { color: $orange; }
+      &.nike.running .icon { color: $orange; }
+      &.zelus.running .icon { color: $cyan; }
+      // Always drawn so it keeps its space; only visible while the VPN is up.
+      &.vm .vm-vpn { color: transparent; }
+      &.vm.vpn .vm-vpn { color: $green; }
       // Firewall modes: open is the plain one, lockdown red, the
       // restricted ones (OSCP, Hack The Box, local inference) purple.
       .vm-mode { color: $purple; }

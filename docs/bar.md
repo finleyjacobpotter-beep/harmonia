@@ -9,7 +9,7 @@ the button again closes it too. Panels open on the primary display.
 |  logo (top left) | opens the session panel: **Lock** (swaylock), **Log out** (exits sway) and **Power off**. `Super+Shift+e` has the same actions from the keyboard, plus suspend and reboot |
 | **CAPS** / **NUM** | shown while Caps Lock or Num Lock is on |
 | GameMode, Steam, LM Studio | shown while running; Steam and LM Studio open a panel with **Close** ([lmstudio.md](lmstudio.md)) |
-| Nike, Zelus | always shown: running or not, and the firewall mode; each opens its VM panel (below) |
+| Nike, Zelus | always shown: running or not, VPN, and the firewall mode; each opens its VM panel (below) |
 | 󰍹 **2** | how many displays there are; opens the display settings window (below) |
 | CPU, memory | |
 | 󰢮 GPU | load and temperature from `rocm-smi`; the tooltip adds VRAM use |
@@ -60,13 +60,13 @@ resolutions and positions are ordinary `swaymsg output` settings, and anything s
 
 ## Nike and Zelus
 
-Each microVM has a badge: Nike's 󰒋 ([nike.md](nike.md)) and Zelus's 󰅩
-([zelus.md](zelus.md)). The icon is grey while the VM is stopped and green
-while it runs, and the badge ends with the VM's firewall mode: **open**
-(permissive), **lock** in red, or **oscp**, **htb** or **local** in purple.
-While Nike runs, its badge also shows where its traffic goes: **vpn** in
-green when it leaves through the VPN tunnel, **no vpn** in orange when it
-doesn't (no tunnel, or a tunnel that doesn't carry the default route).
+Each microVM has the same 󰒋 badge ([nike.md](nike.md), [zelus.md](zelus.md)).
+The icon is grey while the VM is stopped, and orange (Nike) or cyan (Zelus)
+while it runs. A green **\*** follows it while the VM's VPN is up, and the
+badge ends with the VM's firewall mode: **open** (permissive), **lock** in red,
+or **oscp**, **htb** or **local** in purple. The asterisk and the mode keep
+their space when they are hidden or change, so the bar doesn't shift. Hover
+the badge to see whether Nike's traffic actually leaves through the tunnel.
 
 Clicking a badge opens the VM's panel:
 
@@ -80,5 +80,5 @@ Clicking a badge opens the VM's panel:
 
 Each VM measures its own numbers (`nike/status.py`, every 2 seconds) and
 writes them to `/var/lib/<vm>/status` on the host; the bar reads them every 3
-seconds (`home/eww/microvm.py`). While a VM is still booting, Nike's badge
-reads **nike** and the panel says it is starting.
+seconds (`home/eww/microvm.py`). While a VM is still booting, its panel says it
+is starting.

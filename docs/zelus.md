@@ -109,10 +109,10 @@ agent once in permissive mode. The rules are in
 
 ## Bar
 
-The 󰅩 badge is grey while Zelus is stopped and green while it runs, followed
+The 󰒋 badge is grey while Zelus is stopped and cyan while it runs, followed
 by its firewall mode: **open**, **lock** (red) or **local** (purple). Clicking
 it opens a panel with Zelus's CPU, memory and disk (from its own status
-service, like [Nike's](bar.md#nike)) and the firewall dropdown.
+service, like [Nike's](bar.md#nike-and-zelus)) and the firewall dropdown.
 
 ## Root CAs
 
