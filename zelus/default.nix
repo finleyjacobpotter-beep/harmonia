@@ -5,8 +5,8 @@
 #
 # Login: c, no password (ssh zelus from the host). The shell, neovim, tmux
 # and ranger are the host's own home-manager configs in cyan instead of pink
-# (zelus/palette.nix). Claude Code has the Blender and Godot MCP servers
-# (home/mcp-servers.nix), the same ones opencode uses on the host.
+# (zelus/palette.nix). Claude Code and opencode (home/opencode.nix) both have
+# the Blender and Godot MCP servers (home/mcp-servers.nix).
 {
   lib,
   pkgs,
@@ -15,7 +15,15 @@
   ...
 }:
 let
+  pyScript = import ../lib/python-script.nix { inherit pkgs lib; };
+
   mcp = import ../home/mcp-servers.nix { inherit pkgs; };
+
+  # Nike's status writer: utilization for the host's bar (its VPN fields
+  # just read "no VPN" here).
+  status = pyScript "zelus-status" {
+    runtimeInputs = [ pkgs.iproute2 ];
+  } ../nike/status.py;
 in
 {
   imports = [ inputs.home-manager.nixosModules.home-manager ];
@@ -58,6 +66,13 @@ in
         tag = "projects";
         source = zelus.projectsDir;
         mountPoint = "/home/c/Projects";
+      }
+      # Where status.py writes for the host's bar.
+      {
+        proto = "virtiofs";
+        tag = "status";
+        source = zelus.statusDir;
+        mountPoint = "/run/zelus-status";
       }
     ];
 
@@ -125,6 +140,8 @@ in
     settings = {
       PasswordAuthentication = true;
       PermitEmptyPasswords = "yes";
+      # The host's `opencode` command passes the Anthropic key this way.
+      AcceptEnv = [ "ANTHROPIC_API_KEY" ];
     };
     # On the /var volume, so the host key stays the same across reboots.
     hostKeys = [
@@ -135,7 +152,8 @@ in
     ];
   };
 
-  # bash, neovim, tmux, ranger and Claude Code come from home-manager below.
+  # bash, neovim, tmux, ranger, Claude Code and opencode come from
+  # home-manager below.
   environment.systemPackages = with pkgs; [
     openssh
     git
@@ -158,6 +176,7 @@ in
     useUserPackages = true;
     extraSpecialArgs = {
       inherit (zelus) palette keys;
+      inherit zelus;
     };
     users.c = {
       imports = [
@@ -165,6 +184,7 @@ in
         ../home/tmux.nix
         ../home/ranger.nix
         ../home/neovim.nix
+        ../home/opencode.nix
       ];
       programs.git.enable = true; # the prompt shows the git branch
 
@@ -180,6 +200,17 @@ in
       };
 
       home.stateVersion = "26.05";
+    };
+  };
+
+  systemd.services.zelus-status = {
+    description = "Write Zelus's utilization for the host's bar";
+    wantedBy = [ "multi-user.target" ];
+    unitConfig.RequiresMountsFor = "/run/zelus-status";
+    serviceConfig = {
+      ExecStart = "${status}/bin/zelus-status /run/zelus-status/status.json";
+      Restart = "always";
+      RestartSec = 5;
     };
   };
 

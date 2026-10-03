@@ -113,6 +113,7 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | Package | Version |
 | --- | --- |
 | Claude Code | 2.1.283 |
+| opencode | 1.18.31 |
 | MCP for Blender (`mcp-for-blender`) | 2.1.3 |
 | Godot MCP | v5.0.9 |
 

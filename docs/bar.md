@@ -8,7 +8,8 @@ the button again closes it too. Panels open on the primary display.
 |---|---|
 |  logo (top left) | opens the session panel: **Lock** (swaylock), **Log out** (exits sway) and **Power off**. `Super+Shift+e` has the same actions from the keyboard, plus suspend and reboot |
 | **CAPS** / **NUM** | shown while Caps Lock or Num Lock is on |
-| GameMode, Steam, LM Studio, Nike | shown while running; Steam and LM Studio open a panel with **Close** ([lmstudio.md](lmstudio.md)); Nike opens the Nike panel (below) |
+| GameMode, Steam, LM Studio | shown while running; Steam and LM Studio open a panel with **Close** ([lmstudio.md](lmstudio.md)) |
+| Nike, Zelus | always shown: running or not, and the firewall mode; each opens its VM panel (below) |
 | 󰍹 **2** | how many displays there are; opens the display settings window (below) |
 | CPU, memory | |
 | 󰢮 GPU | load and temperature from `rocm-smi`; the tooltip adds VRAM use |
@@ -57,19 +58,27 @@ has no primary display, so this only decides where the bar goes; the
 resolutions and positions are ordinary `swaymsg output` settings, and anything set in
 `home/sway.nix` still applies first.
 
-## Nike
+## Nike and Zelus
 
-While the Nike microVM runs ([nike.md](nike.md)), the 󰒋 badge shows where
-its traffic goes: **vpn** in green when it leaves through the VPN tunnel,
-**no vpn** in orange when it doesn't (no tunnel, or a tunnel that doesn't
-carry the default route). Clicking it opens a panel with:
+Each microVM has a badge: Nike's 󰒋 ([nike.md](nike.md)) and Zelus's 󰅩
+([zelus.md](zelus.md)). The icon is grey while the VM is stopped and green
+while it runs, and the badge ends with the VM's firewall mode: **open**
+(permissive), **lock** in red, or **oscp**, **htb** or **local** in purple.
+While Nike runs, its badge also shows where its traffic goes: **vpn** in
+green when it leaves through the VPN tunnel, **no vpn** in orange when it
+doesn't (no tunnel, or a tunnel that doesn't carry the default route).
 
-- **VPN outbound**: the interface Nike's internet traffic leaves through, the
-  tunnel's address and the VPN server, and the tunnel's download and upload
-  rates.
-- **System**: Nike's CPU (100% means both vCPUs), memory, and `/home` disk
-  use, its load average and uptime.
+Clicking a badge opens the VM's panel:
 
-Nike measures all of this itself (`nike/status.py`, every 2 seconds) and
-writes it to `/var/lib/nike/status` on the host; the bar reads it every 3
-seconds. While Nike is still booting, the badge reads **nike**.
+- **VPN outbound** (Nike only): the interface Nike's internet traffic leaves
+  through, the tunnel's address and the VPN server, and the tunnel's download
+  and upload rates.
+- **System**: the VM's CPU (100% means all its vCPUs), memory, and `/home`
+  disk use, its load average and uptime.
+- **Firewall**: the current mode; click it for the list of modes, and click
+  one to switch to it (`vm-firewall`, allowed without a password).
+
+Each VM measures its own numbers (`nike/status.py`, every 2 seconds) and
+writes them to `/var/lib/<vm>/status` on the host; the bar reads them every 3
+seconds (`home/eww/microvm.py`). While a VM is still booting, Nike's badge
+reads **nike** and the panel says it is starting.

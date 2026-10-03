@@ -1,6 +1,7 @@
 # Elkowar's Wacky Widgets — top bar for sway.
 {
   config,
+  osConfig,
   pkgs,
   lib,
   palette,
@@ -171,9 +172,46 @@ let
   # Quit Steam the way its own menu does, Flathub or native.
   steamClose = script "eww-steam-close" ./eww/steam-close.py [ pkgs.flatpak ];
 
-  # The Nike microVM: running or not, its VPN and its utilization
-  # (modules/nixos/nike.nix).
-  nike = script "eww-nike" ./eww/nike.py [ pkgs.systemd ];
+  # The microVMs (modules/nixos/nike.nix, zelus.nix): running or not, their
+  # firewall mode, VPN and utilization, and switching the mode.
+  microvm = script "eww-microvm" ./eww/microvm.py [
+    pkgs.systemd
+    pkgs.eww
+  ];
+
+  # Each VM's firewall modes (modules/nixos/vm-firewall.nix), in order.
+  vmModes = vm: osConfig.harmonia.vmFirewall.${vm}.modes;
+
+  # A mode's label or short word from the VM's current mode, as a yuck
+  # expression: nike.mode == "oscp" ? "OSCP" : (…).
+  modeText =
+    vm: field:
+    lib.foldr (m: rest: ''(${vm}.mode == "${m.name}" ? "${m.${field}}" : ${rest})'') ''""'' (
+      vmModes vm
+    );
+
+  # The firewall dropdown in a VM's panel: the current mode, and the list of
+  # modes when it is opened.
+  firewallDropdown = vm: ''
+    (defvar ${vm}_fw_open false)
+    (defwidget ${vm}-firewall []
+      (box :class "wg-tunnel vm-fw" :orientation "v" :space-evenly false :spacing 6
+        (button :class "vm-fw-current" :onclick "${eww} update ${vm}_fw_open=''${!${vm}_fw_open}"
+          (box :orientation "h" :space-evenly false
+            (label :class "wg-name" :hexpand true :halign "start" :text "Firewall")
+            (label :class "vm-fw-mode mode-''${${vm}.mode}" :text "''${${modeText vm "label"}} ''${${vm}_fw_open ? "▴" : "▾"}")))
+        (revealer :reveal ${vm}_fw_open :transition "slidedown" :duration "150ms"
+          (box :orientation "v" :space-evenly false :spacing 2
+            ${
+              lib.concatMapStrings (m: ''
+                (button :class "vm-fw-item ''${${vm}.mode == "${m.name}" ? "active" : ""}"
+                  :onclick "${microvm}/bin/eww-microvm ${vm} set ${m.name}"
+                  (box :orientation "v" :space-evenly false :spacing 0
+                    (label :class "vm-fw-label" :halign "start" :text "${m.label}")
+                    (label :class "wg-detail" :halign "start" :xalign 0 :wrap true :text "${m.description}")))
+              '') (vmModes vm)
+            }))))
+  '';
 
   battery = script "eww-battery" ./eww/battery.py [ ];
 in
@@ -241,8 +279,11 @@ in
           :initial "{\"gamemode\":false,\"steam\":false,\"lmstudio\":{\"running\":false,\"serving\":false,\"first\":\"\",\"list\":\"\"}}"
           "${activity}/bin/eww-activity")
         (defpoll nike :interval "3s"
-          :initial "{\"running\":false,\"fresh\":false,\"cpu\":0,\"mem\":0,\"disk\":0,\"vpn\":{\"up\":false,\"via_vpn\":false}}"
-          "${nike}/bin/eww-nike")
+          :initial "{\"running\":false,\"fresh\":false,\"mode\":\"\",\"cpu\":0,\"mem\":0,\"disk\":0,\"vpn\":{\"up\":false,\"via_vpn\":false}}"
+          "${microvm}/bin/eww-microvm nike")
+        (defpoll zelus :interval "3s"
+          :initial "{\"running\":false,\"fresh\":false,\"mode\":\"\",\"cpu\":0,\"mem\":0,\"disk\":0,\"vpn\":{\"up\":false,\"via_vpn\":false}}"
+          "${microvm}/bin/eww-microvm zelus")
         (defpoll locks :interval "500ms" :initial "{\"caps\":false,\"num\":false}" "${locks}/bin/eww-locks")
         (defpoll caffeine :interval "10s" "${caffeine}/bin/eww-caffeine")
         (defpoll battery :interval "30s" "${battery}/bin/eww-battery")
@@ -304,19 +345,27 @@ in
               (box :orientation "h" :space-evenly false :spacing 6
                 (label :class "icon" :text "󰚩")
                 (label :visible {activity.lmstudio.serving} :limit-width 24 :text "''${activity.lmstudio.first}")))
-            ; Always shown: the server icon is grey while Nike is stopped and
-            ; green while it runs; the text says whether its traffic goes
-            ; through the VPN.
-            (button :class "module nike ''${nike.running ? "running" : "stopped"} ''${nike.fresh ? (nike.vpn.via_vpn ? "vpn" : "direct") : ""}"
-              :tooltip {!nike.running ? "Nike is stopped (click for details)"
+            ; The microVMs, always shown: the icon is grey while the VM is
+            ; stopped and green while it runs, followed by its firewall mode.
+            ; Nike's text also says whether its traffic goes through the VPN.
+            (button :class "module vm nike ''${nike.running ? "running" : "stopped"} ''${nike.fresh ? (nike.vpn.via_vpn ? "vpn" : "direct") : ""}"
+              :tooltip {(!nike.running ? "Nike is stopped"
                 : (!nike.fresh ? "Nike is starting"
-                  : (nike.vpn.via_vpn ? "Nike: outbound through the VPN (click for details)"
-                    : "Nike: outbound NOT through a VPN (click for details)"))}
+                  : (nike.vpn.via_vpn ? "Nike: outbound through the VPN"
+                    : "Nike: outbound NOT through a VPN")))
+                + " · firewall: ''${${modeText "nike" "label"}} (click for details)"}
               :onclick "${menu} nike-menu"
               (box :orientation "h" :space-evenly false :spacing 6
                 (label :class "icon" :text "󰒋")
-                (label :visible {nike.running}
-                  :text {!nike.fresh ? "nike" : (nike.vpn.via_vpn ? "vpn" : "no vpn")})))
+                (label :class "vm-state" :visible {nike.running}
+                  :text {!nike.fresh ? "nike" : (nike.vpn.via_vpn ? "vpn" : "no vpn")})
+                (label :class "vm-mode mode-''${nike.mode}" :text "''${${modeText "nike" "short"}}")))
+            (button :class "module vm zelus ''${zelus.running ? "running" : "stopped"}"
+              :tooltip "Zelus is ''${zelus.running ? (zelus.fresh ? "running" : "starting") : "stopped"} · firewall: ''${${modeText "zelus" "label"}} (click for details)"
+              :onclick "${menu} zelus-menu"
+              (box :orientation "h" :space-evenly false :spacing 6
+                (label :class "icon" :text "󰅩")
+                (label :class "vm-mode mode-''${zelus.mode}" :text "''${${modeText "zelus" "short"}}")))
             (button :class "module display"
               :tooltip "''${arraylength(displays.outputs)} display''${arraylength(displays.outputs) == 1 ? "" : "s"}, primary ''${displays.primary}. Click for display settings"
               :onclick "${displaySettings}/bin/display-settings --toggle"
@@ -448,6 +497,9 @@ in
               (label :class "wg-detail" :text text))
             (progress :class "vm-meter ''${value >= 90 ? "high" : ""}" :orientation "h" :value value)))
 
+        ${firewallDropdown "nike"}
+        ${firewallDropdown "zelus"}
+
         (defwidget nike-panel []
           (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
             (box :orientation "h" :space-evenly false
@@ -472,8 +524,29 @@ in
                 (vm-meter :name "Memory" :value {nike.mem} :text "''${nike.mem_text}")
                 (vm-meter :name "Disk (/home)" :value {nike.disk} :text "''${nike.disk_text}")
                 (label :class "wg-detail" :halign "start" :text "Load ''${nike.load} · up ''${nike.uptime_text}")))
+            (nike-firewall)
             (label :class "wg-detail" :halign "start" :wrap true
               :text "ssh nike (k / k) · ~/nike-share is ~/share on Nike")))
+
+        ; Zelus: its CPU, memory and disk, and its firewall mode.
+        (defwidget zelus-panel []
+          (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+            (box :orientation "h" :space-evenly false
+              (label :class "wg-title zelus" :hexpand true :halign "start" :text "Zelus")
+              (button :class "wg-close" :onclick "${eww} close zelus-menu" "✕"))
+            (label :class "wg-detail" :visible {!zelus.running} :halign "start" :wrap true
+              :text "Zelus is stopped. Start it with: sudo systemctl start microvm@zelus")
+            (label :class "wg-detail" :visible {zelus.running && !zelus.fresh} :halign "start" :wrap true
+              :text "Zelus is starting: no status from it yet.")
+            (box :class "wg-tunnel" :visible {zelus.running && zelus.fresh} :orientation "v" :space-evenly false :spacing 6
+              (label :class "wg-name" :halign "start" :text "System")
+              (vm-meter :name "CPU" :value {zelus.cpu} :text "''${zelus.cpu_text}")
+              (vm-meter :name "Memory" :value {zelus.mem} :text "''${zelus.mem_text}")
+              (vm-meter :name "Disk (/home)" :value {zelus.disk} :text "''${zelus.disk_text}")
+              (label :class "wg-detail" :halign "start" :text "Load ''${zelus.load} · up ''${zelus.uptime_text}"))
+            (zelus-firewall)
+            (label :class "wg-detail" :halign "start" :wrap true
+              :text "ssh zelus (c, no password) · claude, opencode · ~/zelus-share is ~/share, ~/Projects is shared")))
 
         ; Network: every interface's rates, and which one the bar shows.
         (defwidget net-panel []
@@ -600,6 +673,13 @@ in
           :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
           (nike-panel))
 
+        (defwindow zelus-menu
+          :monitor 0
+          :stacking "overlay"
+          :namespace "eww-menu"
+          :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
+          (zelus-panel))
+
         (defwindow steam-menu
           :monitor 0
           :stacking "overlay"
@@ -691,13 +771,18 @@ in
       &.clock .icon { color: $pink; }
       &.gamemode .icon { color: $green; }
       &.steam .icon { color: $blue; }
-      &.steam, &.lmstudio, &.nike { &:hover { background-color: $surface; } }
+      &.steam, &.lmstudio, &.vm { &:hover { background-color: $surface; } }
       &.lmstudio .icon { color: $muted; }
       &.lmstudio.serving .icon { color: $pink; }
-      &.nike .icon { color: $muted; }
-      &.nike.running .icon { color: $green; }
-      &.nike.vpn { color: $green; }
-      &.nike.direct { color: $orange; }
+      &.vm .icon { color: $muted; }
+      &.vm.running .icon { color: $green; }
+      &.nike.vpn .vm-state { color: $green; }
+      &.nike.direct .vm-state { color: $orange; }
+      // Firewall modes: open is the plain one, lockdown red, the
+      // restricted ones (OSCP, Hack The Box, local inference) purple.
+      .vm-mode { color: $purple; }
+      .vm-mode.mode-permissive { color: $muted; }
+      .vm-mode.mode-lockdown { color: $red; }
       &.wg { color: $muted; &:hover { background-color: $surface; } }
       &.wg.on { color: $cyan; }
       &.caffeine { color: $muted; &:hover { background-color: $surface; } }
@@ -731,6 +816,16 @@ in
       .wg-tunnel.down .wg-name { color: $muted; }
       .wg-tunnel.warn .wg-name { color: $orange; }
       .wg-title.nike { color: $orange; }
+      .wg-title.zelus { color: $cyan; }
+      .vm-fw-current { padding: 0; &:hover .wg-name { color: $fg; } }
+      .vm-fw-mode { color: $purple; }
+      .vm-fw-mode.mode-permissive { color: $fg; }
+      .vm-fw-mode.mode-lockdown { color: $red; }
+      .vm-fw-item {
+        padding: 4px 8px;
+        &:hover { background-color: $surface; }
+        &.active { background-color: $surface; .vm-fw-label { color: $cyan; } }
+      }
       .wg-detail { color: $muted; }
       .wg-toggle {
         padding: 4px 10px;

@@ -98,10 +98,8 @@ in
       }
     ];
   };
-  networking.nameservers = [
-    "9.9.9.9"
-    "149.112.112.112"
-  ];
+  # The VPN modes' firewall lets DNS out only to these.
+  networking.nameservers = nike.nameservers;
 
   users.mutableUsers = false;
   users.users.k = {

@@ -20,6 +20,7 @@
     ../../modules/nixos/virtualisation.nix
     ../../modules/nixos/nike.nix
     ../../modules/nixos/zelus.nix
+    ../../modules/nixos/vm-firewall.nix
     ../../modules/nixos/secrets.nix
     ../../modules/nixos/wireguard.nix
   ];

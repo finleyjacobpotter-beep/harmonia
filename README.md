@@ -4,7 +4,7 @@
 icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, two **microVMs** (Nike and Zelus), **podman**, and **Zen browser**, **Lutris**, **Steam**, **Element**, **LM Studio**, **Blender**, **Godot** and **opencode** jailed in Flatpak —
+**neovim**, two **microVMs** (Nike and Zelus), **podman**, and **Zen browser**, **Lutris**, **Steam**, **Element**, **LM Studio**, **Blender** and **Godot** jailed in Flatpak —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -24,23 +24,24 @@ modules/nixos/
   steam.nix                    Steam from Flathub, locked down, sharing only ~/Games with Lutris
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
-  studio.nix                   Blender, Godot and opencode from Flathub, sharing only ~/Projects
+  studio.nix                   Blender and Godot from Flathub, sharing only ~/Projects
   fans.nix                     LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
   virtualisation.nix           rootless podman + buildah, plain QEMU (no libvirt)
   nike.nix                     the Nike microVM, host side: tap network + NAT, shared folders, `ssh nike`
-  zelus.nix                    the Zelus microVM, host side: tap network + NAT, shared folders, `ssh zelus` with the Blender/Godot forwards
+  zelus.nix                    the Zelus microVM, host side: tap network + NAT, shared folders, LM Studio socket, `ssh zelus` with the Blender/Godot forwards
+  vm-firewall.nix              per-VM firewall modes (nftables on the host) and the `vm-firewall` command
   secrets.nix                  pcscd + YubiKey udev rules
   wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
 nike/                          the Nike microVM guest (microvm.nix)
   default.nix                  packages, user k, network, shares and volumes, home-manager
   palette.nix                  Miami Wind with orange as the primary colour
   status.py                    writes Nike's VPN and utilization for the bar
-zelus/                         the Zelus microVM guest (microvm.nix): Claude Code with Blender and Godot MCP
-  default.nix                  packages, user c, network, shares and volumes, home-manager, Claude Code
+zelus/                         the Zelus microVM guest (microvm.nix): Claude Code and opencode with Blender and Godot MCP
+  default.nix                  packages, user c, network, shares and volumes, home-manager, Claude Code, status service
   palette.nix                  Miami Wind with cyan as the primary colour
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio/nike, display settings, cpu, mem, gpu, network, wireguard, caffeine, volume, battery, clock + calendar)
+  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio, nike/zelus with firewall modes, display settings, cpu, mem, gpu, network, wireguard, caffeine, volume, battery, clock + calendar)
   eww/                         the bar's scripts, in Python (displays, network, gpu, volume, clock, calendar, …), and the display settings window
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
@@ -48,8 +49,9 @@ home/                          home-manager, one file per program
   secrets-backup.py            the `secrets-backup` command
   flatpak-theme.nix            the desktop GTK theme copied into the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
-  opencode.nix                 opencode: LM Studio + Claude providers, keys from pass, oh-my-openagent, Blender and Godot MCP servers
-  mcp-servers.nix              the Blender and Godot MCP servers, shared by opencode and Zelus's Claude Code
+  opencode.nix                 opencode on Zelus: LM Studio + Claude providers, oh-my-openagent, Blender and Godot MCP servers
+  zelus.nix                    the host's `opencode` command: key from pass, opencode on Zelus over ssh
+  mcp-servers.nix              the Blender and Godot MCP servers, for Claude Code and opencode on Zelus
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
@@ -104,10 +106,10 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 - [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
-- [opencode](docs/opencode.md): providers, keys in pass, and the Blender and Godot MCP servers
+- [opencode](docs/opencode.md): opencode on Zelus, providers, keys in pass, and the Blender and Godot MCP servers
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
-- [Nike and containers](docs/nike.md): the Nike microVM (VPN work, shared folder, bar panel), podman
-- [Zelus](docs/zelus.md): the Zelus microVM (Claude Code, dev tools, Blender and Godot over MCP)
+- [Nike and containers](docs/nike.md): the Nike microVM (VPN work, firewall modes, shared folder, bar panel), podman
+- [Zelus](docs/zelus.md): the Zelus microVM (Claude Code, opencode, dev tools, Blender and Godot over MCP, firewall modes)
 - [The bar](docs/bar.md): what each part of the eww bar shows, its panels, and the display settings window
 - [Calendar](docs/calendar.md): the clock's calendar, time zones and CalDAV sync with vdirsyncer
 - [WireGuard](docs/wireguard.md): importing tunnels and the bar panel
@@ -144,8 +146,8 @@ harmonia stands on other people's work:
 - **[Departure Mono](https://departuremono.com/)** via
   [Nerd Fonts](https://www.nerdfonts.com/): the font.
 - **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
-  Flatpak setup for Zen, Lutris, Steam, Element, LM Studio, Blender, Godot
-  and opencode.
+  Flatpak setup for Zen, Lutris, Steam, Element, LM Studio, Blender and
+  Godot.
 - **[microvm.nix](https://github.com/microvm-nix/microvm.nix)**: the Nike
   and Zelus microVMs.
 

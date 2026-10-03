@@ -1,6 +1,6 @@
-# The Blender and Godot MCP servers, shared by opencode on the host
-# (home/opencode.nix) and Claude Code on Zelus (zelus/default.nix). Each is
-# pinned to a release so a new upstream commit doesn't run unreviewed.
+# The Blender and Godot MCP servers for Claude Code and opencode on Zelus
+# (zelus/default.nix, home/opencode.nix). Each is pinned to a release so a
+# new upstream commit doesn't run unreviewed.
 #
 # uv runs them with nixpkgs' Python: a Python uv downloads itself can't run
 # on NixOS.

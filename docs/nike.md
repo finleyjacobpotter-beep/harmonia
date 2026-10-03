@@ -55,6 +55,32 @@ up without routing the internet through it, and the badge stays orange
 (**no vpn**). DNS goes to Quad9 (`9.9.9.9`) unless the VPN config changes it;
 with a full tunnel those queries go through the VPN too.
 
+### Firewall modes
+
+The host decides what Nike may reach, so nothing inside Nike (root included)
+can change it. Pick a mode in the bar's Nike panel (the *Firewall* dropdown),
+or on the host:
+
+```sh
+sudo vm-firewall set nike oscp     # lockdown | oscp | htb | permissive
+vm-firewall                        # every VM's current mode
+```
+
+| Mode | What Nike may send out |
+| --- | --- |
+| Lockdown | nothing |
+| OSCP | DNS to Quad9, and OpenVPN to UDP 1194 (OffSec's connection packs) |
+| Hack The Box | DNS to Quad9, and OpenVPN to UDP 1337 (Hack The Box's UDP packs) |
+| Permissive (default) | anything |
+
+In the OSCP and Hack The Box modes the only way out is the VPN: once
+OpenVPN is connected, the lab traffic is inside the tunnel, and nothing
+reaches the internet around it. Use the UDP connection pack; if yours uses
+another port or TCP, change the port in `modules/nixos/nike.nix`. Nike can't
+open connections to the host in any mode but permissive; `ssh nike` works in
+every mode, since the host starts it. The mode is kept across reboots
+(`/var/lib/vm-firewall/nike`), and the bar's Nike badge shows it.
+
 ### Network
 
 Nike has its own tap interface with a `/32` route each way, and the host

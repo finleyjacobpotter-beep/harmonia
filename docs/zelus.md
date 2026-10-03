@@ -1,7 +1,8 @@
 # Zelus
 
 Zelus is a small NixOS VM for development with
-[Claude Code](https://github.com/anthropics/claude-code), built with
+[Claude Code](https://github.com/anthropics/claude-code) and
+[opencode](opencode.md), built with
 [microvm.nix](https://github.com/microvm-nix/microvm.nix) on QEMU/KVM like
 [Nike](nike.md). The guest is [`zelus/default.nix`](../zelus/default.nix);
 the host side (network, shared folders, `ssh zelus`) is
@@ -9,8 +10,9 @@ the host side (network, shared folders, `ssh zelus`) is
 
 | | |
 | --- | --- |
-| Packages | Claude Code, bash, neovim, tmux, ranger, git, ripgrep, fd, jq, curl, wget, unzip, btop, make, gcc, python3, uv, nodejs, openssh |
-| MCP servers | Blender and Godot, the same pinned ones opencode uses ([opencode.md](opencode.md#mcp-servers)) |
+| Packages | Claude Code, opencode, bash, neovim, tmux, ranger, git, ripgrep, fd, jq, curl, wget, unzip, btop, make, gcc, python3, uv, nodejs, openssh |
+| MCP servers | Blender and Godot, for both Claude Code and opencode ([opencode.md](opencode.md#mcp-servers)) |
+| Firewall | permissive, lockdown or local inference, switched from the bar ([below](#firewall-modes)) |
 | Login | user `c`, no password (in `wheel`; `sudo` doesn't ask either) |
 | Resources | 4 vCPUs, 6 GiB RAM |
 | Address | `10.20.1.2`, host side `10.20.1.1` on the `vm-zelus` tap |
@@ -30,6 +32,9 @@ ssh zelus                              # no password
 claude                                 # /login the first time
 ```
 
+or `opencode` in a host terminal ([opencode.md](opencode.md)), which brings
+your Anthropic key from pass.
+
 `Super+o z` opens a terminal with `ssh zelus`. Claude Code's login is kept in
 `~/.claude` on the `/home` volume.
 
@@ -42,8 +47,8 @@ neither the host (pink) nor Nike (orange).
 
 Blender and Godot run on the host, as usual (`Super+o Shift+b`, `Super+o d`),
 with the add-ons set up as in [opencode.md](opencode.md#mcp-servers). Claude
-Code on Zelus starts the two MCP servers itself, and `ssh zelus` connects
-them to the editors:
+Code or opencode on Zelus starts the two MCP servers itself, and `ssh zelus`
+connects them to the editors:
 
 | | Zelus | Host |
 | --- | --- | --- |
@@ -54,10 +59,50 @@ Both forwards are bound to localhost on each side, so nothing is opened to
 the network. They exist while an `ssh zelus` session is open (later sessions
 share the first one's connection), so start Claude Code from one.
 
-The host's `localhost:9500` can be held by only one Godot MCP server: while
-`ssh zelus` is open, opencode's Godot server on the host can't start, and
-the other way round (ssh then warns that the forward failed). Use one of them
-with Godot at a time. The Blender add-on accepts one client at a time too.
+Port 9500 can be held by only one Godot MCP server, so run Claude Code and
+opencode with Godot one at a time (the second one's Godot server fails to
+start). The Blender add-on accepts one client at a time too. The two forwards
+come with `ssh zelus`, not the network, so they work in every firewall mode.
+
+## LM Studio
+
+LM Studio runs on the host ([lmstudio.md](lmstudio.md)), and Zelus reaches its
+server at `10.20.1.1:1234`: a socket on the host's end of Zelus's tap
+(`lmstudio-zelus.socket`) passes each connection on to LM Studio's
+`localhost:1234`. opencode's `lmstudio` provider points there. Start the
+server in LM Studio's *Developer* tab first.
+
+## Firewall modes
+
+The host decides what Zelus may reach, so nothing inside Zelus (root
+included) can change it. Pick a mode in the bar's Zelus panel (the
+*Firewall* dropdown), or on the host:
+
+```sh
+sudo vm-firewall set zelus local   # permissive | lockdown | local
+vm-firewall                        # every VM's current mode
+```
+
+| Mode | Internet | Host's LM Studio |
+| --- | --- | --- |
+| Permissive (default) | yes | yes |
+| Lockdown | no | no |
+| Local inference | no | yes |
+
+The mode is kept across reboots (`/var/lib/vm-firewall/zelus`). `ssh zelus`
+works in every mode, since the host starts it. Claude Code needs the internet
+for Anthropic's API, so in lockdown and local inference use opencode with the
+local model. uv fetches the MCP servers on their first start, so start each
+agent once in permissive mode. The rules are in
+[`modules/nixos/zelus.nix`](../modules/nixos/zelus.nix) and
+[`modules/nixos/vm-firewall.nix`](../modules/nixos/vm-firewall.nix).
+
+## Bar
+
+The 󰅩 badge is grey while Zelus is stopped and green while it runs, followed
+by its firewall mode: **open**, **lock** (red) or **local** (purple). Clicking
+it opens a panel with Zelus's CPU, memory and disk (from its own status
+service, like [Nike's](bar.md#nike)) and the firewall dropdown.
 
 ## Changing it
 
