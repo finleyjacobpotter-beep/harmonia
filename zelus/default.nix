@@ -140,8 +140,6 @@ in
     settings = {
       PasswordAuthentication = true;
       PermitEmptyPasswords = "yes";
-      # The host's `opencode` command passes the Anthropic key this way.
-      AcceptEnv = [ "ANTHROPIC_API_KEY" ];
     };
     # On the /var volume, so the host key stays the same across reboots.
     hostKeys = [

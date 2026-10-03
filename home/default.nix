@@ -17,7 +17,6 @@
     ./zen.nix
     ./flatpak-theme.nix
     ./element.nix
-    ./zelus.nix
     ./tui.nix
     ./keymap.nix
     ./secrets.nix

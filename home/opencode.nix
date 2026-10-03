@@ -1,7 +1,6 @@
-# opencode on Zelus (imported by zelus/default.nix for user c): providers,
-# oh-my-openagent and the Blender and Godot MCP servers. The host's
-# `opencode` command (home/zelus.nix) starts it over `ssh zelus` with the
-# Anthropic key from the host's pass. See docs/opencode.md.
+# opencode, on Zelus only (imported by zelus/default.nix for user c):
+# providers, oh-my-openagent and the Blender and Godot MCP servers. Nothing
+# of it is on the host. See docs/opencode.md.
 { pkgs, zelus, ... }:
 let
   # The same pinned servers Claude Code uses (home/mcp-servers.nix), run
@@ -71,9 +70,6 @@ let
           options.baseURL = "http://${zelus.hostAddress}:${toString zelus.lmstudioPort}/v1";
           models."qwopus3.5-9b-v3".name = "Qwopus 3.5 9B v3 (Q4_K_M)";
         };
-        # The key comes from the host's pass with each `opencode` (ssh
-        # SendEnv), never from disk.
-        anthropic.options.apiKey = "{env:ANTHROPIC_API_KEY}";
       };
       mcp = {
         blender = {

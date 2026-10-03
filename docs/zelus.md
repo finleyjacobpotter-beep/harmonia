@@ -32,8 +32,7 @@ ssh zelus                              # no password
 claude                                 # /login the first time
 ```
 
-or `opencode` in a host terminal ([opencode.md](opencode.md)), which brings
-your Anthropic key from pass.
+or `opencode` ([opencode.md](opencode.md)).
 
 `Super+o z` opens a terminal with `ssh zelus`. Claude Code's login is kept in
 `~/.claude` on the `/home` volume.

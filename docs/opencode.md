@@ -1,21 +1,24 @@
 # opencode
 
-[opencode](https://opencode.ai/) runs on the [Zelus](zelus.md) microVM, from
-nixpkgs, configured by [`home/opencode.nix`](../home/opencode.nix). Start Zelus
-(`sudo systemctl start microvm@zelus`), then `Super+o o` or `opencode` in a
-host terminal: that reads your key from pass on the host and opens opencode
-on Zelus over `ssh zelus`, in `~/Projects` (the host's `~/Projects`). Inside
-Zelus, plain `opencode` works too, without the Anthropic key.
+[opencode](https://opencode.ai/) runs only on the [Zelus](zelus.md) microVM,
+from nixpkgs, configured by [`home/opencode.nix`](../home/opencode.nix); the
+host has no opencode at all. Start Zelus, then run it there:
+
+```sh
+sudo systemctl start microvm@zelus
+ssh zelus
+opencode
+```
 
 The Flathub app it used to be isn't installed any more; remove the old copy
-with `flatpak uninstall ai.opencode.opencode`.
+from the host with `flatpak uninstall ai.opencode.opencode`.
 
 ## Providers
 
 | Provider | Model | Needs |
 | --- | --- | --- |
 | LM Studio (default) | `lmstudio/qwopus3.5-9b-v3` | LM Studio's local server running on the host (*Developer* tab, `localhost:1234`) with the model loaded; Zelus reaches it at `10.20.1.1:1234`, also in its *local inference* firewall mode |
-| Anthropic (Claude) | any `anthropic/...` model | an API key in pass |
+| Anthropic (Claude) | any `anthropic/...` model | an API key, added on Zelus (below) |
 
 The model is
 [`Jackrong/Qwopus3.5-9B-v3-GGUF`](https://huggingface.co/Jackrong/Qwopus3.5-9B-v3-GGUF)
@@ -43,21 +46,12 @@ slowly and less capably) without an API key. To change a mapping, edit
 `home/opencode.nix`; edits to the file in place are replaced on the next
 switch.
 
-## API keys in pass
+## Anthropic key
 
-The host's `opencode` command reads the key from pass and hands it to opencode
-on Zelus as `ANTHROPIC_API_KEY` (ssh `SendEnv`; Zelus's sshd accepts only that
-variable); no key is written to disk on either side. Store it once, on the
-host:
-
-```sh
-pass insert opencode/anthropic-api-key
-```
-
-`Super+o o` opens a terminal for this so pinentry can ask for your gpg
-passphrase. Without the entry, opencode still starts with LM Studio only.
-Don't add keys through opencode's own `/connect`: that saves them in plain
-text in Zelus's home.
+Add it once on Zelus, from inside opencode: `/connect`, then *Anthropic*.
+opencode keeps it in `~/.local/share/opencode/auth.json` on Zelus's `/home`
+volume, so it never touches the host. Without it, opencode runs with LM
+Studio only.
 
 ## MCP servers
 
@@ -65,7 +59,7 @@ opencode on Zelus has the same two servers as Claude Code there
 ([`home/mcp-servers.nix`](../home/mcp-servers.nix)), pinned to a release and
 started on Zelus. They reach Blender and Godot on the host through
 `ssh zelus` ([zelus.md](zelus.md#blender-and-godot)), so open opencode from an
-ssh session (the `opencode` command does).
+ssh session.
 
 | Server | Version | One-time setup in the app (on the host) |
 | --- | --- | --- |

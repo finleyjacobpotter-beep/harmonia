@@ -236,7 +236,6 @@ in
             l = run "flatpak run ai.lmstudio.lm-studio";
             "Shift+b" = run "flatpak run org.blender.Blender";
             d = run "flatpak run org.godotengine.Godot";
-            o = term "opencode";
           };
           media = leave // {
             k = "exec ${volUp}";
