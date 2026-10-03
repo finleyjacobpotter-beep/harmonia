@@ -195,6 +195,7 @@ let
 in
 {
   home.packages = [ sync ];
+  programs.bash.shellAliases.zen = "flatpak run app.zen_browser.zen";
 
   home.activation.zenMiamiWind = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     # Real copies of the font for flatpak apps (symlinks into /nix/store are

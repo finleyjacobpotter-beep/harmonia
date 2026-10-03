@@ -27,6 +27,7 @@
   home.homeDirectory = "/home/${username}";
 
   programs.home-manager.enable = true;
+  programs.bash.shellAliases.rebuild = "sudo nixos-rebuild switch --flake ~/harmonia";
   programs.git.enable = true;
 
   # XDG base dirs (~/.config, ~/.local/share, ...) plus the user dirs

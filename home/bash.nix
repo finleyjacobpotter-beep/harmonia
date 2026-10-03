@@ -1,4 +1,9 @@
-{ pkgs, palette, config, ... }:
+{
+  pkgs,
+  palette,
+  config,
+  ...
+}:
 let
   p = palette;
 in
@@ -32,13 +37,11 @@ in
       r = "ranger";
       v = "nvim";
       t = "tmux new-session -A -s main";
-      zen = "flatpak run app.zen_browser.zen";
-      rebuild = "sudo nixos-rebuild switch --flake ~/harmonia";
     };
     initExtra = import ./bash-prompt.nix {
       inherit palette;
       gitPrompt = "${pkgs.git}/share/bash-completion/completions/git-prompt.sh";
-      gpg = config.programs.gpg.package;
+      gpg = if config.programs.gpg.enable then config.programs.gpg.package else null;
     };
   };
   # vi editing mode for bash (and everything else that uses readline).

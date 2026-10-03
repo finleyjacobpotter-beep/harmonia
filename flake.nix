@@ -16,6 +16,12 @@
 
     # Declarative flatpak (used for the sandboxed Zen browser). Tag v0.7.0.
     nix-flatpak.url = "github:gmodena/nix-flatpak/440818969ac2cbd77bfe025e884d0aa528991374";
+
+    # The Nike microVM (nike/, modules/nixos/nike.nix). main, 2026-10-01
+    microvm = {
+      url = "github:microvm-nix/microvm.nix/3f1540f254fe73ac907281b7de7d396bb3d54850";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -23,6 +29,7 @@
       nixpkgs,
       home-manager,
       nix-flatpak,
+      microvm,
       ...
     }@inputs:
     let
@@ -56,6 +63,7 @@
           }
           ./hosts/harmonia
           nix-flatpak.nixosModules.nix-flatpak
+          microvm.nixosModules.host
           home-manager.nixosModules.home-manager
           {
             home-manager = {

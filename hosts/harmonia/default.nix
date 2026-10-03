@@ -18,7 +18,7 @@
     ../../modules/nixos/studio.nix
     ../../modules/nixos/fans.nix
     ../../modules/nixos/virtualisation.nix
-    ../../modules/nixos/vms.nix
+    ../../modules/nixos/nike.nix
     ../../modules/nixos/secrets.nix
     ../../modules/nixos/wireguard.nix
   ];

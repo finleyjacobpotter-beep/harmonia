@@ -8,14 +8,12 @@ belongs to exactly one layer ([`keys.nix`](../keys.nix)), so layers never fight:
 | `Super` + … | **sway** | nothing else binds Super |
 | `Ctrl+Space` … | **tmux** prefix | no prefix-less tmux keys, so every other key reaches the program inside. `Ctrl+Space Ctrl+Space` sends a literal Ctrl+Space |
 | `Ctrl+Shift` + … | **alacritty** | its Ctrl+= / Ctrl+- / Ctrl+0 defaults are passed through to programs instead |
-| `Alt` + … | **i3 in the Kali VM** | nothing on the host binds Alt, so a VM window gets it untouched |
 | everything else | focused app | Zen + Vimium, neovim, ranger, bash (vi mode), btop, pulsemixer, bluetuith… |
 
 Zen and tmux may share keys (only one has focus); CLI tools may never use
 Super, Ctrl+Space or Ctrl+Shift. [`home/keymap.nix`](../home/keymap.nix) checks
 this at build time: a sway binding without Super, a tmux `bind -n`, or an
-alacritty binding outside Ctrl+Shift fails `nixos-rebuild`, and so does any
-Alt binding in neovim, tmux or alacritty.
+alacritty binding outside Ctrl+Shift fails `nixos-rebuild`.
 
 ## sway (`Super`)
 
@@ -46,7 +44,7 @@ Alt binding in neovim, tmux or alacritty.
 | Enter | Mode | Keys |
 | --- | --- | --- |
 | `Super+r` | resize | `h` `j` `k` `l` (`Shift` = bigger steps) |
-| `Super+o` | open | `b` Zen · `f` ranger · `e` nvim · `t` tmux · `s` btop · `a` pulsemixer · `u` bluetuith · `n` nmtui · `v` virt-manager · `g` Lutris · `Shift+g` Steam · `c` Element · `l` LM Studio · `Shift+b` Blender · `d` Godot · `o` opencode |
+| `Super+o` | open | `b` Zen · `f` ranger · `e` nvim · `t` tmux · `s` btop · `a` pulsemixer · `u` bluetuith · `n` nmtui · `v` Nike (ssh) · `g` Lutris · `Shift+g` Steam · `c` Element · `l` LM Studio · `Shift+b` Blender · `d` Godot · `o` opencode |
 | `Super+m` | media | `j`/`k` volume · `m` mute · `Shift+m` mic · `h`/`l` prev/next · `p` play/pause · `Shift+j`/`Shift+k` brightness |
 | `Super+Shift+e` | system | `l` lock · `e` exit sway · `s` suspend · `r` reboot · `Shift+p` power off |
 
@@ -83,7 +81,7 @@ Hardware keys (volume, media, brightness, Print) work as usual.
   telescope, `Space s`/`Space v` split, `Ctrl+w h/j/k/l` between windows.
 - **ranger**, **btop**, **pulsemixer**, **bluetuith**, **fzf**, **less**: vim
   keys (`btop` has `vim_keys` turned on).
-- **nmtui** and **virt-manager** are keyboard-driven but don't use vim keys.
+- **nmtui** is keyboard-driven but doesn't use vim keys.
 
 ## Zen browser (Vimium)
 

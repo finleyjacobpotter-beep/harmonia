@@ -140,7 +140,7 @@ in
       blue = "${p.blue}", green = "${p.green}", red = "${p.red}", orange = "${p.orange}",
       pink_b = "${p.pinkBright}", cyan_b = "${p.cyanBright}", yellow_b = "${p.yellowBright}",
       blue_b = "${p.blueBright}", green_b = "${p.greenBright}", red_b = "${p.redBright}",
-      selection = "#4a2d45", -- pink @ 25% over bg (VS Code: #f472b640)
+      selection = "${p.selectionSolid}", -- pink @ 25% over bg (VS Code: #f472b640)
       line = "#282838",      -- fg @ 7% over bg (VS Code: #cdd6f412)
     }
 

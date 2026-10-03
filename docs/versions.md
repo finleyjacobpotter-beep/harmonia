@@ -11,6 +11,7 @@ only change when an input's commit is bumped; update this table when you do.
 | nixpkgs | [`e158d9e`](https://github.com/NixOS/nixpkgs/commit/e158d9ed9b51c98974c5e66e1ba1c9e0255fecaa) (nixos-unstable, 2026-09-27) |
 | home-manager | [`7b4c5ec`](https://github.com/nix-community/home-manager/commit/7b4c5ec4bedaf1e062bbc1bcaeddbc6bd242aa1b) (master, 2026-09-27) |
 | nix-flatpak | v0.7.0 ([`4408189`](https://github.com/gmodena/nix-flatpak/commit/440818969ac2cbd77bfe025e884d0aa528991374)) |
+| microvm.nix | [`3f1540f`](https://github.com/microvm-nix/microvm.nix/commit/3f1540f254fe73ac907281b7de7d396bb3d54850) (main, 2026-10-01) |
 
 ## System
 
@@ -88,16 +89,22 @@ Neovim plugins:
 
 | Package | Version |
 | --- | --- |
-| QEMU (KVM) | 11.1.1 |
-| libvirt | 12.7.0 |
-| virt-manager | 5.1.0 |
-| swtpm | 0.10.1 (unstable 2026-05-21) |
+| QEMU (KVM, runs Nike) | 11.1.1 |
 | virtiofsd | 1.14.0 |
 | Podman | 5.8.7 |
 | podman-compose | 1.6.0 |
 | Buildah | 1.45.1 |
-| Kali installer (VM) | 2026.2 (checksum read from the release's SHA256SUMS) |
-| Ubuntu Desktop installer (VM) | 26.04.1 (sha256 `601e30fb…1bda1f`) |
+
+## Nike (microVM)
+
+Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables above.
+
+| Package | Version |
+| --- | --- |
+| OpenVPN | 2.6.23 |
+| Nmap | 7.991 |
+| Python | 3.14.7 |
+| OpenSSH | 10.5p1 |
 
 ## Secrets
 

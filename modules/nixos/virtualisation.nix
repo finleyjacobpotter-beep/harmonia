@@ -1,29 +1,8 @@
-# libvirt/KVM for VMs, rootless Podman + Buildah for containers.
+# Rootless Podman + Buildah for containers, and plain QEMU for one-off VMs.
+# The managed VM is the Nike microVM (modules/nixos/nike.nix); there is no
+# libvirt or virt-manager.
+{ pkgs, username, ... }:
 {
-  pkgs,
-  username,
-  ...
-}:
-{
-  virtualisation.libvirtd = {
-    enable = true;
-    onBoot = "ignore";
-    qemu = {
-      package = pkgs.qemu_kvm;
-      runAsRoot = false;
-      swtpm.enable = true;
-      # virtiofs shared folders
-      vhostUserPackages = [ pkgs.virtiofsd ];
-    };
-  };
-  virtualisation.spiceUSBRedirection.enable = true;
-  programs.virt-manager.enable = true;
-
-  users.users.${username}.extraGroups = [
-    "libvirtd"
-    "kvm"
-  ];
-
   # Rootless Podman, no Docker daemon.
   virtualisation.podman = {
     enable = true;
@@ -32,8 +11,10 @@
   environment.systemPackages = with pkgs; [
     podman-compose
     buildah
+    # qemu-system-x86_64, qemu-img etc. for running an image by hand.
+    qemu_kvm
   ];
 
-  # Let VMs on libvirt bridges reach the host (DHCP/DNS from dnsmasq).
-  networking.firewall.trustedInterfaces = [ "virbr+" ];
+  # /dev/kvm without root, so `qemu-system-x86_64 -enable-kvm` works as you.
+  users.users.${username}.extraGroups = [ "kvm" ];
 }
