@@ -31,7 +31,7 @@ modules/nixos/
   wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
 nike/                          the Nike microVM guest (microvm.nix)
   default.nix                  packages, user k, network, shares and volumes, home-manager
-  palette.nix                  Miami Wind with red as the primary colour
+  palette.nix                  Miami Wind with orange as the primary colour
   status.py                    writes Nike's VPN and utilization for the bar
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle

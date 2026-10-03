@@ -1,5 +1,5 @@
 # Nike, a microVM (microvm.nix) for VPN work: bash, neovim, tmux, ranger,
-# openssh, python, openvpn and nmap, with the host's configs in red. The
+# openssh, python, openvpn and nmap, with the host's configs in orange. The
 # guest itself is nike/default.nix; this is the host side.
 #
 #   sudo systemctl start microvm@nike     (it doesn't start at boot)

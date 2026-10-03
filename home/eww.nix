@@ -730,7 +730,7 @@ in
       .wg-tunnel.up .wg-name { color: $green; }
       .wg-tunnel.down .wg-name { color: $muted; }
       .wg-tunnel.warn .wg-name { color: $orange; }
-      .wg-title.nike { color: $red; }
+      .wg-title.nike { color: $orange; }
       .wg-detail { color: $muted; }
       .wg-toggle {
         padding: 4px 10px;

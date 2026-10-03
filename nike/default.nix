@@ -3,7 +3,7 @@
 # `nike` below: the addresses, the tap interface and the host folders.
 #
 # Login: k / k (ssh nike from the host). The shell, neovim, tmux and ranger
-# are the host's own home-manager configs in red instead of pink
+# are the host's own home-manager configs in orange instead of pink
 # (nike/palette.nix).
 {
   lib,

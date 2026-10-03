@@ -1,6 +1,6 @@
 { pkgs, palette, ... }:
 let
-  # The ANSI colour that stands in for the accent (magenta = pink, red on Nike).
+  # The ANSI colour that stands in for the accent (magenta = pink, yellow = orange on Nike).
   accent = palette.accentAnsi;
   devicons = pkgs.fetchFromGitHub {
     owner = "alexanderjeurissen";

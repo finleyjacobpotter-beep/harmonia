@@ -35,7 +35,7 @@ disk images, so it takes a little longer.
 
 Inside, bash, tmux, neovim and ranger are the same home-manager configs as
 on the host ([`home/`](../home)), with the same keys, aliases and plugins.
-The only difference is the colour: red is the primary colour instead of
+The only difference is the colour: orange is the primary colour instead of
 pink ([`nike/palette.nix`](../nike/palette.nix)), so you can always tell which
 machine a shell is on. tmux on Nike uses the same `Ctrl+Space` prefix: inside
 a host tmux, press it twice to reach Nike's.
