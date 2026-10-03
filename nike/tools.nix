@@ -5,8 +5,16 @@
 #
 # Heavy GUI tools (Burp, the BloodHound UI) are not here: BloodHound runs as a
 # container (nike/labs.nix), and Nike is a headless SSH box.
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 let
+  pyScript = import ../lib/python-script.nix { inherit pkgs lib; };
+
+  # A small free WordPress enumerator in place of the non-free WPScan: core
+  # version, users and plugins/themes over HTTP. See nike/wp-enum.py.
+  wpEnum = pyScript "wp-enum" {
+    libraries = [ pkgs.python3Packages.requests ];
+  } ./wp-enum.py;
+
   # Python with impacket (which also puts impacket-* example scripts on PATH),
   # the AD/crypto libraries, and pwntools for exploit scripting.
   python = pkgs.python3.withPackages (ps: [
@@ -64,6 +72,8 @@ in
     whatweb
     cewl
     sqlmap
+    wpEnum # free WordPress enumerator (wp-enum), replaces non-free wpscan
+    wpprobe # free WordPress plugin/vulnerability scanner (nikto/nuclei above help too)
 
     # ── Exploitation ────────────────────────────────────────────────
     metasploit

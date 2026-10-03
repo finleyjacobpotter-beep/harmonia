@@ -108,6 +108,8 @@ A `python3` with **impacket** (the `impacket-*` scripts are on `PATH`),
   enum4linux-ng, netexec (`nxc`), responder.
 - **Web**: gobuster, feroxbuster, ffuf, dirb, wfuzz, nikto, nuclei, whatweb,
   cewl, sqlmap, jwt-cli (JSON Web Tokens).
+- **WordPress**: `wp-enum` (our own free enumerator, below) and WPProbe, plus
+  nikto and nuclei's WordPress templates.
 - **Exploitation**: metasploit, searchsploit (exploitdb), PayloadsAllTheThings.
 - **Passwords**: hashcat (+utils), john, hydra, medusa, hashid, haiti, crunch,
   username-anarchy, KeePwn.
@@ -124,8 +126,28 @@ A `python3` with **impacket** (the `impacket-*` scripts are on `PATH`),
   `/usr/share/seclists` (and `$WORDLISTS`); PayloadsAllTheThings at
   `/usr/share/payloadsallthethings`.
 
-Only free packages are included, so `wpscan` (unfree) is left out; use `nikto`
-and `nuclei` for WordPress.
+Only free packages are included. `wpscan` is unfree (the WPScan Public Source
+License is non-commercial), so instead of enabling it, Nike ships free
+WordPress tooling:
+
+- **`wp-enum`** ([`nike/wp-enum.py`](../nike/wp-enum.py)) — a small enumerator
+  that covers what WPScan is usually reached for first, over HTTP only (it
+  reads, it doesn't exploit): the core version, users (REST API, then the
+  `?author=N` redirect) and installed plugins/themes, plus a few interesting
+  files. Point `-p`/`-t` at a wordlist for a wider plugin/theme sweep:
+  ```sh
+  wp-enum http://10.10.10.10/
+  wp-enum https://blog.target/ -p $WORDLISTS/CMS/wp-plugins.fuzz.txt --insecure
+  ```
+- **WPProbe** (`wpprobe`) — a maintained, MIT-licensed plugin and
+  vulnerability scanner.
+- **nikto** and **nuclei** (its `http/cves` and WordPress templates) round
+  these out.
+
+If you do want WPScan itself on your own box, add `"wpscan"` to the
+`allowUnfreePredicate` list in `hosts/harmonia/default.nix` and `wpscan` to
+`nike/tools.nix`, then `rebuild` — but note that bakes a non-commercial
+dependency into the flake.
 
 ### Tools not in nixpkgs
 
