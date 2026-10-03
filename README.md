@@ -39,6 +39,8 @@ nike/                          the Nike microVM guest (microvm.nix)
 zelus/                         the Zelus microVM guest (microvm.nix): Claude Code and opencode with Blender and Godot MCP
   default.nix                  packages, user c, network, shares and volumes, home-manager, Claude Code, status service
   palette.nix                  Miami Wind with cyan as the primary colour
+  rust-tools.nix               Rust CLI tools, the classic-command aliases, agent skills
+  skills/                      skills for Claude Code and opencode (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
   eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio, nike/zelus with firewall modes, display settings, cpu, mem, gpu, network, wireguard, caffeine, volume, battery, clock + calendar)

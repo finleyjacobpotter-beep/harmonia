@@ -155,8 +155,6 @@ in
   environment.systemPackages = with pkgs; [
     openssh
     git
-    ripgrep
-    fd
     jq
     curl
     wget
@@ -183,6 +181,7 @@ in
         ../home/ranger.nix
         ../home/neovim.nix
         ../home/opencode.nix
+        ./rust-tools.nix
       ];
       programs.git.enable = true; # the prompt shows the git branch
 
