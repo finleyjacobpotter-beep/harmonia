@@ -96,6 +96,12 @@ leaves it alone; everything else stays with NetworkManager.
 and your user on the host are both uid 1000. If your host user has a
 different uid (`id -u`), change `uid` in `nike/default.nix` to match.
 
+### Root CAs
+
+To trust your own root CA on Nike, put its `.crt` or `.pem` in `certs/nike/`
+(or `certs/all/` for the host, Nike and Zelus), `git add` it and `rebuild`.
+See [certs/README.md](../certs/README.md).
+
 ### Changing it
 
 Edit `nike/default.nix` (packages go in `environment.systemPackages`) and

@@ -26,7 +26,10 @@ let
   } ../nike/status.py;
 in
 {
-  imports = [ inputs.home-manager.nixosModules.home-manager ];
+  imports = [
+    inputs.home-manager.nixosModules.home-manager
+    (import ../lib/root-cas.nix "zelus")
+  ];
 
   # The only non-free package, and only on Zelus.
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "claude-code" ];

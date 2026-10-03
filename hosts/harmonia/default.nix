@@ -8,6 +8,7 @@
 {
   imports = [
     ./hardware-configuration.nix
+    (import ../../lib/root-cas.nix "harmonia")
     ../../modules/nixos/desktop.nix
     ../../modules/nixos/fonts.nix
     ../../modules/nixos/flatpak.nix

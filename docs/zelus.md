@@ -114,6 +114,12 @@ by its firewall mode: **open**, **lock** (red) or **local** (purple). Clicking
 it opens a panel with Zelus's CPU, memory and disk (from its own status
 service, like [Nike's](bar.md#nike)) and the firewall dropdown.
 
+## Root CAs
+
+To trust your own root CA on Zelus, put its `.crt` or `.pem` in `certs/zelus/`
+(or `certs/all/` for the host, Nike and Zelus), `git add` it and `rebuild`.
+See [certs/README.md](../certs/README.md).
+
 ## Changing it
 
 Edit `zelus/default.nix` (packages go in `environment.systemPackages`) and

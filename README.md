@@ -55,6 +55,8 @@ home/                          home-manager, one file per program
   mcp-servers.nix              the Blender and Godot MCP servers, for Claude Code and opencode on Zelus
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
+lib/root-cas.nix               trusts the root CAs in certs/ on the host, Nike and Zelus
+certs/                         your own root CAs: all/ for every machine, harmonia/, nike/ or zelus/ for one (empty by default, see certs/README.md)
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          the rest of the documentation (linked below)

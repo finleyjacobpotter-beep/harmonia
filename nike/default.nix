@@ -21,7 +21,10 @@ let
   } ./status.py;
 in
 {
-  imports = [ inputs.home-manager.nixosModules.home-manager ];
+  imports = [
+    inputs.home-manager.nixosModules.home-manager
+    (import ../lib/root-cas.nix "nike")
+  ];
 
   microvm = {
     hypervisor = "qemu";
