@@ -229,6 +229,7 @@ in
             u = term "bluetuith";
             n = term "nmtui";
             v = run "alacritty --class nike -e ssh nike";
+            z = run "alacritty --class zelus -e ssh zelus";
             g = run "flatpak run net.lutris.Lutris";
             "Shift+g" = run "flatpak run com.valvesoftware.Steam";
             c = run "flatpak run im.riot.Riot";

@@ -67,5 +67,6 @@ are pinned to a release:
 host's Blender config, and the Flatpak Blender reads
 `~/.var/app/org.blender.Blender/config/blender` instead.
 
-To update a server, bump its version in `home/opencode.nix` and the add-on
-to match.
+To update a server, bump its version in `home/mcp-servers.nix` and the
+add-on to match. Zelus's Claude Code uses the same servers
+([zelus.md](zelus.md)).

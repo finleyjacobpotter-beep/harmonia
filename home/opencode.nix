@@ -5,22 +5,9 @@
 let
   app = "ai.opencode.opencode";
 
-  # The MCP servers run on the host (opencode reaches them with
-  # flatpak-spawn --host), pinned to a release so a new upstream commit
-  # doesn't run unreviewed.
-  blenderMcp = pkgs.writeShellApplication {
-    name = "blender-mcp";
-    runtimeInputs = [ pkgs.uv ];
-    text = ''exec uvx mcp-for-blender==2.1.3 "$@"'';
-  };
-  godotMcp = pkgs.writeShellApplication {
-    name = "godot-mcp";
-    runtimeInputs = [
-      pkgs.uv
-      pkgs.git
-    ];
-    text = ''exec uvx --from git+https://github.com/bebabinlarsson-blip/Godot-MCP.git@v5.0.9 godot-ai "$@"'';
-  };
+  # The MCP servers (home/mcp-servers.nix) run on the host: opencode reaches
+  # them with flatpak-spawn --host.
+  mcp = import ./mcp-servers.nix { inherit pkgs; };
 
   host = cmd: [
     "flatpak-spawn"
@@ -93,12 +80,12 @@ let
       mcp = {
         blender = {
           type = "local";
-          command = host "${blenderMcp}/bin/blender-mcp";
+          command = host "${mcp.blender}/bin/blender-mcp";
           enabled = true;
         };
         godot = {
           type = "local";
-          command = host "${godotMcp}/bin/godot-mcp";
+          command = host "${mcp.godot}/bin/godot-mcp";
           enabled = true;
         };
       };
