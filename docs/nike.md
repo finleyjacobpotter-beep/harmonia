@@ -87,3 +87,14 @@ Nike's password is in `nike/default.nix` as a hash; make a new one with
 
 Containers use rootless **podman** (with `podman-compose` and `buildah`);
 there is no Docker daemon and no `docker` alias.
+
+## Plain QEMU
+
+There is no libvirt or virt-manager. QEMU itself stays installed for one-off
+VMs, and your user is in the `kvm` group, so this works without root:
+
+```sh
+qemu-img create -f qcow2 disk.qcow2 20G
+qemu-system-x86_64 -enable-kvm -m 4G -smp 2 -cpu host \
+  -drive file=disk.qcow2,if=virtio -cdrom installer.iso
+```

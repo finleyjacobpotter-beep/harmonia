@@ -25,7 +25,7 @@ modules/nixos/
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
   fans.nix                     LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
-  virtualisation.nix           rootless podman + buildah
+  virtualisation.nix           rootless podman + buildah, plain QEMU (no libvirt)
   nike.nix                     the Nike microVM, host side: tap network + NAT, shared folders, `ssh nike`
   secrets.nix                  pcscd + YubiKey udev rules
   wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
