@@ -186,13 +186,15 @@ If you reach for one of these every time, add it to `nike/tools.nix` with
 
 ### Lab services (podman-compose)
 
-Two [podman-compose](https://github.com/containers/podman-compose) stacks run
-as systemd services. Neither starts at boot (the containers are heavy); bring
+Several [podman-compose](https://github.com/containers/podman-compose) stacks
+run as systemd services. None start at boot (the containers are heavy); bring
 one up when you need it:
 
 ```sh
 sudo systemctl start ligolo-ng     # or: stop
 sudo systemctl start bloodhound
+sudo systemctl start cyberchef
+sudo systemctl start zap
 ```
 
 - **ligolo-ng** ([`/etc/nike/ligolo-ng/compose.yml`](../nike/labs.nix)): the
@@ -214,6 +216,27 @@ sudo systemctl start bloodhound
   `sudo podman logs nike-bloodhound` on first run; Neo4j is
   `neo4j` / `bloodhoundcommunityedition`. Collect graph data on targets with
   the bundled `bloodhound-python` and upload the ZIP in the UI.
+- **cyberchef** ([`/etc/nike/cyberchef/compose.yml`](../nike/labs.nix)):
+  GCHQ's CyberChef, the "cyber swiss army knife" for encoding, encryption,
+  compression and data analysis (the official `ghcr.io/gchq/cyberchef` image,
+  pulled on first start). Bound to localhost:
+  ```sh
+  ssh -L 8000:127.0.0.1:8000 nike        # then open http://localhost:8000
+  ```
+- **zap** ([`/etc/nike/zap/compose.yml`](../nike/labs.nix)): **OWASP ZAP as a
+  free Burp replacement** — the full ZAP desktop UI served in your browser via
+  Webswing (no local Java), plus the intercepting proxy. Official
+  `ghcr.io/zaproxy/zaproxy:stable` image, pulled on first start. Two ports,
+  both localhost:
+  ```sh
+  ssh -L 8081:127.0.0.1:8081 -L 8090:127.0.0.1:8090 nike
+  #   GUI:   http://localhost:8081/zap
+  #   proxy: point your browser/tools at http://localhost:8090
+  ```
+  Use ZAP's Manual Explore / HUD and the proxy the way you'd use Burp's
+  Proxy + Repeater; for Intruder-style fuzzing, `ffuf`/`wfuzz` are on Nike.
+  The session is ephemeral (no volume); from the GUI, save a ZAP session into
+  `~/share` if you want it to persist across restarts.
 
 The container images and volumes live on Nike's `/var`, which is sized for
 them. `podman` has a `docker` alias here, so `docker compose` muscle memory

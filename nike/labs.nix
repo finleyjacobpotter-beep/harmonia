@@ -1,11 +1,15 @@
-# Podman on the Nike guest, plus two podman-compose lab stacks the user asked
+# Podman on the Nike guest, plus the podman-compose lab stacks the user asked
 # for, each wired to a systemd service:
 #
 #   systemctl start ligolo-ng     the Ligolo-ng pivot proxy (nike/labs: ligolo)
 #   systemctl start bloodhound    BloodHound CE (Postgres + Neo4j + the UI)
+#   systemctl start cyberchef     CyberChef, the data-transformation web app
+#   systemctl start zap           OWASP ZAP desktop UI in the browser (Burp
+#                                 replacement: intercepting proxy + the GUI)
 #
-# Neither starts at boot: bring one up when you need it, and `systemctl stop`
-# it after. The compose files live in /etc/nike/<stack>/.
+# None start at boot: bring one up when you need it, and `systemctl stop` it
+# after. The compose files live in /etc/nike/<stack>/. The web UIs all bind to
+# localhost, so reach them over an SSH tunnel to Nike (see docs/nike.md).
 {
   lib,
   pkgs,
@@ -113,6 +117,39 @@ let
       neo4j-data:
   '';
 
+  # CyberChef — GCHQ's data-transformation web app ("the cyber swiss army
+  # knife"), a static site in the official image. Bound to localhost; reach it
+  # over an SSH tunnel (ssh -L 8000:127.0.0.1:8000 nike), then
+  # http://localhost:8000. Replaces the encode/decode side of Burp.
+  cyberchefCompose = pkgs.writeText "cyberchef-compose.yml" ''
+    services:
+      cyberchef:
+        image: ghcr.io/gchq/cyberchef:latest
+        container_name: nike-cyberchef
+        ports:
+          - "127.0.0.1:8000:8080"
+        restart: unless-stopped
+  '';
+
+  # OWASP ZAP as a free Burp replacement: the full desktop UI served in the
+  # browser via Webswing (no local Java needed), plus the intercepting proxy.
+  #   GUI:   ssh -L 8081:127.0.0.1:8081 nike  ->  http://localhost:8081/zap
+  #   proxy: ssh -L 8090:127.0.0.1:8090 nike  ->  point the browser at :8090
+  # The session is ephemeral (no volume); save a session to ~/share from the
+  # GUI if you need it to persist.
+  zapCompose = pkgs.writeText "zap-compose.yml" ''
+    services:
+      zap:
+        image: ghcr.io/zaproxy/zaproxy:stable
+        container_name: nike-zap
+        command: zap-webswing.sh
+        user: zap
+        ports:
+          - "127.0.0.1:8081:8080"
+          - "127.0.0.1:8090:8090"
+        restart: unless-stopped
+  '';
+
   # A compose stack as a service: bring it up detached, tear it down on stop.
   # `restartIfChanged = false` so a rebuild doesn't yank a running lab.
   composeService =
@@ -153,6 +190,8 @@ in
   environment.etc = {
     "nike/ligolo-ng/compose.yml".source = ligoloCompose;
     "nike/bloodhound/compose.yml".source = bloodhoundCompose;
+    "nike/cyberchef/compose.yml".source = cyberchefCompose;
+    "nike/zap/compose.yml".source = zapCompose;
   };
 
   # Defined but not wanted-by anything: start them on demand.
@@ -168,5 +207,17 @@ in
     name = "bloodhound";
     file = "/etc/nike/bloodhound/compose.yml";
     description = "BloodHound CE: Postgres, Neo4j and the UI (podman-compose)";
+  };
+
+  systemd.services.cyberchef = composeService {
+    name = "cyberchef";
+    file = "/etc/nike/cyberchef/compose.yml";
+    description = "CyberChef data-transformation web app (podman-compose)";
+  };
+
+  systemd.services.zap = composeService {
+    name = "zap";
+    file = "/etc/nike/zap/compose.yml";
+    description = "OWASP ZAP desktop UI via Webswing + proxy (podman-compose)";
   };
 }
