@@ -145,6 +145,7 @@ in
         ../home/tmux.nix
         ../home/ranger.nix
         ../home/neovim.nix
+        ../home/rust-tools.nix
       ];
       programs.git.enable = true; # the prompt shows the git branch
       home.stateVersion = "26.05";

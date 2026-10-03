@@ -18,6 +18,7 @@
     ./flatpak-theme.nix
     ./element.nix
     ./tui.nix
+    ./rust-tools.nix
     ./keymap.nix
     ./secrets.nix
   ];

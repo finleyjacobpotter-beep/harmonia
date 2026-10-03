@@ -39,7 +39,6 @@ nike/                          the Nike microVM guest (microvm.nix)
 zelus/                         the Zelus microVM guest (microvm.nix): Claude Code and opencode with Blender and Godot MCP
   default.nix                  packages, user c, network, shares and volumes, home-manager, Claude Code, status service
   palette.nix                  Miami Wind with cyan as the primary colour
-  rust-tools.nix               Rust CLI tools, the classic-command aliases, agent skills
   skills/                      skills for Claude Code and opencode (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
@@ -52,6 +51,7 @@ home/                          home-manager, one file per program
   flatpak-theme.nix            the desktop GTK theme copied into the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
   opencode.nix                 opencode on Zelus: LM Studio + Claude providers, oh-my-openagent, Blender and Godot MCP servers
+  rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host, Nike and Zelus
   mcp-servers.nix              the Blender and Godot MCP servers, for Claude Code and opencode on Zelus
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
@@ -110,6 +110,7 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 - [opencode](docs/opencode.md): opencode on Zelus, providers, the Anthropic key, and the Blender and Godot MCP servers
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
 - [Nike and containers](docs/nike.md): the Nike microVM (VPN work, firewall modes, shared folder, bar panel), podman
+- [Rust tools](docs/rust-tools.md): ripgrep, fd, bat, eza and friends, and the aliases from grep, find, cat, ls … on every machine
 - [Zelus](docs/zelus.md): the Zelus microVM (Claude Code, opencode, dev tools, Blender and Godot over MCP, firewall modes)
 - [The bar](docs/bar.md): what each part of the eww bar shows, its panels, and the display settings window
 - [Calendar](docs/calendar.md): the clock's calendar, time zones and CalDAV sync with vdirsyncer

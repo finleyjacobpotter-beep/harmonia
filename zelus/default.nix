@@ -181,7 +181,7 @@ in
         ../home/ranger.nix
         ../home/neovim.nix
         ../home/opencode.nix
-        ./rust-tools.nix
+        ../home/rust-tools.nix
       ];
       programs.git.enable = true; # the prompt shows the git branch
 
@@ -190,6 +190,13 @@ in
       # modules/nixos/zelus.nix), so start Claude Code from an ssh session.
       programs.claude-code = {
         enable = true;
+        # When to use the Rust tools (home/rust-tools.nix); opencode reads
+        # ~/.claude/skills too.
+        skills = {
+          rust-search = ./skills/rust-search/SKILL.md;
+          rust-edit = ./skills/rust-edit/SKILL.md;
+          rust-inspect = ./skills/rust-inspect/SKILL.md;
+        };
         mcpServers = {
           blender.command = "${mcp.blender}/bin/blender-mcp";
           godot.command = "${mcp.godot}/bin/godot-mcp";

@@ -63,38 +63,16 @@ opencode with Godot one at a time (the second one's Godot server fails to
 start). The Blender add-on accepts one client at a time too. The two forwards
 come with `ssh zelus`, not the network, so they work in every firewall mode.
 
-## Rust tools
+## Rust tools and agent skills
 
-[`zelus/rust-tools.nix`](../zelus/rust-tools.nix) adds Rust replacements for
-the classic commands, and your interactive shell on Zelus aliases the
-classics to them:
-
-| Command | Runs |
-| --- | --- |
-| `grep` | `rg` (ripgrep) |
-| `find` | `fd` |
-| `cat` | `bat --paging=never --style=plain` |
-| `ls`, `ll`, `la`, `tree` | `eza` |
-| `du` | `dust` |
-| `df` | `dysk` |
-| `top` | `btm` (bottom) |
-| `ps` | `procs` |
-| `diff` | `difft` (difftastic) |
-| `cd` | zoxide (`cd proj` jumps to the best match) |
-
-The flags differ from the originals (`find . -name x` is `fd x`), so the old
-command is still there as `command grep` or `\grep`. `git diff`, `log` and
-`show` page through delta. Also installed, without aliases: `sd` (find and
-replace), `ast-grep` (structural search and rewrite), `jaq` (jq), `xh`
-(HTTP), `hyperfine`, `tokei`, `watchexec`, `just`, `ouch` (archives),
-`choose` and `tldr`.
-
-The aliases are skipped in Claude Code's and opencode's shells, which expect
-the classic tools. Instead, both agents get three skills that say when to
-use which tool: `rust-search` (rg, fd, ast-grep), `rust-edit` (sd, ast-grep
-rewrites, jaq, difft) and `rust-inspect` (tokei, dust, procs, hyperfine, xh,
-just, ouch). They're in [`zelus/skills/`](../zelus/skills) and installed in
-`~/.claude/skills`, which opencode reads too.
+Zelus has the same Rust command-line tools and aliases as the host and Nike
+([rust-tools.md](rust-tools.md)). The aliases are skipped in Claude Code's and
+opencode's shells, which expect the classic tools. Instead, both agents get
+three skills that say when to use which tool: `rust-search` (rg, fd,
+ast-grep), `rust-edit` (sd, ast-grep rewrites, jaq, difft) and
+`rust-inspect` (tokei, dust, procs, hyperfine, xh, just, ouch). They're in
+[`zelus/skills/`](../zelus/skills) and installed in `~/.claude/skills`, which
+opencode reads too.
 
 ## LM Studio
 

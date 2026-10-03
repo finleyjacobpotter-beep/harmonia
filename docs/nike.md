@@ -34,7 +34,8 @@ ssh nike                               # password k
 disk images, so it takes a little longer.
 
 Inside, bash, tmux, neovim and ranger are the same home-manager configs as
-on the host ([`home/`](../home)), with the same keys, aliases and plugins.
+on the host ([`home/`](../home)), with the same keys, aliases, plugins and
+[Rust tools](rust-tools.md).
 The only difference is the colour: orange is the primary colour instead of
 pink ([`nike/palette.nix`](../nike/palette.nix)), so you can always tell which
 machine a shell is on. tmux on Nike uses the same `Ctrl+Space` prefix: inside

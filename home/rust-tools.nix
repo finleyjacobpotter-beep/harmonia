@@ -1,8 +1,7 @@
-# Rust command-line tools on Zelus, for you and for the agents (imported by
-# zelus/default.nix for user c). Your interactive bash gets aliases from the
-# classic commands to them; Claude Code and opencode get skills that explain
-# when to reach for which (zelus/skills/, read by both: opencode also loads
-# ~/.claude/skills).
+# Rust command-line tools, on the host, Nike and Zelus alike (imported by
+# home/default.nix, nike/default.nix and zelus/default.nix). Your interactive
+# bash gets aliases from the classic commands to them. On Zelus, Claude Code
+# and opencode also get skills for them (zelus/skills/).
 { pkgs, lib, ... }:
 let
   # The classic command → its Rust replacement. `command grep` (or \grep)
@@ -76,10 +75,4 @@ in
       )
     }fi
   '';
-
-  programs.claude-code.skills = {
-    rust-search = ./skills/rust-search/SKILL.md;
-    rust-edit = ./skills/rust-edit/SKILL.md;
-    rust-inspect = ./skills/rust-inspect/SKILL.md;
-  };
 }
