@@ -1,10 +1,9 @@
 """What's running, as JSON for the bar's activity badges: GameMode, Steam
 (Flathub or native), LM Studio and the models it has loaded (its API on
-localhost:1234, docs/lmstudio.md), and the running libvirt VMs.
+localhost:1234, docs/lmstudio.md).
 
 {"gamemode": bool, "steam": bool,
- "lmstudio": {"running": bool, "serving": bool, "first": id, "list": "id, id"},
- "vms": {"count": n, "list": "name, name"}}
+ "lmstudio": {"running": bool, "serving": bool, "first": id, "list": "id, id"}}
 """
 
 import json
@@ -14,13 +13,12 @@ import urllib.request
 LMSTUDIO_MODELS = "http://127.0.0.1:1234/api/v0/models"
 
 
-def output(*args: str, check: bool = False) -> str:
-    """A command's output ("" if it is missing, or with check, if it fails)."""
+def output(*args: str) -> str:
+    """A command's output ("" if it is missing)."""
     try:
-        result = subprocess.run(args, capture_output=True, text=True)
+        return subprocess.run(args, capture_output=True, text=True).stdout
     except OSError:
         return ""
-    return "" if check and result.returncode != 0 else result.stdout
 
 
 def loaded_models() -> list[str]:
@@ -44,7 +42,6 @@ def main() -> None:
     steam = "com.valvesoftware.Steam" in apps or native_steam
     lms = "ai.lmstudio.lm-studio" in apps
     models = loaded_models() if lms else []
-    vms = [line for line in output("virsh", "-c", "qemu:///system", "list", "--name", check=True).splitlines() if line]
     print(
         json.dumps(
             {
@@ -56,7 +53,6 @@ def main() -> None:
                     "first": models[0] if models else "",
                     "list": ", ".join(models),
                 },
-                "vms": {"count": len(vms), "list": ", ".join(vms)},
             },
             separators=(",", ":"),
             ensure_ascii=False,

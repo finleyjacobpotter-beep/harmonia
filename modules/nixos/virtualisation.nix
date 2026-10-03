@@ -1,29 +1,7 @@
-# libvirt/KVM for VMs, rootless Podman + Buildah for containers.
+# Rootless Podman + Buildah for containers. VMs are microVMs (Nike,
+# modules/nixos/nike.nix).
+{ pkgs, ... }:
 {
-  pkgs,
-  username,
-  ...
-}:
-{
-  virtualisation.libvirtd = {
-    enable = true;
-    onBoot = "ignore";
-    qemu = {
-      package = pkgs.qemu_kvm;
-      runAsRoot = false;
-      swtpm.enable = true;
-      # virtiofs shared folders
-      vhostUserPackages = [ pkgs.virtiofsd ];
-    };
-  };
-  virtualisation.spiceUSBRedirection.enable = true;
-  programs.virt-manager.enable = true;
-
-  users.users.${username}.extraGroups = [
-    "libvirtd"
-    "kvm"
-  ];
-
   # Rootless Podman, no Docker daemon.
   virtualisation.podman = {
     enable = true;
@@ -33,7 +11,4 @@
     podman-compose
     buildah
   ];
-
-  # Let VMs on libvirt bridges reach the host (DHCP/DNS from dnsmasq).
-  networking.firewall.trustedInterfaces = [ "virbr+" ];
 }

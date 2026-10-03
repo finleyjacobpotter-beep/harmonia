@@ -57,6 +57,8 @@ rec {
   accent = pink; # focusBorder, cursor
   accentAlt = cyan;
   selection = "${pink}40"; # editor.selectionBackground
+  selectionSolid = "#4a2d45"; # the selection blended over bg, for neovim
+  accentAnsi = "magenta"; # the ANSI slot nearest the accent, for ranger
 
   # terminal.ansi* from the VS Code theme, in ANSI order (0-15)
   ansi = [

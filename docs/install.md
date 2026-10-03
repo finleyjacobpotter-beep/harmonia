@@ -267,14 +267,14 @@ cd ~/harmonia
 sudo nixos-rebuild switch --flake .#harmonia
 ```
 
-The first build is large (latest kernel, sway, QEMU/libvirt, all neovim
+The first build is large (latest kernel, sway, QEMU, all neovim
 treesitter grammars, the Tulasi icon theme build), so it takes a while. When
 it finishes, reboot; you'll get the tuigreet login, and logging in as `u`
 (with your password from step 8) starts sway.
 
 After that, see the docs: `zen-miami-wind` after first launching Zen
-([zen.md](zen.md)), `sudo harmonia-vm-fetch` for the VMs
-([vms-and-containers.md](vms-and-containers.md)), and the secrets first-run steps ([secrets.md](secrets.md)).
+([zen.md](zen.md)), starting the Nike microVM
+([nike.md](nike.md)), and the secrets first-run steps ([secrets.md](secrets.md)).
 
 ---
 

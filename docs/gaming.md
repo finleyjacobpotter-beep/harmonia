@@ -51,9 +51,7 @@ break without them:
   escapes any sandbox.
 
 Everything in `~/Games` is visible to every game, so one bad game can tamper
-with another. For a game you really don't trust, use a VM
-([VMs and containers](vms-and-containers.md)) with the `isolated` or
-`internet-only` firewall, accepting worse graphics.
+with another.
 
 ## Why Flatpak and not…
 
@@ -62,7 +60,7 @@ with another. For a game you really don't trust, use a VM
 | **Flatpak Lutris** (this) | own data dir plus `~/Games`, no host commands | native | EAC and BattlEye games that support Linux work |
 | nixpkgs `lutris` | none: games run as you with full home access | native | same |
 | A separate `gaming` user | strong for files, but it needs its own sway session or access to yours | native | same |
-| libvirt VM | strongest | virgl only, or a second GPU for passthrough | many anti-cheats refuse to run in VMs |
+| A VM | strongest | virgl only, or a second GPU for passthrough | many anti-cheats refuse to run in VMs |
 
 ## Theming
 

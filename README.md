@@ -4,7 +4,7 @@
 icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, **libvirt**, **podman**, and **Zen browser**, **Lutris**, **Steam**, **Element** and **LM Studio** jailed in Flatpak —
+**neovim**, a **microVM** (Nike), **podman**, and **Zen browser**, **Lutris**, **Steam**, **Element** and **LM Studio** jailed in Flatpak —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -25,17 +25,17 @@ modules/nixos/
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
   fans.nix                     LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
-  virtualisation.nix           libvirtd/KVM, virt-manager, rootless podman + buildah
-  vms.nix                      Kali (i3) and Ubuntu (GNOME) libvirt VMs, VGA + VNC
+  virtualisation.nix           rootless podman + buildah
+  nike.nix                     the Nike microVM, host side: tap network + NAT, shared folders, `ssh nike`
   secrets.nix                  pcscd + YubiKey udev rules
   wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
-vms/kali-i3.nix                i3, i3status and caffeine bar for the Kali VM (Alt modifier)
-vms/firewall.nix               host-enforced VM firewall policies (libvirt nwfilter)
-vms/harmonia-vms.py            harmonia-vms, harmonia-vm-fetch and harmonia-vm-firewall
-vms/kali-install.py            run inside the Kali VM to set up i3, neovim and bash
+nike/                          the Nike microVM guest (microvm.nix)
+  default.nix                  packages, user k, network, shares and volumes, home-manager
+  palette.nix                  Miami Wind with red as the primary colour
+  status.py                    writes Nike's VPN and utilization for the bar
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio/vms, display settings, cpu, mem, gpu, network, wireguard, caffeine, volume, battery, clock + calendar)
+  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio/nike, display settings, cpu, mem, gpu, network, wireguard, caffeine, volume, battery, clock + calendar)
   eww/                         the bar's scripts, in Python (displays, network, gpu, volume, clock, calendar, …), and the display settings window
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
@@ -98,7 +98,7 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
-- [VMs and containers](docs/vms-and-containers.md): libvirt, the Kali and Ubuntu VMs, their firewall, podman
+- [Nike and containers](docs/nike.md): the Nike microVM (VPN work, shared folder, bar panel), podman
 - [The bar](docs/bar.md): what each part of the eww bar shows, its panels, and the display settings window
 - [Calendar](docs/calendar.md): the clock's calendar, time zones and CalDAV sync with vdirsyncer
 - [WireGuard](docs/wireguard.md): importing tunnels and the bar panel
@@ -136,6 +136,8 @@ harmonia stands on other people's work:
   [Nerd Fonts](https://www.nerdfonts.com/): the font.
 - **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
   Flatpak setup for Zen, Lutris, Steam, Element and LM Studio.
+- **[microvm.nix](https://github.com/microvm-nix/microvm.nix)**: the Nike
+  microVM.
 
 ## License
 

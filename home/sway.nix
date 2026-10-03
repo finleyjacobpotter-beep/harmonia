@@ -228,7 +228,7 @@ in
             a = term "pulsemixer";
             u = term "bluetuith";
             n = term "nmtui";
-            v = run "virt-manager";
+            v = run "alacritty --class nike -e ssh nike";
             g = run "flatpak run net.lutris.Lutris";
             "Shift+g" = run "flatpak run com.valvesoftware.Steam";
             c = run "flatpak run im.riot.Riot";

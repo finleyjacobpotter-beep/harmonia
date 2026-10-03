@@ -1,5 +1,7 @@
-{ pkgs, ... }:
+{ pkgs, palette, ... }:
 let
+  # The ANSI colour that stands in for the accent (magenta = pink, red on Nike).
+  accent = palette.accentAnsi;
   devicons = pkgs.fetchFromGitHub {
     owner = "alexanderjeurissen";
     repo = "ranger_devicons";
@@ -51,7 +53,7 @@ in
 
 
     class Scheme(ColorScheme):
-        progress_bar_color = magenta
+        progress_bar_color = ${accent}
 
         def use(self, context):
             fg, bg, attr = default_colors
@@ -88,7 +90,7 @@ in
                     fg = blue if context.good else red + BRIGHT
                 if context.tag_marker and not context.selected:
                     attr |= bold
-                    fg = magenta
+                    fg = ${accent}
                 if not context.selected and (context.cut or context.copied):
                     fg = black + BRIGHT
                     attr |= bold
@@ -110,12 +112,12 @@ in
             elif context.in_titlebar:
                 attr |= bold
                 if context.hostname:
-                    fg = magenta
+                    fg = ${accent}
                 elif context.directory:
                     fg = cyan
                 elif context.tab:
                     if context.good:
-                        bg = magenta
+                        bg = ${accent}
                         fg = black
                 elif context.link:
                     fg = blue
@@ -154,7 +156,7 @@ in
 
             if context.in_taskview:
                 if context.title:
-                    fg = magenta
+                    fg = ${accent}
                 if context.selected:
                     attr |= reverse
                 if context.loaded:
