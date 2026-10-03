@@ -94,22 +94,30 @@ Hack The Box, the OSCP exam).
 
 ### Tools
 
+The toolset tracks the [0xsyr0/oscp](https://github.com/0xsyr0/oscp)
+cheat-sheet: every tool on that list that is packaged in nixpkgs is here.
+
 A `python3` with **impacket** (the `impacket-*` scripts are on `PATH`),
-**pwntools**, ldap3, dnspython and pycryptodome, plus **penelope** (the
-reverse-shell handler). Grouped in `nike/tools.nix`:
+**pwntools**, ldap3, dnspython and pycryptodome, plus **lsassy**, **pypykatz**,
+**bloodyAD** and **dploot** for AD and credential looting, and **penelope**
+(the reverse-shell handler). Grouped in `nike/tools.nix`:
 
 - **Enumeration**: nmap, masscan, rustscan, netdiscover, arp-scan, nbtscan,
   snmpwalk (net-snmp), onesixtyone, dnsrecon, dnsenum, fierce, dig/host.
 - **SMB / Windows**: smbclient and rpcclient (samba), smbmap, smbclient-ng,
   enum4linux-ng, netexec (`nxc`), responder.
 - **Web**: gobuster, feroxbuster, ffuf, dirb, wfuzz, nikto, nuclei, whatweb,
-  cewl, sqlmap.
+  cewl, sqlmap, jwt-cli (JSON Web Tokens).
 - **Exploitation**: metasploit, searchsploit (exploitdb), PayloadsAllTheThings.
-- **Passwords**: hashcat (+utils), john, hydra, medusa, hashid, haiti, crunch.
+- **Passwords**: hashcat (+utils), john, hydra, medusa, hashid, haiti, crunch,
+  username-anarchy, KeePwn.
 - **Active Directory**: evil-winrm, certipy, kerbrute, donpapi, coercer,
-  adidnsdump, pretender, mimikatz, powersploit, powershell.
+  adidnsdump, pretender, mimikatz, powersploit, powershell, pyWhisker,
+  rusthound-ce (BloodHound CE collector).
 - **Pivoting**: ligolo-ng, chisel, socat, proxychains-ng, sshpass, stunnel,
   xfreerdp (freerdp).
+- **Post-exploitation / privesc**: linux-exploit-suggester, pspy,
+  firefox_decrypt.
 - **Shells / RE / forensics**: netcat (`nc`), rlwrap, gdb, radare2, ltrace,
   binwalk, exiftool, steghide, foremost.
 - **Wordlists**: SecLists, linked at `/usr/share/wordlists` and
@@ -118,6 +126,41 @@ reverse-shell handler). Grouped in `nike/tools.nix`:
 
 Only free packages are included, so `wpscan` (unfree) is left out; use `nikto`
 and `nuclei` for WordPress.
+
+### Tools not in nixpkgs
+
+A few things on the 0xsyr0/oscp list aren't packaged in nixpkgs. They aren't
+dropped — they just aren't baked into the image, because most of them either
+run **on the target** (Windows `.exe`/`.ps1` payloads you drop onto the victim,
+not on Nike) or are single scripts easier to pull fresh. Grab them into
+`~/share` (persists, visible on the host) when a box needs them:
+
+- **Drop-on-target payloads** — PEASS-ng (`linpeas.sh`, `winPEASx64.exe`),
+  Ghostpack compiled binaries (Rubeus, Certify, Seatbelt), SharpHound.exe,
+  nanodump, RunasCs, powercat, WESNG, Watson, Sherlock, JAWS, PrivescCheck.
+  These execute on the victim, so fetch the release/binary and serve it (e.g.
+  `python3 -m http.server` from `~/share`); don't install them on Nike.
+  ```sh
+  # examples, run inside Nike
+  curl -LO https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh
+  git clone https://github.com/r3motecontrol/Ghostpack-CompiledBinaries ~/share/ghostpack
+  ```
+- **Python/CLI tools** — JWT_Tool, PKINITtools, krbrelayx, PassTheCert,
+  PowerView.py, CUPP, bopscrk, LaZagne. Install per-engagement with pipx (it's
+  on `PATH` via the python env) or clone and run:
+  ```sh
+  pipx install git+https://github.com/ticarpi/jwt_tool
+  git clone https://github.com/dirkjanm/krbrelayx ~/share/krbrelayx
+  ```
+- **PHP gadget generators** — PHPGGC, PHP Filter Chain Generator. Clone when a
+  PHP target needs them:
+  ```sh
+  git clone https://github.com/ambionics/phpggc ~/share/phpggc
+  ```
+
+If you reach for one of these every time, add it to `nike/tools.nix` with
+`fetchFromGitHub` (for a script/binary) or as an overlay package, and
+`rebuild`.
 
 ### Lab services (podman-compose)
 

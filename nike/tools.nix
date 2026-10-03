@@ -17,6 +17,11 @@ let
     ps.pycryptodome
     ps.ldap3
     ps.dnspython
+    # Credential looting and AD, from the 0xsyr0/oscp list.
+    ps.lsassy # pull LSASS secrets over SMB
+    ps.pypykatz # parse LSASS dumps / registry hives offline
+    ps.bloodyad # read and abuse AD objects over LDAP
+    ps.dploot # loot DPAPI secrets (like a Python SharpDPAPI)
   ]);
 in
 {
@@ -74,6 +79,8 @@ in
     hashid
     haiti
     crunch
+    username-anarchy # generate username lists from real names
+    jwt-cli # inspect and forge JSON Web Tokens
 
     # ── Active Directory ────────────────────────────────────────────
     evil-winrm
@@ -86,6 +93,9 @@ in
     mimikatz
     powersploit
     powershell
+    pywhisker # shadow-credentials (msDS-KeyCredentialLink) attack
+    keepwn # hunt and crack KeePass databases
+    rusthound-ce # fast BloodHound CE collector (Rust), next to bloodhound-python
 
     # ── Pivoting / tunnelling ───────────────────────────────────────
     ligolo-ng # also run as a container service (nike/labs.nix)
@@ -99,6 +109,11 @@ in
     # ── Shells / listeners ──────────────────────────────────────────
     netcat-gnu # `nc`
     rlwrap
+
+    # ── Post-exploitation / privilege escalation ────────────────────
+    linux-exploit-suggester # suggest kernel privesc from `uname`
+    pspy # watch processes/cron without root
+    firefox_decrypt # recover saved Firefox credentials from a profile
 
     # ── Reversing / forensics ───────────────────────────────────────
     gdb
