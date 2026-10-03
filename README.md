@@ -4,7 +4,7 @@
 icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, a **microVM** (Nike), **podman**, and **Zen browser**, **Lutris**, **Steam**, **Element** and **LM Studio** jailed in Flatpak —
+**neovim**, a **microVM** (Nike), **podman**, and **Zen browser**, **Lutris**, **Steam**, **Element**, **LM Studio**, **Blender**, **Godot** and **opencode** jailed in Flatpak —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -24,6 +24,7 @@ modules/nixos/
   steam.nix                    Steam from Flathub, locked down, sharing only ~/Games with Lutris
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
+  studio.nix                   Blender, Godot and opencode from Flathub, sharing only ~/Projects
   fans.nix                     LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
   virtualisation.nix           rootless podman + buildah, plain QEMU (no libvirt)
   nike.nix                     the Nike microVM, host side: tap network + NAT, shared folders, `ssh nike`
@@ -43,6 +44,7 @@ home/                          home-manager, one file per program
   secrets-backup.py            the `secrets-backup` command
   flatpak-theme.nix            the desktop GTK theme copied into the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
+  opencode.nix                 opencode: LM Studio + Claude providers, keys from pass, oh-my-openagent, Blender and Godot MCP servers
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
@@ -97,6 +99,7 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 - [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
+- [opencode](docs/opencode.md): providers, keys in pass, and the Blender and Godot MCP servers
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
 - [Nike and containers](docs/nike.md): the Nike microVM (VPN work, shared folder, bar panel), podman
 - [The bar](docs/bar.md): what each part of the eww bar shows, its panels, and the display settings window
@@ -135,7 +138,8 @@ harmonia stands on other people's work:
 - **[Departure Mono](https://departuremono.com/)** via
   [Nerd Fonts](https://www.nerdfonts.com/): the font.
 - **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
-  Flatpak setup for Zen, Lutris, Steam, Element and LM Studio.
+  Flatpak setup for Zen, Lutris, Steam, Element, LM Studio, Blender, Godot
+  and opencode.
 - **[microvm.nix](https://github.com/microvm-nix/microvm.nix)**: the Nike
   microVM.
 
