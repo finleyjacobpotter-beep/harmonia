@@ -21,12 +21,21 @@ let
   } ./status.py;
 in
 {
-  imports = [ inputs.home-manager.nixosModules.home-manager ];
+  imports = [
+    inputs.home-manager.nixosModules.home-manager
+    ./tools.nix # the OSCP toolset and Penelope
+    ./labs.nix # podman + the Ligolo-ng and BloodHound compose services
+  ];
 
+  # More room for the lab containers (BloodHound runs Neo4j + Postgres) and
+  # for scanning; still not exactly 2 or 4 GiB (QEMU hangs, microvm.nix#171).
   microvm = {
     hypervisor = "qemu";
-    vcpu = 2;
-    mem = 3072; # not exactly 2048: QEMU hangs (microvm.nix#171)
+    vcpu = 4;
+    mem = 6144;
+
+    # BloodHound's Neo4j is memory-hungry; the containers also write to the
+    # store overlay, so give the writable overlay real disk below.
 
     interfaces = [
       {
@@ -65,9 +74,11 @@ in
     # start.
     volumes = [
       {
+        # /var holds the podman container images and volumes (BloodHound's
+        # Neo4j and Postgres data, the pulled images), so it needs room.
         image = "var.img";
         mountPoint = "/var";
-        size = 4096;
+        size = 24576;
       }
       {
         image = "home.img";
@@ -78,6 +89,9 @@ in
   };
   # Mounted before users are set up, so ~k lands on the volume.
   fileSystems."/home".neededForBoot = true;
+
+  # The ligolo proxy and its container open a TUN interface.
+  boot.kernelModules = [ "tun" ];
 
   networking.useNetworkd = true;
   networking.useDHCP = false;

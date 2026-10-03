@@ -33,6 +33,8 @@ modules/nixos/
 nike/                          the Nike microVM guest (microvm.nix)
   default.nix                  packages, user k, network, shares and volumes, home-manager
   palette.nix                  Miami Wind with orange as the primary colour
+  tools.nix                    the OSCP toolset and Penelope
+  labs.nix                     podman + the Ligolo-ng and BloodHound compose services
   status.py                    writes Nike's VPN and utilization for the bar
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
@@ -101,7 +103,7 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
 - [opencode](docs/opencode.md): providers, keys in pass, and the Blender and Godot MCP servers
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
-- [Nike and containers](docs/nike.md): the Nike microVM (VPN work, shared folder, bar panel), podman
+- [Nike and containers](docs/nike.md): the Nike microVM (VPN work, OSCP lab, shared folder, bar panel), podman
 - [The bar](docs/bar.md): what each part of the eww bar shows, its panels, and the display settings window
 - [Calendar](docs/calendar.md): the clock's calendar, time zones and CalDAV sync with vdirsyncer
 - [WireGuard](docs/wireguard.md): importing tunnels and the bar panel
