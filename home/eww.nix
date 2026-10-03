@@ -304,15 +304,19 @@ in
               (box :orientation "h" :space-evenly false :spacing 6
                 (label :class "icon" :text "󰚩")
                 (label :visible {activity.lmstudio.serving} :limit-width 24 :text "''${activity.lmstudio.first}")))
-            (button :class "module nike ''${nike.fresh ? (nike.vpn.via_vpn ? "vpn" : "direct") : ""}"
-              :visible {nike.running}
-              :tooltip {!nike.fresh ? "Nike is starting"
-                : (nike.vpn.via_vpn ? "Nike: outbound through the VPN (click for details)"
-                  : "Nike: outbound NOT through a VPN (click for details)")}
+            ; Always shown: the server icon is grey while Nike is stopped and
+            ; green while it runs; the text says whether its traffic goes
+            ; through the VPN.
+            (button :class "module nike ''${nike.running ? "running" : "stopped"} ''${nike.fresh ? (nike.vpn.via_vpn ? "vpn" : "direct") : ""}"
+              :tooltip {!nike.running ? "Nike is stopped (click for details)"
+                : (!nike.fresh ? "Nike is starting"
+                  : (nike.vpn.via_vpn ? "Nike: outbound through the VPN (click for details)"
+                    : "Nike: outbound NOT through a VPN (click for details)"))}
               :onclick "${menu} nike-menu"
               (box :orientation "h" :space-evenly false :spacing 6
                 (label :class "icon" :text "󰒋")
-                (label :text {!nike.fresh ? "nike" : (nike.vpn.via_vpn ? "vpn" : "no vpn")})))
+                (label :visible {nike.running}
+                  :text {!nike.fresh ? "nike" : (nike.vpn.via_vpn ? "vpn" : "no vpn")})))
             (button :class "module display"
               :tooltip "''${arraylength(displays.outputs)} display''${arraylength(displays.outputs) == 1 ? "" : "s"}, primary ''${displays.primary}. Click for display settings"
               :onclick "${displaySettings}/bin/display-settings --toggle"
@@ -690,7 +694,8 @@ in
       &.steam, &.lmstudio, &.nike { &:hover { background-color: $surface; } }
       &.lmstudio .icon { color: $muted; }
       &.lmstudio.serving .icon { color: $pink; }
-      &.nike .icon { color: $red; }
+      &.nike .icon { color: $muted; }
+      &.nike.running .icon { color: $green; }
       &.nike.vpn { color: $green; }
       &.nike.direct { color: $orange; }
       &.wg { color: $muted; &:hover { background-color: $surface; } }
