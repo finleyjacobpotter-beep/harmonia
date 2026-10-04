@@ -38,7 +38,6 @@ nike/                          the Nike microVM guest (microvm.nix)
   status.py                    writes Nike's VPN and utilization for the bar
 zelus/                         the Zelus microVM guest (microvm.nix): Claude Code and opencode with Blender and Godot MCP
   default.nix                  packages, user c, network, shares and volumes, home-manager, Claude Code, status service
-  labs.nix                     rootless podman + the Mythic C2 lab service (mythic.py / mythic-cli)
   palette.nix                  Miami Wind with cyan as the primary colour
   skills/                      skills for Claude Code and opencode (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
 home/                          home-manager, one file per program

@@ -10,14 +10,14 @@ the host side (network, shared folders, `ssh zelus`) is
 
 | | |
 | --- | --- |
-| Packages | Claude Code, opencode, bash, neovim, tmux, ranger, git, ripgrep, fd, jq, curl, wget, unzip, btop, make, gcc, python3, uv, nodejs, openssh, podman + Mythic C2 ([below](#mythic-c2)) |
+| Packages | Claude Code, opencode, bash, neovim, tmux, ranger, git, ripgrep, fd, jq, curl, wget, unzip, btop, make, gcc, python3, uv, nodejs, openssh |
 | MCP servers | Blender and Godot, for both Claude Code and opencode ([opencode.md](opencode.md#mcp-servers)) |
 | Firewall | permissive, lockdown or local inference, switched from the bar ([below](#firewall-modes)) |
 | Login | user `c`, no password (in `wheel`; `sudo` doesn't ask either) |
-| Resources | 4 vCPUs, 8 GiB RAM |
+| Resources | 4 vCPUs, 6 GiB RAM |
 | Address | `10.20.1.2`, host side `10.20.1.1` on the `vm-zelus` tap |
 | Shared folders | `~/zelus-share` on the host is `~/share` on Zelus; `~/Projects` is `~/Projects` on both. Both read-write |
-| Persistent | `/home` (32 GiB) and `/var` (32 GiB, also holds podman's images) in `/var/lib/microvms/zelus` |
+| Persistent | `/home` (32 GiB) and `/var` (4 GiB) images in `/var/lib/microvms/zelus` |
 
 The root filesystem is a tmpfs and starts fresh on every boot; Zelus reads
 the host's `/nix/store` read-only.
@@ -82,42 +82,6 @@ server at `10.20.1.1:1234`: a socket on the host's end of Zelus's tap
 (`lmstudio-zelus.socket`) passes each connection on to LM Studio's
 `localhost:1234`. opencode's `lmstudio` provider points there. Start the
 server in LM Studio's *Developer* tab first.
-
-## Mythic C2
-
-Zelus can run [Mythic](https://github.com/its-a-feature/Mythic), an
-open-source command-and-control framework, as a lab for red-team / OSCP
-practice: start the server here and implants from your lab call back to it. It
-runs on rootless **podman** (with `podman-compose`, and a `docker` alias), the
-same way Nike's lab containers do, as a `systemctl`-controlled service
-([`zelus/labs.nix`](../zelus/labs.nix)):
-
-```sh
-sudo systemctl start mythic     # bring Mythic up (first run clones and builds)
-sudo systemctl stop mythic      # take it down
-```
-
-Unlike a plain stack such as BloodHound, Mythic ships no static compose file:
-its own `mythic-cli` generates the compose project and drives it. So the
-service calls the `mythic` helper ([`zelus/mythic.py`](../zelus/mythic.py)),
-which clones the repo into `/var/lib/mythic`, builds `mythic-cli` once, and
-runs `mythic-cli start` / `stop`. The first start pulls and builds the images,
-which takes a while (`journalctl -u mythic -f` to watch it).
-
-You can also run `mythic` by hand over `ssh zelus` for anything else:
-`mythic status` (shows the admin URL and password), `mythic logs mythic_server`,
-`mythic install github <url>` to add an agent, and so on. Set `MYTHIC_REF` to
-pin a tag or commit. Podman keeps its images and volumes under `/var`.
-
-Reach the UI over an SSH tunnel: `ssh -L 7443:127.0.0.1:7443 zelus`, then
-<https://localhost:7443>.
-
-The stack listens inside Zelus only. Nothing on your LAN reaches the VM: the
-host NATs its egress and forwards no port in, so to catch callbacks from
-elsewhere you bring the targets onto Zelus's network yourself (a tunnel, or a
-forward you add on the host). Pulling and building the images needs the
-internet, so keep the firewall in **Permissive** the first time (the bar's
-Zelus panel, [below](#firewall-modes)).
 
 ## Firewall modes
 
