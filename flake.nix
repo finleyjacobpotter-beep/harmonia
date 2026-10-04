@@ -47,6 +47,13 @@
       palette = import ./theme/miami-wind.nix;
       keys = import ./keys.nix;
 
+      # The tulasi-icon-theme overlay, used by every host.
+      iconOverlay = (
+        final: _: {
+          tulasi-icon-theme = final.callPackage ./pkgs/tulasi-icon-theme.nix { };
+        }
+      );
+
       # Every host gets the same desktop, home-manager config and microVMs;
       # hosts/<name>/default.nix adds its hardware and what only it needs.
       mkHost =
@@ -67,9 +74,7 @@
           modules = [
             {
               nixpkgs.hostPlatform = system;
-              nixpkgs.overlays = [
-                (final: _: { tulasi-icon-theme = final.callPackage ./pkgs/tulasi-icon-theme.nix { }; })
-              ];
+              nixpkgs.overlays = [ iconOverlay ];
             }
             ./hosts/${hostname}
             nix-flatpak.nixosModules.nix-flatpak
@@ -86,6 +91,47 @@
             }
           ];
         };
+
+      # Dionysus: harmonia's Sway desktop with the coding/creative toolset
+      # built in natively (Blender, Godot, opencode, Claude Code, the MCP
+      # servers and the Rust tools) and no microVMs. One module list, built
+      # for whichever architecture is passed, so the same config works on
+      # aarch64-linux and x86_64-linux.
+      dionysusArgs = {
+        inherit inputs palette keys;
+        hostname = "dionysus";
+        username = "d";
+      };
+      mkDionysus =
+        sys:
+        let
+          # `system` lets the home config decide, statically, whether to pull
+          # in the x86_64-only Zen theming (home/dionysus/default.nix).
+          args = dionysusArgs // {
+            system = sys;
+          };
+        in
+        nixpkgs.lib.nixosSystem {
+          specialArgs = args;
+          modules = [
+            {
+              nixpkgs.hostPlatform = sys;
+              nixpkgs.overlays = [ iconOverlay ];
+            }
+            ./hosts/dionysus
+            nix-flatpak.nixosModules.nix-flatpak
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                backupFileExtension = "hm-backup";
+                extraSpecialArgs = args;
+                users.${dionysusArgs.username} = import ./home/dionysus;
+              };
+            }
+          ];
+        };
     in
     {
       nixosConfigurations = {
@@ -94,8 +140,17 @@
         # The laptop (ThinkPad E14 Gen 2): the same, plus Wi-Fi, lid/power
         # handling and ThinkPad fan control.
         cadmus = mkHost "cadmus";
+
+        # Dionysus: the dev/creative desktop with everything native and no
+        # microVMs. Same two outputs so `nixos-rebuild --flake .#dionysus`
+        # works on an x86_64 host and `.#dionysus-aarch64` on an aarch64 one.
+        dionysus = mkDionysus "x86_64-linux";
+        dionysus-aarch64 = mkDionysus "aarch64-linux";
       };
 
-      formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt;
+      formatter = {
+        x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt;
+        aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.nixfmt;
+      };
     };
 }
