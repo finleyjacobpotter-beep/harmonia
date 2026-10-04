@@ -89,7 +89,7 @@ Neovim plugins:
 
 | Package | Version |
 | --- | --- |
-| QEMU (KVM, runs Nike) | 11.1.1 |
+| QEMU (KVM, runs Nike and Zelus) | 11.1.1 |
 | virtiofsd | 1.14.0 |
 | Podman | 5.8.7 |
 | podman-compose | 1.6.0 |
@@ -105,6 +105,21 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | Nmap | 7.991 |
 | Python | 3.14.7 |
 | OpenSSH | 10.5p1 |
+
+## Zelus (microVM)
+
+Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables above.
+
+| Package | Version |
+| --- | --- |
+| Claude Code | 2.1.283 |
+| opencode | 1.18.31 |
+| ripgrep / fd / bat / eza (host, Nike and Zelus) | 15.2.0 / 10.5.0 / 0.26.1 / 0.23.5 |
+| dust / dysk / bottom / procs | 1.2.6 / 3.7.0 / 0.14.9 / 0.14.12 |
+| sd / ast-grep / jaq / difftastic / delta | 1.1.0 / 0.45.1 / 3.1.1 / 0.71.0 / 0.19.2 |
+| xh / hyperfine / tokei / watchexec / just / ouch / zoxide | 0.26.2 / 1.20.0 / 15.0.0 / 2.5.1 / 1.58.0 / 0.8.3 / 0.10.0 |
+| MCP for Blender (`mcp-for-blender`) | 2.1.3 |
+| Godot MCP | v5.0.9 |
 
 ## Secrets
 

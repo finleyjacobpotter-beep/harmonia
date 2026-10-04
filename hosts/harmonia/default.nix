@@ -8,6 +8,7 @@
 {
   imports = [
     ./hardware-configuration.nix
+    (import ../../lib/root-cas.nix "harmonia")
     ../../modules/nixos/desktop.nix
     ../../modules/nixos/fonts.nix
     ../../modules/nixos/flatpak.nix
@@ -19,6 +20,8 @@
     ../../modules/nixos/fans.nix
     ../../modules/nixos/virtualisation.nix
     ../../modules/nixos/nike.nix
+    ../../modules/nixos/zelus.nix
+    ../../modules/nixos/vm-firewall.nix
     ../../modules/nixos/secrets.nix
     ../../modules/nixos/wireguard.nix
   ];
