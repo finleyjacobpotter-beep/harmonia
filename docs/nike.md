@@ -23,7 +23,8 @@ for packages.
 
 ### Using it
 
-It doesn't start at boot:
+It doesn't start at boot. Start or stop it with the button in its bar panel
+([the bar](bar.md#nike-and-zelus)), or from a terminal:
 
 ```sh
 sudo systemctl start microvm@nike     # stop / restart / status work too
@@ -34,7 +35,8 @@ ssh nike                               # password k
 disk images, so it takes a little longer.
 
 Inside, bash, tmux, neovim and ranger are the same home-manager configs as
-on the host ([`home/`](../home)), with the same keys, aliases and plugins.
+on the host ([`home/`](../home)), with the same keys, aliases, plugins and
+[Rust tools](rust-tools.md).
 The only difference is the colour: orange is the primary colour instead of
 pink ([`nike/palette.nix`](../nike/palette.nix)), so you can always tell which
 machine a shell is on. tmux on Nike uses the same `Ctrl+Space` prefix: inside
@@ -48,12 +50,38 @@ Put your `.ovpn` file in `~/nike-share` on the host, then on Nike:
 sudo openvpn --config ~/share/client.ovpn
 ```
 
-(in a tmux window, or add `--daemon`). The bar's Nike badge turns green
-(**vpn**) once Nike's traffic leaves through the tunnel; see
-[the bar](bar.md#nike). A config without `redirect-gateway` brings the tunnel
-up without routing the internet through it, and the badge stays orange
-(**no vpn**). DNS goes to Quad9 (`9.9.9.9`) unless the VPN config changes it;
+(in a tmux window, or add `--daemon`). A green **\*** appears next to the
+bar's Nike badge while the tunnel is up; see [the bar](bar.md#nike-and-zelus).
+A config without `redirect-gateway` brings the tunnel up without routing the
+internet through it: the badge's tooltip and panel say whether Nike's traffic
+actually leaves through it. DNS goes to Quad9 (`9.9.9.9`) unless the VPN config changes it;
 with a full tunnel those queries go through the VPN too.
+
+### Firewall modes
+
+The host decides what Nike may reach, so nothing inside Nike (root included)
+can change it. Pick a mode in the bar's Nike panel (the *Firewall* dropdown),
+or on the host:
+
+```sh
+sudo vm-firewall set nike oscp     # lockdown | oscp | htb | permissive
+vm-firewall                        # every VM's current mode
+```
+
+| Mode | What Nike may send out |
+| --- | --- |
+| Lockdown | nothing |
+| OSCP | DNS to Quad9, and OpenVPN to UDP 1194 (OffSec's connection packs) |
+| Hack The Box | DNS to Quad9, and OpenVPN to UDP 1337 (Hack The Box's UDP packs) |
+| Permissive (default) | anything |
+
+In the OSCP and Hack The Box modes the only way out is the VPN: once
+OpenVPN is connected, the lab traffic is inside the tunnel, and nothing
+reaches the internet around it. Use the UDP connection pack; if yours uses
+another port or TCP, change the port in `modules/nixos/nike.nix`. Nike can't
+open connections to the host in any mode but permissive; `ssh nike` works in
+every mode, since the host starts it. The mode is kept across reboots
+(`/var/lib/vm-firewall/nike`), and the bar's Nike badge shows it.
 
 ### Network
 
@@ -68,6 +96,12 @@ leaves it alone; everything else stays with NetworkManager.
 `~/nike-share` is a virtiofs share, so files keep their owner: `k` on Nike
 and your user on the host are both uid 1000. If your host user has a
 different uid (`id -u`), change `uid` in `nike/default.nix` to match.
+
+### Root CAs
+
+To trust your own root CA on Nike, put its `.crt` or `.pem` in `certs/nike/`
+(or `certs/all/` for the host, Nike and Zelus), `git add` it and `rebuild`.
+See [certs/README.md](../certs/README.md).
 
 ### Changing it
 

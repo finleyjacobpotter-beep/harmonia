@@ -229,13 +229,13 @@ in
             u = term "bluetuith";
             n = term "nmtui";
             v = run "alacritty --class nike -e ssh nike";
+            z = run "alacritty --class zelus -e ssh zelus";
             g = run "flatpak run net.lutris.Lutris";
             "Shift+g" = run "flatpak run com.valvesoftware.Steam";
             c = run "flatpak run im.riot.Riot";
             l = run "flatpak run ai.lmstudio.lm-studio";
             "Shift+b" = run "flatpak run org.blender.Blender";
             d = run "flatpak run org.godotengine.Godot";
-            o = term "opencode";
           };
           media = leave // {
             k = "exec ${volUp}";

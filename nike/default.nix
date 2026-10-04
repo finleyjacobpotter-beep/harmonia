@@ -23,6 +23,7 @@ in
 {
   imports = [
     inputs.home-manager.nixosModules.home-manager
+    (import ../lib/root-cas.nix "nike")
     ./tools.nix # the OSCP toolset and Penelope
     ./labs.nix # podman + the Ligolo-ng and BloodHound compose services
   ];
@@ -112,10 +113,8 @@ in
       }
     ];
   };
-  networking.nameservers = [
-    "9.9.9.9"
-    "149.112.112.112"
-  ];
+  # The VPN modes' firewall lets DNS out only to these.
+  networking.nameservers = nike.nameservers;
 
   users.mutableUsers = false;
   users.users.k = {
@@ -161,6 +160,7 @@ in
         ../home/tmux.nix
         ../home/ranger.nix
         ../home/neovim.nix
+        ../home/rust-tools.nix
       ];
       programs.git.enable = true; # the prompt shows the git branch
       home.stateVersion = "26.05";
