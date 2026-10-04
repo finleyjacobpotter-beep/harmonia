@@ -251,6 +251,14 @@ let
   '';
 
   battery = script "eww-battery" ./eww/battery.py [ ];
+
+  # Connected USB devices for the bar button and its panel, re-read whenever
+  # udev sees one come or go.
+  usb = pyScript "eww-usb" {
+    runtimeInputs = [ pkgs.systemd ];
+    replace."USB_IDS = \"/usr/share/hwdata/usb.ids\"" =
+      ''USB_IDS = "${pkgs.hwdata}/share/hwdata/usb.ids"'';
+  } ./eww/usb.py;
 in
 {
   # eww-display is also run by sway at startup (home/sway.nix), and
@@ -321,6 +329,7 @@ in
         (defpoll zelus :interval "3s"
           :initial "{\"running\":false,\"fresh\":false,\"mode\":\"\",\"cpu\":0,\"mem\":0,\"disk\":0,\"vpn\":{\"up\":false,\"via_vpn\":false}}"
           "${microvm}/bin/eww-microvm zelus")
+        (deflisten usb :initial "{\"count\":0,\"devices\":[]}" "${usb}/bin/eww-usb watch")
         (defpoll locks :interval "500ms" :initial "{\"caps\":false,\"num\":false}" "${locks}/bin/eww-locks")
         (defpoll caffeine :interval "10s" "${caffeine}/bin/eww-caffeine")
         (defpoll battery :interval "30s" "${battery}/bin/eww-battery")
@@ -391,6 +400,12 @@ in
                     : (nike.vpn.up ? "Nike: VPN up, but outbound NOT through it" : "Nike: outbound NOT through a VPN"))))
                 + " · firewall: ''${${modeText "nike" "label"}} (click for details)"}''}
             ${vmBadge "zelus" ''"Zelus is ''${zelus.running ? (zelus.fresh ? "running" : "starting") : "stopped"}''${zelus.running && zelus.fresh && zelus.vpn.up ? " · VPN up" : ""} · firewall: ''${${modeText "zelus" "label"}} (click for details)"''}
+            (button :class "module usb ''${usb.count > 0 ? "on" : ""}"
+              :tooltip "''${usb.count} USB device''${usb.count == 1 ? "" : "s"}: click for the list"
+              :onclick "${menu} usb-menu"
+              (box :orientation "h" :space-evenly false :spacing 6
+                (label :class "icon" :text "󰕓")
+                (label :text "''${usb.count}")))
             (button :class "module display"
               :tooltip "''${arraylength(displays.outputs)} display''${arraylength(displays.outputs) == 1 ? "" : "s"}, primary ''${displays.primary}. Click for display settings"
               :onclick "${displaySettings}/bin/display-settings --toggle"
@@ -556,6 +571,24 @@ in
             (label :class "wg-detail" :halign "start" :wrap true
               :text "ssh nike (k / k) · ~/nike-share is ~/share on Nike")))
 
+        ; USB: every connected device, hubs included, in port order.
+        (defwidget usb-panel []
+          (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+            (box :orientation "h" :space-evenly false
+              (label :class "wg-title" :hexpand true :halign "start" :text "USB")
+              (button :class "wg-close" :onclick "${eww} close usb-menu" "✕"))
+            (label :class "wg-detail" :visible {arraylength(usb.devices) == 0} :halign "start"
+              :text "No USB devices connected")
+            (for d in {usb.devices}
+              (box :class "wg-tunnel usb-device ''${d.kind == "Hub" ? "hub" : ""}" :orientation "h" :space-evenly false :spacing 12
+                (label :class "usb-icon" :valign "start" :text "''${d.icon}")
+                (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+                  (label :class "wg-name" :halign "start" :limit-width 34 :text "''${d.name}")
+                  (label :class "wg-detail" :visible {d.vendor != ""} :halign "start" :limit-width 34 :text "''${d.vendor}")
+                  (label :class "wg-detail" :halign "start"
+                    :text "''${d.kind}''${d.speed != "" ? " · ''${d.speed}" : ""}")
+                  (label :class "wg-detail" :halign "start" :text "ID ''${d.id} · port ''${d.port}"))))))
+
         ; Zelus: its CPU, memory and disk, and its firewall mode.
         (defwidget zelus-panel []
           (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
@@ -695,6 +728,13 @@ in
           :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
           (cal-panel))
 
+        (defwindow usb-menu
+          :monitor 0
+          :stacking "overlay"
+          :namespace "eww-menu"
+          :geometry (geometry :x "8px" :y "34px" :width "440px" :anchor "top right")
+          (usb-panel))
+
         (defwindow nike-menu
           :monitor 0
           :stacking "overlay"
@@ -823,7 +863,9 @@ in
       &.net.down { color: $muted; }
       &.vol.muted { color: $muted; .icon { color: $muted; } }
       &.display .icon { color: $pink; }
-      &.display, &.net, &.vol, &.clock { &:hover { background-color: $surface; } }
+      &.usb { color: $muted; }
+      &.usb.on { color: $fg; .icon { color: $yellow; } }
+      &.display, &.usb, &.net, &.vol, &.clock { &:hover { background-color: $surface; } }
       .tz { color: $muted; }
     }
 
@@ -901,6 +943,11 @@ in
       }
 
       .power-action { padding: 8px 12px; }
+
+      .usb-device .wg-name { color: $fg; }
+      .usb-device.hub .wg-name { color: $muted; }
+      .usb-icon { color: $yellow; font-size: ${toString (p.font.size + 4)}pt; min-width: 24px; }
+      .usb-device.hub .usb-icon { color: $muted; }
 
     }
   '';
