@@ -113,7 +113,7 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | Package | Version |
 | --- | --- |
 | Claude Code | 2.1.283 |
-| Docker (for the Mythic C2 stack) | from nixpkgs; Mythic itself is cloned at run time |
+| Podman / podman-compose (for the Mythic C2 lab) | from nixpkgs; Mythic itself is cloned and built at run time |
 | opencode | 1.18.31 |
 | ripgrep / fd / bat / eza (host, Nike and Zelus) | 15.2.0 / 10.5.0 / 0.26.1 / 0.23.5 |
 | dust / dysk / bottom / procs | 1.2.6 / 3.7.0 / 0.14.9 / 0.14.12 |

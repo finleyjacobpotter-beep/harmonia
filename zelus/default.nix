@@ -29,7 +29,7 @@ in
   imports = [
     inputs.home-manager.nixosModules.home-manager
     (import ../lib/root-cas.nix "zelus")
-    ./mythic.nix
+    ./labs.nix
   ];
 
   # The only non-free package, and only on Zelus.
@@ -87,12 +87,12 @@ in
       {
         image = "var.img";
         mountPoint = "/var";
-        size = 4096;
+        size = 32768; # holds podman's images and volumes for the Mythic stack
       }
       {
         image = "home.img";
         mountPoint = "/home";
-        size = 65536; # /home also holds Docker's images (/home/c/.docker), for Mythic
+        size = 32768;
       }
     ];
   };
