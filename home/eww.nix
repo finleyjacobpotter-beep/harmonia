@@ -183,6 +183,11 @@ let
     pkgs.eww
   ];
 
+  # The microVMs this host runs, taken from vm-firewall.nix. A host without
+  # that module (e.g. Dionysus) has none, so the bar shows no VM widgets.
+  vms = lib.attrNames (osConfig.harmonia.vmFirewall or { });
+  hasVms = vms != [ ];
+
   # Each VM's firewall modes (modules/nixos/vm-firewall.nix), in order.
   vmModes = vm: osConfig.harmonia.vmFirewall.${vm}.modes;
 
@@ -327,12 +332,14 @@ in
         (defpoll activity :interval "5s"
           :initial "{\"gamemode\":false,\"steam\":false,\"lmstudio\":{\"running\":false,\"serving\":false,\"first\":\"\",\"list\":\"\"}}"
           "${activity}/bin/eww-activity")
+${lib.optionalString hasVms ''
         (defpoll nike :interval "3s"
           :initial "{\"running\":false,\"fresh\":false,\"mode\":\"\",\"cpu\":0,\"mem\":0,\"disk\":0,\"vpn\":{\"up\":false,\"via_vpn\":false}}"
           "${microvm}/bin/eww-microvm nike")
         (defpoll zelus :interval "3s"
           :initial "{\"running\":false,\"fresh\":false,\"mode\":\"\",\"cpu\":0,\"mem\":0,\"disk\":0,\"vpn\":{\"up\":false,\"via_vpn\":false}}"
           "${microvm}/bin/eww-microvm zelus")
+''}
         (deflisten usb :initial "{\"count\":0,\"devices\":[]}" "${usb}/bin/eww-usb watch")
         (defpoll locks :interval "500ms" :initial "{\"caps\":false,\"num\":false}" "${locks}/bin/eww-locks")
         (defpoll caffeine :interval "10s" "${caffeine}/bin/eww-caffeine")
@@ -395,6 +402,7 @@ in
               (box :orientation "h" :space-evenly false :spacing 6
                 (label :class "icon" :text "󰚩")
                 (label :visible {activity.lmstudio.serving} :limit-width 24 :text "''${activity.lmstudio.first}")))
+${lib.optionalString hasVms ''
             ; The microVMs, always shown (vmBadge): grey while stopped,
             ; Nike orange and Zelus cyan while running.
             ${vmBadge "nike" ''
@@ -404,6 +412,7 @@ in
                     : (nike.vpn.up ? "Nike: VPN up, but outbound NOT through it" : "Nike: outbound NOT through a VPN"))))
                 + " · firewall: ''${${modeText "nike" "label"}} (click for details)"}''}
             ${vmBadge "zelus" ''"Zelus is ''${zelus.running ? (zelus.fresh ? "running" : "starting") : "stopped"}''${zelus.running && zelus.fresh && zelus.vpn.up ? " · VPN up" : ""} · firewall: ''${${modeText "zelus" "label"}} (click for details)"''}
+''}
             (button :class "module usb ''${usb.count > 0 ? "on" : ""}"
               :tooltip "''${usb.count} USB device''${usb.count == 1 ? "" : "s"}: click for the list"
               :onclick "${menu} usb-menu"
@@ -541,11 +550,14 @@ in
               (label :class "wg-detail" :text text))
             (progress :class "vm-meter ''${value >= 90 ? "high" : ""}" :orientation "h" :value value)))
 
+${lib.optionalString hasVms ''
         ${firewallDropdown "nike"}
         ${firewallDropdown "zelus"}
         ${powerButton "nike"}
         ${powerButton "zelus"}
+''}
 
+${lib.optionalString hasVms ''
         (defwidget nike-panel []
           (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
             (box :orientation "h" :space-evenly false
@@ -574,6 +586,7 @@ in
             (nike-firewall)
             (label :class "wg-detail" :halign "start" :wrap true
               :text "ssh nike (k / k) · ~/nike-share is ~/share on Nike")))
+''}
 
         ; USB: every connected device, hubs included, in port order.
         (defwidget usb-panel []
@@ -593,6 +606,7 @@ in
                     :text "''${d.kind}''${d.speed != "" ? " · ''${d.speed}" : ""}")
                   (label :class "wg-detail" :halign "start" :text "ID ''${d.id} · port ''${d.port}"))))))
 
+${lib.optionalString hasVms ''
         ; Zelus: its CPU, memory and disk, and its firewall mode.
         (defwidget zelus-panel []
           (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
@@ -613,6 +627,7 @@ in
             (zelus-firewall)
             (label :class "wg-detail" :halign "start" :wrap true
               :text "ssh zelus (c, no password) · claude, opencode · ~/zelus-share is ~/share, ~/Projects is shared")))
+''}
 
         ; Network: every interface's rates, and which one the bar shows.
         (defwidget net-panel []
@@ -739,6 +754,7 @@ in
           :geometry (geometry :x "8px" :y "34px" :width "440px" :anchor "top right")
           (usb-panel))
 
+${lib.optionalString hasVms ''
         (defwindow nike-menu
           :monitor 0
           :stacking "overlay"
@@ -752,6 +768,7 @@ in
           :namespace "eww-menu"
           :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
           (zelus-panel))
+''}
 
         (defwindow steam-menu
           :monitor 0
