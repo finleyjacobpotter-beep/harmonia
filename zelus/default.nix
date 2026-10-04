@@ -29,6 +29,7 @@ in
   imports = [
     inputs.home-manager.nixosModules.home-manager
     (import ../lib/root-cas.nix "zelus")
+    ./mythic.nix
   ];
 
   # The only non-free package, and only on Zelus.
@@ -37,7 +38,7 @@ in
   microvm = {
     hypervisor = "qemu";
     vcpu = 4;
-    mem = 6144; # not exactly 2048: QEMU hangs (microvm.nix#171)
+    mem = 8192; # headroom for the Mythic C2 stack (not exactly 2048: QEMU hangs, microvm.nix#171)
 
     interfaces = [
       {
@@ -91,7 +92,7 @@ in
       {
         image = "home.img";
         mountPoint = "/home";
-        size = 32768;
+        size = 65536; # /home also holds Docker's images (/home/c/.docker), for Mythic
       }
     ];
   };

@@ -10,14 +10,14 @@ the host side (network, shared folders, `ssh zelus`) is
 
 | | |
 | --- | --- |
-| Packages | Claude Code, opencode, bash, neovim, tmux, ranger, git, ripgrep, fd, jq, curl, wget, unzip, btop, make, gcc, python3, uv, nodejs, openssh |
+| Packages | Claude Code, opencode, bash, neovim, tmux, ranger, git, ripgrep, fd, jq, curl, wget, unzip, btop, make, gcc, python3, uv, nodejs, openssh, Docker + `mythic` ([below](#mythic-c2)) |
 | MCP servers | Blender and Godot, for both Claude Code and opencode ([opencode.md](opencode.md#mcp-servers)) |
 | Firewall | permissive, lockdown or local inference, switched from the bar ([below](#firewall-modes)) |
 | Login | user `c`, no password (in `wheel`; `sudo` doesn't ask either) |
-| Resources | 4 vCPUs, 6 GiB RAM |
+| Resources | 4 vCPUs, 8 GiB RAM |
 | Address | `10.20.1.2`, host side `10.20.1.1` on the `vm-zelus` tap |
 | Shared folders | `~/zelus-share` on the host is `~/share` on Zelus; `~/Projects` is `~/Projects` on both. Both read-write |
-| Persistent | `/home` (32 GiB) and `/var` (4 GiB) images in `/var/lib/microvms/zelus` |
+| Persistent | `/home` (64 GiB, also holds Docker's images) and `/var` (4 GiB) images in `/var/lib/microvms/zelus` |
 
 The root filesystem is a tmpfs and starts fresh on every boot; Zelus reads
 the host's `/nix/store` read-only.
@@ -82,6 +82,35 @@ server at `10.20.1.1:1234`: a socket on the host's end of Zelus's tap
 (`lmstudio-zelus.socket`) passes each connection on to LM Studio's
 `localhost:1234`. opencode's `lmstudio` provider points there. Start the
 server in LM Studio's *Developer* tab first.
+
+## Mythic C2
+
+Zelus can run [Mythic](https://github.com/its-a-feature/Mythic), an
+open-source command-and-control framework, as a lab for red-team / OSCP
+practice: start the server here and implants from your lab call back to it.
+Mythic is a docker-compose stack driven by its own `mythic-cli`, so Zelus has
+Docker on, and the `mythic` helper ([`zelus/mythic.py`](../zelus/mythic.py))
+clones the repo into `~/mythic`, builds `mythic-cli` once, and passes
+everything else through to it:
+
+```sh
+mythic start      # bring the stack up (the first run pulls and builds images)
+mythic status     # what's running, plus the admin URL and password
+mythic stop       # take it down
+mythic update     # git pull in ~/mythic, then rebuild
+```
+
+Any other argument goes straight to `mythic-cli` (`mythic logs mythic_server`,
+`mythic install github <url>` to add an agent, and so on). Set `MYTHIC_REF` to
+pin a tag or commit, or `MYTHIC_DIR` to clone somewhere other than `~/mythic`.
+Docker keeps its images under `/home/c/.docker`, on the 64 GiB `/home` volume.
+
+The stack listens inside Zelus only. Nothing on your LAN reaches the VM: the
+host NATs its egress and forwards no port in, so to catch callbacks from
+elsewhere you bring the targets onto Zelus's network yourself (a tunnel, or a
+forward you add on the host). Pulling and building the images needs the
+internet, so keep the firewall in **Permissive** the first time (the bar's
+Zelus panel, [below](#firewall-modes)).
 
 ## Firewall modes
 
