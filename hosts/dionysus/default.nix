@@ -15,8 +15,10 @@
 {
   imports = [
     ./hardware-configuration.nix
+    ./flatpak.nix
     ../../modules/nixos/desktop.nix
     ../../modules/nixos/fonts.nix
+    ../../modules/nixos/element.nix
     ../../modules/nixos/secrets.nix
     ../../modules/nixos/wireguard.nix
   ];

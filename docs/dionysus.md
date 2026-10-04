@@ -23,6 +23,12 @@ x86 one.
   - the **Rust command-line tools** (ripgrep, fd, bat, eza, …) with the usual
     aliases in interactive shells only;
   - `uv`, Node, Python, a C toolchain, and a native Firefox.
+- Flatpak apps (`hosts/dionysus/flatpak.nix`, same tightened sandboxes as
+  harmonia):
+  - **Element** (Matrix) — on both architectures (Flathub ships x86_64 and
+    aarch64 builds);
+  - **Zen** (browser) — **x86_64 only**, because Zen has no ARM64 Linux build;
+    on aarch64 the native Firefox above is the browser.
 - Login `d`, initial password `changeme` (change it after first boot).
 
 ## What harmonia has that Dionysus leaves out
@@ -31,8 +37,8 @@ Everything architecture-specific or flatpak-only, so both arches build:
 
 - the **Nike** and **Zelus** microVMs and all the host-side microVM wiring;
 - **Steam** and the **gaming** stack (32-bit, x86-only);
-- the **LM Studio**, **Zen**, **Element** and **studio** flatpaks, and the
-  flatpak theme sync;
+- the **LM Studio** and **studio** (Blender/Godot/opencode) flatpaks — those
+  tools are native here — and the Lutris/LACT flatpak theme sync;
 - 32-bit graphics (`hardware.graphics.enable32Bit`), which has no aarch64 Mesa.
 
 Set `ANTHROPIC_API_KEY` (or use opencode's `/connect`) to reach Claude from

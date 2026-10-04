@@ -70,21 +70,29 @@
       };
       mkDionysus =
         sys:
+        let
+          # `system` lets the home config decide, statically, whether to pull
+          # in the x86_64-only Zen theming (home/dionysus/default.nix).
+          args = dionysusArgs // {
+            system = sys;
+          };
+        in
         nixpkgs.lib.nixosSystem {
-          specialArgs = dionysusArgs;
+          specialArgs = args;
           modules = [
             {
               nixpkgs.hostPlatform = sys;
               nixpkgs.overlays = [ iconOverlay ];
             }
             ./hosts/dionysus
+            nix-flatpak.nixosModules.nix-flatpak
             home-manager.nixosModules.home-manager
             {
               home-manager = {
                 useGlobalPkgs = true;
                 useUserPackages = true;
                 backupFileExtension = "hm-backup";
-                extraSpecialArgs = dionysusArgs;
+                extraSpecialArgs = args;
                 users.${dionysusArgs.username} = import ./home/dionysus;
               };
             }

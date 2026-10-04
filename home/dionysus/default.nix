@@ -6,6 +6,7 @@
   pkgs,
   lib,
   username,
+  system,
   ...
 }:
 {
@@ -21,8 +22,12 @@
     ../tui.nix
     ../keymap.nix
     ../secrets.nix
+    ../element.nix # Element theming (the flatpak is in hosts/dionysus/)
     ./dev.nix
-  ];
+  ]
+  # Zen has no aarch64 build, so its theming only applies where the flatpak is
+  # installed (x86_64); aarch64 uses the native Firefox from ./dev.nix.
+  ++ lib.optional (system == "x86_64-linux") ../zen.nix;
 
   home.username = username;
   home.homeDirectory = "/home/${username}";

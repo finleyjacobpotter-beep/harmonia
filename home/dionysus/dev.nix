@@ -135,7 +135,9 @@ in
     python3
     gcc
     gnumake
-    # A native browser (harmonia's is a flatpak, which isn't portable here).
+    # A native browser, always present. On aarch64 it is the browser (Zen has
+    # no ARM64 build); on x86_64 the Zen flatpak (hosts/dionysus/flatpak.nix)
+    # sits alongside it.
     firefox
     # The Rust command-line tools (home/rust-tools on harmonia's VMs).
     ripgrep # rg: grep
