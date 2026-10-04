@@ -222,10 +222,13 @@ let
 in
 {
   # Rootless-capable podman with a docker alias, so compose and the usual
-  # `docker` muscle memory both work.
+  # `docker` muscle memory both work. The docker-compatible socket at
+  # /run/docker.sock is for Mythic's mythic-cli, which talks to the daemon
+  # through the Docker Go SDK (not just the `docker` CLI).
   virtualisation.podman = {
     enable = true;
     dockerCompat = true;
+    dockerSocket.enable = true;
     defaultNetwork.settings.dns_enabled = true;
   };
   environment.systemPackages = [ pkgs.podman-compose ];
@@ -272,6 +275,9 @@ in
     path = with pkgs; [
       podman
       podman-compose
+      # mythic-cli may call `docker-compose` (v1 spelling); route it to
+      # podman-compose so the shim is complete.
+      (writeShellScriptBin "docker-compose" ''exec ${podman-compose}/bin/podman-compose "$@"'')
       gettext # podman-compose shells out to envsubst
       git
       go # mythic-cli is built with `make` on first start
@@ -283,6 +289,8 @@ in
       Type = "oneshot";
       RemainAfterExit = true;
       WorkingDirectory = mythicDir;
+      # mythic-cli talks to the Docker-compatible socket podman exposes.
+      Environment = "DOCKER_HOST=unix:///run/docker.sock";
       ExecStartPre = "${mythicSetup}";
       ExecStart = "${mythicDir}/mythic-cli start";
       ExecStop = "${mythicDir}/mythic-cli stop";
