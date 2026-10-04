@@ -4,9 +4,10 @@
 
 Wipes one disk, creates a GPT table with a 1 GiB ESP and a root partition
 (optionally LUKS2-encrypted, always ext4), installs a small base system
-that matches harmonia (systemd-boot, host harmonia, user u, flakes, git),
-and clones harmonia into ~u/harmonia with this machine's
-hardware-configuration.nix already in place.
+that matches harmonia (systemd-boot, user u, flakes, git), and clones
+harmonia into ~u/harmonia with this machine's hardware-configuration.nix
+already in place for the host you pick: harmonia (desktop) or cadmus
+(laptop, with Wi-Fi).
 
 Run it as root from the live ISO (the nix-shell line above fetches Python,
 which the minimal ISO doesn't ship):
@@ -26,7 +27,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-HOSTNAME = "harmonia"
+HOSTS = {"harmonia": "desktop", "cadmus": "laptop, with Wi-Fi"}
 USERNAME = "u"
 REPO = "https://github.com/finleyjacobpotter-beep/harmonia"
 STATE_VERSION = "26.05"
@@ -121,6 +122,11 @@ def ask_settings() -> dict:
     if not (Path(disk).exists() and stat.S_ISBLK(os.stat(disk).st_mode)):
         die(f"{disk} is not a block device")
 
+    print("Hosts: " + ", ".join(f"{h} ({what})" for h, what in HOSTS.items()))
+    host = input("Host to install: ").strip()
+    if host not in HOSTS:
+        die(f"{host!r} is not one of {', '.join(HOSTS)}")
+
     luks = ask("Use LUKS encryption for the root partition?")
     swap = input("Swap file size in GiB (0 for none): ").strip()
     if not re.fullmatch(r"[0-9]+", swap):
@@ -128,6 +134,7 @@ def ask_settings() -> dict:
 
     esp, root = partitions(disk)
     return {
+        "host": host,
         "disk": disk,
         "esp": esp,
         "root": root,
@@ -143,7 +150,7 @@ def confirm(s: dict) -> None:
     print(f"  {s['root']} rest of the disk, ext4 (label nixos){' inside LUKS2' if s['luks'] else ''}")
     if s["swap_gib"]:
         print(f"  {s['swap_gib']} GiB swap file at /swap/swapfile")
-    print(f"  host {HOSTNAME}, user {USERNAME}")
+    print(f"  host {s['host']}, user {USERNAME}")
     if input("Type ERASE to continue: ") != "ERASE":
         die("aborted")
 
@@ -189,10 +196,10 @@ def partition_and_mount(s: dict) -> None:
         run("swapon", str(swapfile))
 
 
-def install() -> None:
+def install(s: dict) -> None:
     run("nixos-generate-config", "--root", str(MNT))
     (MNT / "etc/nixos/configuration.nix").write_text(
-        CONFIGURATION_NIX.format(hostname=HOSTNAME, username=USERNAME, state_version=STATE_VERSION)
+        CONFIGURATION_NIX.format(hostname=s["host"], username=USERNAME, state_version=STATE_VERSION)
     )
 
     print("\nInstalling. nixos-install asks for the root password at the end.")
@@ -203,7 +210,7 @@ def install() -> None:
         pass
 
 
-def clone_harmonia() -> bool:
+def clone_harmonia(s: dict) -> bool:
     dest = MNT / "home" / USERNAME / "harmonia"
     if shutil.which("git"):
         cloned = run("git", "clone", REPO, str(dest), check=False)
@@ -215,7 +222,7 @@ def clone_harmonia() -> bool:
         return False
 
     shutil.copy(MNT / "etc/nixos/hardware-configuration.nix",
-                dest / "hosts/harmonia/hardware-configuration.nix")
+                dest / "hosts" / s["host"] / "hardware-configuration.nix")
     run("nixos-enter", "--root", str(MNT), "-c", f"chown -R {USERNAME}:users /home/{USERNAME}/harmonia")
     return True
 
@@ -225,8 +232,8 @@ def main() -> None:
     settings = ask_settings()
     confirm(settings)
     partition_and_mount(settings)
-    install()
-    cloned = clone_harmonia()
+    install(settings)
+    cloned = clone_harmonia(settings)
 
     quiet("swapoff", "-a")
     run("umount", "-R", str(MNT))
@@ -235,8 +242,8 @@ def main() -> None:
 
     print(f"\nBase NixOS is installed. Remove the USB stick and reboot, then log in as {USERNAME} and run:")
     if not cloned:
-        print(f"  git clone {REPO} ~/harmonia && cp /etc/nixos/hardware-configuration.nix ~/harmonia/hosts/harmonia/")
-    print("  cd ~/harmonia && sudo nixos-rebuild switch --flake .#harmonia")
+        print(f"  git clone {REPO} ~/harmonia && cp /etc/nixos/hardware-configuration.nix ~/harmonia/hosts/{settings['host']}/")
+    print(f"  cd ~/harmonia && sudo nixos-rebuild switch --flake .#{settings['host']}")
 
 
 if __name__ == "__main__":

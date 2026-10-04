@@ -8,9 +8,11 @@ harmonia assumes:
 - **UEFI** with **systemd-boot**, ESP mounted at `/boot`
 - a user named **`u`** (set in `flake.nix`) in the `wheel` group
 - **flakes** enabled (`nix-command` + `flakes`)
-- host name **`harmonia`** (the flake output is `.#harmonia`)
+- host name **`harmonia`** for a desktop or **`cadmus`** for a laptop (the
+  flake outputs are `.#harmonia` and `.#cadmus`; on a laptop, read `cadmus`
+  wherever this guide says `harmonia` in a host name or `hosts/` path)
 - an **x86_64** machine
-- a real `hosts/harmonia/hardware-configuration.nix` from *your* machine (the one in the repo is a placeholder)
+- a real `hosts/<host>/hardware-configuration.nix` from *your* machine (the ones in the repo are placeholders)
 
 **Scripted version:** [`scripts/install.py`](../scripts/install.py) does steps
 3 to 10 for you. Boot the ISO, get online (steps 1 and 2), then:
@@ -199,7 +201,7 @@ the switch later is small:
 
 If you use a different login name, change `u` here **and** `username` in
 harmonia's `flake.nix` later. If your timezone or keymap is different, you
-can set them here too, and in `hosts/harmonia/default.nix` later.
+can set them here too, and in `hosts/common.nix` later.
 
 ## 7. Install
 
