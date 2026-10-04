@@ -47,7 +47,11 @@ let
   cpu = script "eww-cpu" ./eww/cpu.py [ ];
 
   # GPU load, temperature and VRAM from rocm-smi (modules/nixos/fans.nix).
-  gpu = script "eww-gpu" ./eww/gpu.py [ pkgs.rocmPackages.rocm-smi ];
+  # ROCm is x86_64 only; elsewhere (e.g. an aarch64 Dionysus VM) the widget
+  # just reports no GPU and hides itself.
+  gpu = script "eww-gpu" ./eww/gpu.py (
+    lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [ pkgs.rocmPackages.rocm-smi ]
+  );
 
   # Up/down rates of one interface for the bar, all of them for its panel.
   net = script "eww-net" ./eww/net.py [

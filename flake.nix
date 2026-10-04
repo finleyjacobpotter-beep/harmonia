@@ -50,33 +50,81 @@
           keys
           ;
       };
+
+      # The tulasi-icon-theme overlay, used by every host.
+      iconOverlay = (
+        final: _: {
+          tulasi-icon-theme = final.callPackage ./pkgs/tulasi-icon-theme.nix { };
+        }
+      );
+
+      # Dionysus: harmonia's Sway desktop with the coding/creative toolset
+      # built in natively (Blender, Godot, opencode, Claude Code, the MCP
+      # servers and the Rust tools) and no microVMs. One module list, built
+      # for whichever architecture is passed, so the same config works on
+      # aarch64-linux and x86_64-linux.
+      dionysusArgs = {
+        inherit inputs palette keys;
+        hostname = "dionysus";
+        username = "d";
+      };
+      mkDionysus =
+        sys:
+        nixpkgs.lib.nixosSystem {
+          specialArgs = dionysusArgs;
+          modules = [
+            {
+              nixpkgs.hostPlatform = sys;
+              nixpkgs.overlays = [ iconOverlay ];
+            }
+            ./hosts/dionysus
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                backupFileExtension = "hm-backup";
+                extraSpecialArgs = dionysusArgs;
+                users.${dionysusArgs.username} = import ./home/dionysus;
+              };
+            }
+          ];
+        };
     in
     {
-      nixosConfigurations.${hostname} = nixpkgs.lib.nixosSystem {
-        inherit specialArgs;
-        modules = [
-          {
-            nixpkgs.hostPlatform = system;
-            nixpkgs.overlays = [
-              (final: _: { tulasi-icon-theme = final.callPackage ./pkgs/tulasi-icon-theme.nix { }; })
-            ];
-          }
-          ./hosts/harmonia
-          nix-flatpak.nixosModules.nix-flatpak
-          microvm.nixosModules.host
-          home-manager.nixosModules.home-manager
-          {
-            home-manager = {
-              useGlobalPkgs = true;
-              useUserPackages = true;
-              backupFileExtension = "hm-backup";
-              extraSpecialArgs = specialArgs;
-              users.${username} = import ./home;
-            };
-          }
-        ];
+      nixosConfigurations = {
+        ${hostname} = nixpkgs.lib.nixosSystem {
+          inherit specialArgs;
+          modules = [
+            {
+              nixpkgs.hostPlatform = system;
+              nixpkgs.overlays = [ iconOverlay ];
+            }
+            ./hosts/harmonia
+            nix-flatpak.nixosModules.nix-flatpak
+            microvm.nixosModules.host
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                backupFileExtension = "hm-backup";
+                extraSpecialArgs = specialArgs;
+                users.${username} = import ./home;
+              };
+            }
+          ];
+        };
+
+        # Same two outputs so `nixos-rebuild --flake .#dionysus` works on an
+        # x86_64 host and `.#dionysus-aarch64` on an aarch64 one.
+        dionysus = mkDionysus "x86_64-linux";
+        dionysus-aarch64 = mkDionysus "aarch64-linux";
       };
 
-      formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt;
+      formatter = {
+        x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt;
+        aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.nixfmt;
+      };
     };
 }
