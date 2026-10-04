@@ -35,6 +35,8 @@ modules/nixos/
 nike/                          the Nike microVM guest (microvm.nix)
   default.nix                  packages, user k, network, shares and volumes, home-manager
   palette.nix                  Miami Wind with orange as the primary colour
+  tools.nix                    the OSCP toolset and Penelope
+  labs.nix                     podman + the Ligolo-ng and BloodHound compose services
   status.py                    writes Nike's VPN and utilization for the bar
 zelus/                         the Zelus microVM guest (microvm.nix): Claude Code and opencode with Blender and Godot MCP
   default.nix                  packages, user c, network, shares and volumes, home-manager, Claude Code, status service
@@ -111,7 +113,7 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
 - [opencode](docs/opencode.md): opencode on Zelus, providers, the Anthropic key, and the Blender and Godot MCP servers
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
-- [Nike and containers](docs/nike.md): the Nike microVM (VPN work, firewall modes, shared folder, bar panel), podman
+- [Nike and containers](docs/nike.md): the Nike microVM (VPN work, OSCP lab, firewall modes, shared folder, bar panel), podman
 - [Rust tools](docs/rust-tools.md): ripgrep, fd, bat, eza and friends, and the aliases from grep, find, cat, ls … on every machine
 - [Zelus](docs/zelus.md): the Zelus microVM (Claude Code, opencode, dev tools, Blender and Godot over MCP, firewall modes)
 - [The bar](docs/bar.md): what each part of the eww bar shows, its panels, and the display settings window
