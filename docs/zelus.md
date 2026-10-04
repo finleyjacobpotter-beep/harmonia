@@ -24,7 +24,8 @@ the host's `/nix/store` read-only.
 
 ## Using it
 
-It doesn't start at boot:
+It doesn't start at boot. Start or stop it with the button in its bar panel
+([the bar](bar.md#nike-and-zelus)), or from a terminal:
 
 ```sh
 sudo systemctl start microvm@zelus    # stop / restart / status work too

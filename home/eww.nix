@@ -215,6 +215,18 @@ let
         (label :class "vm-mode mode-''${${vm}.mode}" :xalign 0 :text "''${${shortText vm}}")))
   '';
 
+  # A VM panel's start/stop button: Start while it is stopped, Stop while it
+  # runs, and Starting…/Stopping… (disabled) until systemctl returns.
+  powerButton = vm: ''
+    (defvar ${vm}_busy "")
+    (defwidget ${vm}-power []
+      (button :class "vm-power ''${${vm}_busy != "" ? "busy" : (${vm}.running ? "stop" : "start")}"
+        :active {${vm}_busy == ""}
+        :tooltip "''${${vm}.running ? "Stop" : "Start"} microvm@${vm}"
+        :onclick "${microvm}/bin/eww-microvm ${vm} ''${${vm}.running ? "stop" : "start"} &"
+        (label :text "''${${vm}_busy == "start" ? "󰐊 Starting…" : (${vm}_busy == "stop" ? "󰓛 Stopping…" : (${vm}.running ? "󰓛 Stop" : "󰐊 Start"))}")))
+  '';
+
   # The firewall dropdown in a VM's panel: the current mode, and the list of
   # modes when it is opened.
   firewallDropdown = vm: ''
@@ -512,14 +524,17 @@ in
 
         ${firewallDropdown "nike"}
         ${firewallDropdown "zelus"}
+        ${powerButton "nike"}
+        ${powerButton "zelus"}
 
         (defwidget nike-panel []
           (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
             (box :orientation "h" :space-evenly false
               (label :class "wg-title nike" :hexpand true :halign "start" :text "Nike")
+              (nike-power)
               (button :class "wg-close" :onclick "${eww} close nike-menu" "✕"))
             (label :class "wg-detail" :visible {!nike.running} :halign "start" :wrap true
-              :text "Nike is stopped. Start it with: sudo systemctl start microvm@nike")
+              :text "Nike is stopped.")
             (label :class "wg-detail" :visible {nike.running && !nike.fresh} :halign "start" :wrap true
               :text "Nike is starting: no status from it yet.")
             (box :visible {nike.running && nike.fresh} :orientation "v" :space-evenly false :spacing 10
@@ -546,9 +561,10 @@ in
           (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
             (box :orientation "h" :space-evenly false
               (label :class "wg-title zelus" :hexpand true :halign "start" :text "Zelus")
+              (zelus-power)
               (button :class "wg-close" :onclick "${eww} close zelus-menu" "✕"))
             (label :class "wg-detail" :visible {!zelus.running} :halign "start" :wrap true
-              :text "Zelus is stopped. Start it with: sudo systemctl start microvm@zelus")
+              :text "Zelus is stopped.")
             (label :class "wg-detail" :visible {zelus.running && !zelus.fresh} :halign "start" :wrap true
               :text "Zelus is starting: no status from it yet.")
             (box :class "wg-tunnel" :visible {zelus.running && zelus.fresh} :orientation "v" :space-evenly false :spacing 6
@@ -832,6 +848,14 @@ in
       .wg-tunnel.warn .wg-name { color: $orange; }
       .wg-title.nike { color: $orange; }
       .wg-title.zelus { color: $cyan; }
+      .vm-power {
+        padding: 0 8px;
+        margin-right: 6px;
+        background-color: $surface;
+        &.start { color: $green; &:hover { color: $bg; background-color: $green; } }
+        &.stop { color: $red; &:hover { color: $bg; background-color: $red; } }
+        &.busy { color: $muted; }
+      }
       .vm-fw-current { padding: 0; &:hover .wg-name { color: $fg; } }
       .vm-fw-mode { color: $purple; }
       .vm-fw-mode.mode-permissive { color: $fg; }

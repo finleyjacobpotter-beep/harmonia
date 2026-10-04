@@ -169,7 +169,20 @@ in
             command = "/run/current-system/sw/bin/vm-firewall set *";
             options = [ "NOPASSWD" ];
           }
-        ];
+        ]
+        # The bar's start and stop buttons, for exactly these VMs.
+        ++ lib.concatMap (
+          vm:
+          map
+            (action: {
+              command = "/run/current-system/sw/bin/systemctl ${action} microvm@${vm}.service";
+              options = [ "NOPASSWD" ];
+            })
+            [
+              "start"
+              "stop"
+            ]
+        ) (lib.attrNames cfg);
       }
     ];
   };

@@ -6,6 +6,8 @@ status is "fresh" while it is under STALE seconds old.
 Usage: eww-microvm NAME             the JSON below
        eww-microvm NAME set MODE    switch its firewall mode (the panel's
                                     dropdown), then refresh the bar
+       eww-microvm NAME start|stop  start or stop the VM (the panel's
+                                    button), then refresh the bar
 
 {"running": bool, "fresh": bool, "mode": "permissive", ...nike/status.py's fields}
 """
@@ -64,14 +66,26 @@ def status(name: str) -> dict:
     return {"running": running, "fresh": fresh, "mode": firewall_mode(name), **info}
 
 
+def refresh(name: str, *extra: str) -> None:
+    subprocess.run(["eww", "update", *extra,
+                    f"{name}={json.dumps(status(name), separators=(',', ':'), ensure_ascii=False)}"])
+
+
 def main() -> None:
     name = sys.argv[1]
+    if sys.argv[2:] in (["start"], ["stop"]):
+        # Allowed without a password by modules/nixos/vm-firewall.nix. The
+        # button reads "Starting…"/"Stopping…" until systemctl returns.
+        subprocess.run(["eww", "update", f"{name}_busy={sys.argv[2]}"])
+        subprocess.run(["/run/wrappers/bin/sudo", "-n", "/run/current-system/sw/bin/systemctl",
+                        sys.argv[2], f"microvm@{name}.service"])
+        refresh(name, f"{name}_busy=")
+        return
     if sys.argv[2:3] == ["set"] and len(sys.argv) == 4:
         # Allowed without a password by modules/nixos/vm-firewall.nix.
         subprocess.run(["/run/wrappers/bin/sudo", "-n", "/run/current-system/sw/bin/vm-firewall",
                         "set", name, sys.argv[3]])
-        subprocess.run(["eww", "update", f"{name}_fw_open=false",
-                        f"{name}={json.dumps(status(name), separators=(',', ':'), ensure_ascii=False)}"])
+        refresh(name, f"{name}_fw_open=false")
         return
     print(json.dumps(status(name), separators=(",", ":"), ensure_ascii=False))
 

@@ -70,6 +70,9 @@ the badge to see whether Nike's traffic actually leaves through the tunnel.
 
 Clicking a badge opens the VM's panel:
 
+- **Start / Stop** (top right): starts or stops `microvm@<vm>`, allowed
+  without a password. It reads **Starting…** or **Stopping…** until
+  systemd is done.
 - **VPN outbound** (Nike only): the interface Nike's internet traffic leaves
   through, the tunnel's address and the VPN server, and the tunnel's download
   and upload rates.
