@@ -10,6 +10,8 @@
 }:
 {
   imports = [
+    # Extra root CAs: certs/all plus certs/<hostname>, if present.
+    (import ../lib/root-cas.nix hostname)
     ../modules/nixos/desktop.nix
     ../modules/nixos/fonts.nix
     ../modules/nixos/flatpak.nix
@@ -20,6 +22,8 @@
     ../modules/nixos/studio.nix
     ../modules/nixos/virtualisation.nix
     ../modules/nixos/nike.nix
+    ../modules/nixos/zelus.nix
+    ../modules/nixos/vm-firewall.nix
     ../modules/nixos/secrets.nix
     ../modules/nixos/wireguard.nix
   ];
