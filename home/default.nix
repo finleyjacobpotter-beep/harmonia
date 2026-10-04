@@ -17,8 +17,8 @@
     ./zen.nix
     ./flatpak-theme.nix
     ./element.nix
-    ./opencode.nix
     ./tui.nix
+    ./rust-tools.nix
     ./keymap.nix
     ./secrets.nix
   ];
@@ -38,8 +38,8 @@
     createDirectories = true;
   };
 
-  # ~/Projects is the only host directory Blender, Godot and opencode can see
-  # (modules/nixos/studio.nix).
+  # ~/Projects is the only host directory Blender and Godot can see
+  # (modules/nixos/studio.nix), and Zelus's ~/Projects (modules/nixos/zelus.nix).
   home.activation.projectsDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run mkdir -p "$HOME/Projects"
   '';

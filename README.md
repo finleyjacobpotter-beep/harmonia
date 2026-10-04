@@ -4,7 +4,7 @@
 icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, a **microVM** (Nike), **podman**, and **Zen browser**, **Lutris**, **Steam**, **Element**, **LM Studio**, **Blender**, **Godot** and **opencode** jailed in Flatpak —
+**neovim**, two **microVMs** (Nike and Zelus), **podman**, and **Zen browser**, **Lutris**, **Steam**, **Element**, **LM Studio**, **Blender** and **Godot** jailed in Flatpak —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -12,10 +12,13 @@ colour scheme, **DepartureMono Nerd Font** and the pixel-art
 ## Layout
 
 ```
-flake.nix                      inputs, hostname/username, nixosConfigurations.harmonia
+flake.nix                      inputs, username, the hosts (nixosConfigurations.harmonia / .cadmus)
 theme/miami-wind.nix           the palette — every app reads its colours from here
 keys.nix                       the keyboard contract (which layer owns which modifier)
-hosts/harmonia/                host config + hardware-configuration.nix (placeholder!)
+hosts/common.nix               everything both hosts share: modules, user, locale, nix settings
+hosts/harmonia/                the desktop: hardware-configuration.nix (placeholder!) + fans.nix
+hosts/cadmus/                  the laptop (ThinkPad E14 Gen 2): hardware-configuration.nix (placeholder!), laptop.nix, thinkpad.nix,
+                               nixos-hardware's E14 Gen 2 profile (set `cpu` to intel or amd)
 modules/nixos/
   desktop.nix                  sway, greetd/tuigreet, pipewire, portals, console colours
   fonts.nix                    DepartureMono Nerd Font as system default
@@ -24,19 +27,29 @@ modules/nixos/
   steam.nix                    Steam from Flathub, locked down, sharing only ~/Games with Lutris
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
-  studio.nix                   Blender, Godot and opencode from Flathub, sharing only ~/Projects
-  fans.nix                     LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
+  studio.nix                   Blender and Godot from Flathub, sharing only ~/Projects
+  fans.nix                     harmonia only: LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
   virtualisation.nix           rootless podman + buildah, plain QEMU (no libvirt)
   nike.nix                     the Nike microVM, host side: tap network + NAT, shared folders, `ssh nike`
+  zelus.nix                    the Zelus microVM, host side: tap network + NAT, shared folders, LM Studio socket, `ssh zelus` with the Blender/Godot forwards
+  vm-firewall.nix              per-VM firewall modes (nftables on the host) and the `vm-firewall` command
+  laptop.nix                   cadmus only: Wi-Fi firmware + regulatory database, suspend on lid close, power profiles
+  thinkpad.nix                 cadmus only: thinkfan fan curve, fwupd for BIOS updates
   secrets.nix                  pcscd + YubiKey udev rules
   wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
 nike/                          the Nike microVM guest (microvm.nix)
   default.nix                  packages, user k, network, shares and volumes, home-manager
   palette.nix                  Miami Wind with orange as the primary colour
+  tools.nix                    the OSCP toolset and Penelope
+  labs.nix                     podman + the Ligolo-ng and BloodHound compose services
   status.py                    writes Nike's VPN and utilization for the bar
+zelus/                         the Zelus microVM guest (microvm.nix): Claude Code and opencode with Blender and Godot MCP
+  default.nix                  packages, user c, network, shares and volumes, home-manager, Claude Code, status service
+  palette.nix                  Miami Wind with cyan as the primary colour
+  skills/                      skills for Claude Code and opencode (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio/nike, display settings, cpu, mem, gpu, network, wireguard, caffeine, volume, battery, clock + calendar)
+  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio, nike/zelus with firewall modes, display settings, cpu, mem, gpu, network, wireguard, caffeine, volume, battery, clock + calendar)
   eww/                         the bar's scripts, in Python (displays, network, gpu, volume, clock, calendar, …), and the display settings window
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
@@ -44,9 +57,13 @@ home/                          home-manager, one file per program
   secrets-backup.py            the `secrets-backup` command
   flatpak-theme.nix            the desktop GTK theme copied into the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
-  opencode.nix                 opencode: LM Studio + Claude providers, keys from pass, oh-my-openagent, Blender and Godot MCP servers
+  opencode.nix                 opencode on Zelus: LM Studio + Claude providers, oh-my-openagent, Blender and Godot MCP servers
+  rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host, Nike and Zelus
+  mcp-servers.nix              the Blender and Godot MCP servers, for Claude Code and opencode on Zelus
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
+lib/root-cas.nix               trusts the root CAs in certs/ on the host, Nike and Zelus
+certs/                         your own root CAs: all/ for every machine, harmonia/, nike/ or zelus/ for one (empty by default, see certs/README.md)
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          the rest of the documentation (linked below)
@@ -56,13 +73,21 @@ scripts/ubuntu-install.py      Ubuntu: Blender + Blender MCP, Godot 4 + Godot MC
 
 ## Install
 
+There are two hosts with the same desktop, apps and microVMs: **harmonia**
+for a desktop and **cadmus** for a Lenovo ThinkPad E14 Gen 2, which adds
+Wi-Fi firmware, suspend on lid close and power profiles
+(`modules/nixos/laptop.nix`), a thinkfan fan curve and fwupd
+(`modules/nixos/thinkpad.nix`) and nixos-hardware's E14 Gen 2 profile. Set
+`cpu` in `hosts/cadmus/default.nix` to `intel` or `amd` to match yours. Below, use `cadmus` in place of `harmonia` for a
+laptop. On cadmus, Super+o n opens `nmtui` to join a Wi-Fi network.
+
 Start from a base NixOS install with flakes and git enabled and a user named
 `u` (or whatever you set as `username`). [Installing base NixOS](docs/install.md)
 walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
 [`scripts/install.py`](scripts/install.py) does it for you.
 
-1. Clone this repo and edit `hostname` / `username` in `flake.nix`, and the
-   timezone/locale/keymap in `hosts/harmonia/default.nix`:
+1. Clone this repo and edit `username` in `flake.nix`, and the
+   timezone/locale/keymap in `hosts/common.nix`:
    ```sh
    git clone https://github.com/finleyjacobpotter-beep/harmonia ~/harmonia && cd ~/harmonia
    ```
@@ -99,9 +124,11 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 - [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
-- [opencode](docs/opencode.md): providers, keys in pass, and the Blender and Godot MCP servers
+- [opencode](docs/opencode.md): opencode on Zelus, providers, the Anthropic key, and the Blender and Godot MCP servers
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
-- [Nike and containers](docs/nike.md): the Nike microVM (VPN work, shared folder, bar panel), podman
+- [Nike and containers](docs/nike.md): the Nike microVM (VPN work, OSCP lab, firewall modes, shared folder, bar panel), podman
+- [Rust tools](docs/rust-tools.md): ripgrep, fd, bat, eza and friends, and the aliases from grep, find, cat, ls … on every machine
+- [Zelus](docs/zelus.md): the Zelus microVM (Claude Code, opencode, dev tools, Blender and Godot over MCP, firewall modes)
 - [The bar](docs/bar.md): what each part of the eww bar shows, its panels, and the display settings window
 - [Calendar](docs/calendar.md): the clock's calendar, time zones and CalDAV sync with vdirsyncer
 - [WireGuard](docs/wireguard.md): importing tunnels and the bar panel
@@ -110,7 +137,7 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 
 ## Unfree packages
 
-Only one non-free package is allowed (`hosts/harmonia/default.nix`):
+Only one non-free package is allowed (`hosts/common.nix`):
 the Tulasi icon theme (CC BY-NC-SA 4.0, free for non-commercial use with
 attribution).
 
@@ -138,10 +165,10 @@ harmonia stands on other people's work:
 - **[Departure Mono](https://departuremono.com/)** via
   [Nerd Fonts](https://www.nerdfonts.com/): the font.
 - **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
-  Flatpak setup for Zen, Lutris, Steam, Element, LM Studio, Blender, Godot
-  and opencode.
+  Flatpak setup for Zen, Lutris, Steam, Element, LM Studio, Blender and
+  Godot.
 - **[microvm.nix](https://github.com/microvm-nix/microvm.nix)**: the Nike
-  microVM.
+  and Zelus microVMs.
 
 ## License
 

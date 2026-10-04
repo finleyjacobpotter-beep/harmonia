@@ -17,6 +17,12 @@
     # Declarative flatpak (used for the sandboxed Zen browser). Tag v0.7.0.
     nix-flatpak.url = "github:gmodena/nix-flatpak/440818969ac2cbd77bfe025e884d0aa528991374";
 
+    # Hardware profiles; cadmus uses the ThinkPad E14 Gen 2 one. master, 2026-10-04
+    nixos-hardware = {
+      url = "github:NixOS/nixos-hardware/31cc5f4d9b9ba601071e8b8504601b9b176e2756";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # The Nike microVM (nike/, modules/nixos/nike.nix). main, 2026-10-01
     microvm = {
       url = "github:microvm-nix/microvm.nix/3f1540f254fe73ac907281b7de7d396bb3d54850";
@@ -35,21 +41,11 @@
     let
       system = "x86_64-linux";
 
-      # Change these two to match your machine / login.
-      hostname = "harmonia";
+      # Change this to your login. Host names are the attribute names below.
       username = "u";
 
       palette = import ./theme/miami-wind.nix;
       keys = import ./keys.nix;
-      specialArgs = {
-        inherit
-          inputs
-          hostname
-          username
-          palette
-          keys
-          ;
-      };
 
       # The tulasi-icon-theme overlay, used by every host.
       iconOverlay = (
@@ -57,6 +53,44 @@
           tulasi-icon-theme = final.callPackage ./pkgs/tulasi-icon-theme.nix { };
         }
       );
+
+      # Every host gets the same desktop, home-manager config and microVMs;
+      # hosts/<name>/default.nix adds its hardware and what only it needs.
+      mkHost =
+        hostname:
+        let
+          specialArgs = {
+            inherit
+              inputs
+              hostname
+              username
+              palette
+              keys
+              ;
+          };
+        in
+        nixpkgs.lib.nixosSystem {
+          inherit specialArgs;
+          modules = [
+            {
+              nixpkgs.hostPlatform = system;
+              nixpkgs.overlays = [ iconOverlay ];
+            }
+            ./hosts/${hostname}
+            nix-flatpak.nixosModules.nix-flatpak
+            microvm.nixosModules.host
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                backupFileExtension = "hm-backup";
+                extraSpecialArgs = specialArgs;
+                users.${username} = import ./home;
+              };
+            }
+          ];
+        };
 
       # Dionysus: harmonia's Sway desktop with the coding/creative toolset
       # built in natively (Blender, Godot, opencode, Claude Code, the MCP
@@ -101,31 +135,15 @@
     in
     {
       nixosConfigurations = {
-        ${hostname} = nixpkgs.lib.nixosSystem {
-          inherit specialArgs;
-          modules = [
-            {
-              nixpkgs.hostPlatform = system;
-              nixpkgs.overlays = [ iconOverlay ];
-            }
-            ./hosts/harmonia
-            nix-flatpak.nixosModules.nix-flatpak
-            microvm.nixosModules.host
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                backupFileExtension = "hm-backup";
-                extraSpecialArgs = specialArgs;
-                users.${username} = import ./home;
-              };
-            }
-          ];
-        };
+        # The desktop.
+        harmonia = mkHost "harmonia";
+        # The laptop (ThinkPad E14 Gen 2): the same, plus Wi-Fi, lid/power
+        # handling and ThinkPad fan control.
+        cadmus = mkHost "cadmus";
 
-        # Same two outputs so `nixos-rebuild --flake .#dionysus` works on an
-        # x86_64 host and `.#dionysus-aarch64` on an aarch64 one.
+        # Dionysus: the dev/creative desktop with everything native and no
+        # microVMs. Same two outputs so `nixos-rebuild --flake .#dionysus`
+        # works on an x86_64 host and `.#dionysus-aarch64` on an aarch64 one.
         dionysus = mkDionysus "x86_64-linux";
         dionysus-aarch64 = mkDionysus "aarch64-linux";
       };
