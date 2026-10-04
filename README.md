@@ -12,10 +12,12 @@ colour scheme, **DepartureMono Nerd Font** and the pixel-art
 ## Layout
 
 ```
-flake.nix                      inputs, hostname/username, nixosConfigurations.harmonia
+flake.nix                      inputs, username, the hosts (nixosConfigurations.harmonia / .cadmus)
 theme/miami-wind.nix           the palette — every app reads its colours from here
 keys.nix                       the keyboard contract (which layer owns which modifier)
-hosts/harmonia/                host config + hardware-configuration.nix (placeholder!)
+hosts/common.nix               everything both hosts share: modules, user, locale, nix settings
+hosts/harmonia/                the desktop: hardware-configuration.nix (placeholder!) + fans.nix
+hosts/cadmus/                  the laptop: hardware-configuration.nix (placeholder!) + laptop.nix
 modules/nixos/
   desktop.nix                  sway, greetd/tuigreet, pipewire, portals, console colours
   fonts.nix                    DepartureMono Nerd Font as system default
@@ -28,6 +30,7 @@ modules/nixos/
   fans.nix                     LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
   virtualisation.nix           rootless podman + buildah, plain QEMU (no libvirt)
   nike.nix                     the Nike microVM, host side: tap network + NAT, shared folders, `ssh nike`
+  laptop.nix                   cadmus only: Wi-Fi firmware + regulatory database, suspend on lid close, power profiles
   secrets.nix                  pcscd + YubiKey udev rules
   wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
 nike/                          the Nike microVM guest (microvm.nix)
@@ -56,13 +59,19 @@ scripts/ubuntu-install.py      Ubuntu: Blender + Blender MCP, Godot 4 + Godot MC
 
 ## Install
 
+There are two hosts with the same desktop, apps and microVMs: **harmonia**
+for a desktop and **cadmus** for a laptop, which adds Wi-Fi firmware, suspend
+on lid close and power profiles (`modules/nixos/laptop.nix`) and leaves out
+the desktop GPU fan control. Below, use `cadmus` in place of `harmonia` for a
+laptop. On cadmus, Super+o n opens `nmtui` to join a Wi-Fi network.
+
 Start from a base NixOS install with flakes and git enabled and a user named
 `u` (or whatever you set as `username`). [Installing base NixOS](docs/install.md)
 walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
 [`scripts/install.py`](scripts/install.py) does it for you.
 
-1. Clone this repo and edit `hostname` / `username` in `flake.nix`, and the
-   timezone/locale/keymap in `hosts/harmonia/default.nix`:
+1. Clone this repo and edit `username` in `flake.nix`, and the
+   timezone/locale/keymap in `hosts/common.nix`:
    ```sh
    git clone https://github.com/finleyjacobpotter-beep/harmonia ~/harmonia && cd ~/harmonia
    ```
@@ -110,7 +119,7 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 
 ## Unfree packages
 
-Only one non-free package is allowed (`hosts/harmonia/default.nix`):
+Only one non-free package is allowed (`hosts/common.nix`):
 the Tulasi icon theme (CC BY-NC-SA 4.0, free for non-commercial use with
 attribution).
 

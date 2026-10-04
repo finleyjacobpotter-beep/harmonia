@@ -35,46 +35,58 @@
     let
       system = "x86_64-linux";
 
-      # Change these two to match your machine / login.
-      hostname = "harmonia";
+      # Change this to your login. Host names are the attribute names below.
       username = "u";
 
       palette = import ./theme/miami-wind.nix;
       keys = import ./keys.nix;
-      specialArgs = {
-        inherit
-          inputs
-          hostname
-          username
-          palette
-          keys
-          ;
-      };
+
+      # Every host gets the same desktop, home-manager config and microVMs;
+      # hosts/<name>/default.nix adds its hardware and what only it needs.
+      mkHost =
+        hostname:
+        let
+          specialArgs = {
+            inherit
+              inputs
+              hostname
+              username
+              palette
+              keys
+              ;
+          };
+        in
+        nixpkgs.lib.nixosSystem {
+          inherit specialArgs;
+          modules = [
+            {
+              nixpkgs.hostPlatform = system;
+              nixpkgs.overlays = [
+                (final: _: { tulasi-icon-theme = final.callPackage ./pkgs/tulasi-icon-theme.nix { }; })
+              ];
+            }
+            ./hosts/${hostname}
+            nix-flatpak.nixosModules.nix-flatpak
+            microvm.nixosModules.host
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                backupFileExtension = "hm-backup";
+                extraSpecialArgs = specialArgs;
+                users.${username} = import ./home;
+              };
+            }
+          ];
+        };
     in
     {
-      nixosConfigurations.${hostname} = nixpkgs.lib.nixosSystem {
-        inherit specialArgs;
-        modules = [
-          {
-            nixpkgs.hostPlatform = system;
-            nixpkgs.overlays = [
-              (final: _: { tulasi-icon-theme = final.callPackage ./pkgs/tulasi-icon-theme.nix { }; })
-            ];
-          }
-          ./hosts/harmonia
-          nix-flatpak.nixosModules.nix-flatpak
-          microvm.nixosModules.host
-          home-manager.nixosModules.home-manager
-          {
-            home-manager = {
-              useGlobalPkgs = true;
-              useUserPackages = true;
-              backupFileExtension = "hm-backup";
-              extraSpecialArgs = specialArgs;
-              users.${username} = import ./home;
-            };
-          }
-        ];
+      nixosConfigurations = {
+        # The desktop.
+        harmonia = mkHost "harmonia";
+        # The laptop: the same, plus Wi-Fi and lid/power handling.
+        cadmus = mkHost "cadmus";
       };
 
       formatter.${system} = nixpkgs.legacyPackages.${system}.nixfmt;
