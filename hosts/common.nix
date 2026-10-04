@@ -18,6 +18,7 @@
     ../modules/nixos/element.nix
     ../modules/nixos/lmstudio.nix
     ../modules/nixos/studio.nix
+    ../modules/nixos/fans.nix
     ../modules/nixos/virtualisation.nix
     ../modules/nixos/nike.nix
     ../modules/nixos/secrets.nix

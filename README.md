@@ -16,7 +16,7 @@ flake.nix                      inputs, username, the hosts (nixosConfigurations.
 theme/miami-wind.nix           the palette — every app reads its colours from here
 keys.nix                       the keyboard contract (which layer owns which modifier)
 hosts/common.nix               everything both hosts share: modules, user, locale, nix settings
-hosts/harmonia/                the desktop: hardware-configuration.nix (placeholder!) + fans.nix
+hosts/harmonia/                the desktop: hardware-configuration.nix (placeholder!)
 hosts/cadmus/                  the laptop: hardware-configuration.nix (placeholder!) + laptop.nix
 modules/nixos/
   desktop.nix                  sway, greetd/tuigreet, pipewire, portals, console colours
@@ -61,8 +61,7 @@ scripts/ubuntu-install.py      Ubuntu: Blender + Blender MCP, Godot 4 + Godot MC
 
 There are two hosts with the same desktop, apps and microVMs: **harmonia**
 for a desktop and **cadmus** for a laptop, which adds Wi-Fi firmware, suspend
-on lid close and power profiles (`modules/nixos/laptop.nix`) and leaves out
-the desktop GPU fan control. Below, use `cadmus` in place of `harmonia` for a
+on lid close and power profiles (`modules/nixos/laptop.nix`). Below, use `cadmus` in place of `harmonia` for a
 laptop. On cadmus, Super+o n opens `nmtui` to join a Wi-Fi network.
 
 Start from a base NixOS install with flakes and git enabled and a user named
