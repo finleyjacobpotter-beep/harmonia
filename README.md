@@ -16,8 +16,9 @@ flake.nix                      inputs, username, the hosts (nixosConfigurations.
 theme/miami-wind.nix           the palette — every app reads its colours from here
 keys.nix                       the keyboard contract (which layer owns which modifier)
 hosts/common.nix               everything both hosts share: modules, user, locale, nix settings
-hosts/harmonia/                the desktop: hardware-configuration.nix (placeholder!)
-hosts/cadmus/                  the laptop: hardware-configuration.nix (placeholder!) + laptop.nix
+hosts/harmonia/                the desktop: hardware-configuration.nix (placeholder!) + fans.nix
+hosts/cadmus/                  the laptop (ThinkPad E14 Gen 2): hardware-configuration.nix (placeholder!), laptop.nix, thinkpad.nix,
+                               nixos-hardware's E14 Gen 2 profile (set `cpu` to intel or amd)
 modules/nixos/
   desktop.nix                  sway, greetd/tuigreet, pipewire, portals, console colours
   fonts.nix                    DepartureMono Nerd Font as system default
@@ -27,10 +28,11 @@ modules/nixos/
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
   studio.nix                   Blender, Godot and opencode from Flathub, sharing only ~/Projects
-  fans.nix                     LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
+  fans.nix                     harmonia only: LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
   virtualisation.nix           rootless podman + buildah, plain QEMU (no libvirt)
   nike.nix                     the Nike microVM, host side: tap network + NAT, shared folders, `ssh nike`
   laptop.nix                   cadmus only: Wi-Fi firmware + regulatory database, suspend on lid close, power profiles
+  thinkpad.nix                 cadmus only: thinkfan fan curve, fwupd for BIOS updates
   secrets.nix                  pcscd + YubiKey udev rules
   wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
 nike/                          the Nike microVM guest (microvm.nix)
@@ -60,8 +62,11 @@ scripts/ubuntu-install.py      Ubuntu: Blender + Blender MCP, Godot 4 + Godot MC
 ## Install
 
 There are two hosts with the same desktop, apps and microVMs: **harmonia**
-for a desktop and **cadmus** for a laptop, which adds Wi-Fi firmware, suspend
-on lid close and power profiles (`modules/nixos/laptop.nix`). Below, use `cadmus` in place of `harmonia` for a
+for a desktop and **cadmus** for a Lenovo ThinkPad E14 Gen 2, which adds
+Wi-Fi firmware, suspend on lid close and power profiles
+(`modules/nixos/laptop.nix`), a thinkfan fan curve and fwupd
+(`modules/nixos/thinkpad.nix`) and nixos-hardware's E14 Gen 2 profile. Set
+`cpu` in `hosts/cadmus/default.nix` to `intel` or `amd` to match yours. Below, use `cadmus` in place of `harmonia` for a
 laptop. On cadmus, Super+o n opens `nmtui` to join a Wi-Fi network.
 
 Start from a base NixOS install with flakes and git enabled and a user named

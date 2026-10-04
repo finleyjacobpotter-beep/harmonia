@@ -17,6 +17,12 @@
     # Declarative flatpak (used for the sandboxed Zen browser). Tag v0.7.0.
     nix-flatpak.url = "github:gmodena/nix-flatpak/440818969ac2cbd77bfe025e884d0aa528991374";
 
+    # Hardware profiles; cadmus uses the ThinkPad E14 Gen 2 one. master, 2026-10-04
+    nixos-hardware = {
+      url = "github:NixOS/nixos-hardware/31cc5f4d9b9ba601071e8b8504601b9b176e2756";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # The Nike microVM (nike/, modules/nixos/nike.nix). main, 2026-10-01
     microvm = {
       url = "github:microvm-nix/microvm.nix/3f1540f254fe73ac907281b7de7d396bb3d54850";
@@ -85,7 +91,8 @@
       nixosConfigurations = {
         # The desktop.
         harmonia = mkHost "harmonia";
-        # The laptop: the same, plus Wi-Fi and lid/power handling.
+        # The laptop (ThinkPad E14 Gen 2): the same, plus Wi-Fi, lid/power
+        # handling and ThinkPad fan control.
         cadmus = mkHost "cadmus";
       };
 
