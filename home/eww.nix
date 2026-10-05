@@ -149,12 +149,13 @@ let
     pkgs.eww
   ];
 
-  # VPNs (WireGuard, OpenVPN and Proton VPN in NetworkManager, see
+  # VPNs (WireGuard and OpenVPN in NetworkManager, openfortivpn, see
   # modules/nixos/vpn.nix) for the network button's asterisks and its panel.
   vpn = pyScript "eww-vpn" {
     runtimeInputs = with pkgs; [
       networkmanager
       iproute2
+      systemd
       eww
     ];
     replace."WG = \"wg\"" = ''WG = "${pkgs.wireguard-tools}/bin/wg"'';
@@ -274,9 +275,9 @@ let
       text = "OpenVPN";
     }
     {
-      kind = "proton";
-      up = "vpn.up.proton";
-      text = "Proton VPN";
+      kind = "forti";
+      up = "vpn.up.forti";
+      text = "openfortivpn";
     }
     {
       kind = "other";
@@ -370,7 +371,7 @@ in
           "${net}/bin/eww-net")
         (deflisten displays :initial "{\"primary\":\"\",\"outputs\":[]}" "${display}/bin/eww-display watch")
         (defpoll vpn :interval "5s"
-          :initial "{\"up\":{\"wireguard\":false,\"openvpn\":false,\"proton\":false,\"other\":false},\"active\":0,\"proton_app\":false,\"connections\":[]}"
+          :initial "{\"up\":{\"wireguard\":false,\"openvpn\":false,\"forti\":false,\"other\":false},\"active\":0,\"connections\":[]}"
           "${vpn}/bin/eww-vpn")
         (defpoll activity :interval "5s"
           :initial "{\"gamemode\":false,\"steam\":false,\"lmstudio\":{\"running\":false,\"serving\":false,\"first\":\"\",\"list\":\"\"}}"
@@ -657,13 +658,9 @@ ${lib.optionalString hasVms ''
             (box :orientation "h" :space-evenly false
               (label :class "wg-title" :hexpand true :halign "start" :text "Network")
               (button :class "wg-close" :onclick "${eww} close net-menu" "✕"))
-            (box :orientation "h" :space-evenly false
-              (label :class "wg-name" :hexpand true :halign "start" :text "VPN")
-              (button :class "wg-toggle" :visible {vpn.proton_app}
-                :onclick "${eww} close net-menu; protonvpn-app &"
-                "Proton VPN app"))
+            (label :class "wg-name" :halign "start" :text "VPN")
             (label :class "wg-detail" :visible {arraylength(vpn.connections) == 0} :halign "start" :wrap true
-              :text "No VPNs yet. Import one with nmcli (docs/vpn.md), or sign in to the Proton VPN app.")
+              :text "No VPNs yet. docs/vpn.md shows how to add WireGuard, OpenVPN and openfortivpn ones.")
             (for t in {vpn.connections}
               (box :class "wg-tunnel ''${t.active ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
                 (box :orientation "v" :space-evenly false :hexpand true :spacing 2
@@ -676,7 +673,7 @@ ${lib.optionalString hasVms ''
                     :text "''${t.endpoint != "" ? t.endpoint : "no peer endpoint"}''${t.handshake != "" ? " · handshake ''${t.handshake}" : ""}")
                   (label :class "wg-detail" :visible {t.active && t.rx != ""} :halign "start" :text "↓ ''${t.rx}  ↑ ''${t.tx}"))
                 (button :class "wg-toggle" :valign "center" :visible {t.managed}
-                  :onclick "${vpn}/bin/eww-vpn toggle \"''${t.name}\" &"
+                  :onclick "${vpn}/bin/eww-vpn toggle ''${t.kind} \"''${t.name}\" &"
                   "''${t.active ? "Disconnect" : "Connect"}")))
             (label :class "wg-name" :halign "start" :text "Interfaces")
             (box :class "wg-tunnel ''${net.auto ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
@@ -933,7 +930,7 @@ ${lib.optionalString hasVms ''
     .vpn-star {
       &.wireguard { color: $green; }
       &.openvpn { color: $yellow; }
-      &.proton { color: $purple; }
+      &.forti { color: $purple; }
       &.other { color: $blue; }
       &.nike { color: $orange; }
       &.zelus { color: $cyan; }

@@ -1,8 +1,8 @@
 # VPNs
 
-WireGuard, OpenVPN and Proton VPN all run through NetworkManager
-(`modules/nixos/vpn.nix`), so you can bring them up and down without root,
-and the bar's network button shows which are up. No keys or configs live in
+WireGuard and OpenVPN run through NetworkManager and openfortivpn through
+its own systemd service (`modules/nixos/vpn.nix`), so you can bring them all
+up and down without root, and the bar's network button shows which are up. No keys or configs live in
 this repo.
 
 ## Adding a VPN
@@ -36,15 +36,29 @@ dialog. Plain `openvpn` is installed too; a tunnel started with
 `sudo openvpn --config client.ovpn` still shows on the bar, without a
 Connect/Disconnect button.
 
-**Proton VPN**: run the Proton VPN app (`protonvpn-app`, in fuzzel, or
-**Proton VPN app** in the network panel) and sign in; it keeps your login in
-the GNOME keyring. The connections it makes are NetworkManager connections
-named `ProtonVPN …` on the `proton0` device (WireGuard) or a `tun` device
-(OpenVPN), and the bar counts them as Proton whichever protocol they use.
-Its kill switch connections (`pvpn-*`) aren't tunnels and aren't listed.
-Proton's own WireGuard or OpenVPN config files can also be imported as
-above; name the connection `ProtonVPN …` to have the bar colour it as
-Proton.
+**openfortivpn** (Fortinet SSL VPN): NetworkManager's plugin for it was
+dropped from nixpkgs as insecure, so each VPN is a config file run by
+openfortivpn's own `openfortivpn@NAME` service. Write
+`/etc/openfortivpn/NAME.conf` (see `man openfortivpn`) and keep it root's
+alone if it holds the password:
+
+```sh
+sudo tee /etc/openfortivpn/work.conf >/dev/null <<'EOF'
+host = vpn.example.com
+port = 443
+username = you
+password = …
+trusted-cert = <sha256 the first connection prints>
+EOF
+sudo chmod 600 /etc/openfortivpn/work.conf
+```
+
+The network panel lists every `*.conf` there, and **Connect** /
+**Disconnect** start and stop `openfortivpn@NAME`, allowed without a
+password for wheel users (polkit). The service can't ask for a password or
+one-time code, so a VPN that needs one at each login is run by hand
+instead: `sudo openfortivpn -c /etc/openfortivpn/work.conf` in a terminal.
+It still shows on the bar while it's up, without a button.
 
 NetworkManager stores private keys and saved passwords in
 `/etc/NetworkManager/system-connections/`, readable only by root.
@@ -58,7 +72,7 @@ stacked top to bottom, each its own colour:
 |---|---|
 | green | WireGuard |
 | yellow | OpenVPN |
-| purple | Proton VPN |
+| purple | openfortivpn |
 | blue | another NetworkManager VPN (e.g. OpenConnect) |
 | orange | Nike's VPN (inside the VM) |
 | cyan | Zelus's VPN (inside the VM) |
@@ -86,8 +100,10 @@ prints keys.
 nmcli connection up wg0        # or: down
 nmcli -f NAME,TYPE,DEVICE connection show
 sudo wg show                   # full WireGuard status
+systemctl start openfortivpn@work   # or: stop, status
+journalctl -u openfortivpn@work     # why it didn't connect
 ```
 
 Tunnels that route all traffic (`AllowedIPs = 0.0.0.0/0`, OpenVPN's
-`redirect-gateway`) need the firewall's reverse-path check set to `loose`,
+`redirect-gateway`, openfortivpn's default routes) need the firewall's reverse-path check set to `loose`,
 which this module does.

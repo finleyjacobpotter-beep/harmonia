@@ -1,25 +1,20 @@
-"""VPNs on this host for the bar's network button and its panel: WireGuard,
-OpenVPN and Proton VPN connections in NetworkManager (modules/nixos/vpn.nix),
-plus any OpenVPN tunnel started outside it (`sudo openvpn --config …`).
+"""VPNs on this host for the bar's network button and its panel (see
+modules/nixos/vpn.nix): WireGuard and OpenVPN connections in NetworkManager,
+openfortivpn configs in /etc/openfortivpn (run as openfortivpn@NAME), and
+any OpenVPN or openfortivpn tunnel started by hand (`sudo openvpn …`).
 
-Usage: eww-vpn              JSON for the bar, below
-       eww-vpn toggle NAME  bring a NetworkManager VPN connection up/down
+Usage: eww-vpn                   JSON for the bar, below
+       eww-vpn toggle KIND NAME  bring a connection up/down
 
-{"up": {"wireguard": bool, "openvpn": bool, "proton": bool, "other": bool},
- "active": N, "proton_app": bool,
+{"up": {"wireguard": bool, "openvpn": bool, "forti": bool, "other": bool},
+ "active": N,
  "connections": [{"name", "kind", "label", "active", "managed", "device",
                   "address", "endpoint", "rx", "tx", "handshake"}]}
-
-Proton VPN's app makes NetworkManager connections named "ProtonVPN …" on
-the proton0 (WireGuard) or a tun (OpenVPN) device; those count as Proton,
-whichever protocol they use. Its kill switch connections (pvpn-*) are not
-tunnels and are left out.
 """
 
 import json
 import math
 import re
-import shutil
 import subprocess
 import sys
 import time
@@ -29,9 +24,10 @@ from pathlib import Path
 WG = "wg"
 
 SYS = Path("/sys/class/net")
+FORTI = Path("/etc/openfortivpn")
 IFF_TUN = 0x0001
-KINDS = ("wireguard", "openvpn", "proton", "other")
-LABELS = {"wireguard": "WireGuard", "openvpn": "OpenVPN", "proton": "Proton VPN", "other": "VPN"}
+KINDS = ("wireguard", "openvpn", "forti", "other")
+LABELS = {"wireguard": "WireGuard", "openvpn": "OpenVPN", "forti": "openfortivpn", "other": "VPN"}
 
 
 def output(*args: str) -> str:
@@ -88,6 +84,11 @@ def counters(dev: str) -> tuple[str, str]:
         return "", ""
 
 
+def ppp_devices() -> list[str]:
+    """Point-to-point devices: openfortivpn's (through pppd)."""
+    return [d.name for d in sorted(SYS.iterdir()) if d.name.startswith("ppp")]
+
+
 def tun_devices() -> list[str]:
     """Layer 3 tun devices (OpenVPN's); taps such as the microVMs' are skipped."""
     devs = []
@@ -101,13 +102,7 @@ def tun_devices() -> list[str]:
     return devs
 
 
-def is_proton(name: str, dev: str) -> bool:
-    return name.lower().startswith("protonvpn") or dev.startswith("proton")
-
-
-def connection(name: str, nmtype: str, active: bool, handshakes: dict, endpoints: dict) -> dict | None:
-    if name.startswith("pvpn-"):
-        return None
+def connection(name: str, nmtype: str, active: bool, handshakes: dict, endpoints: dict) -> dict:
     if nmtype == "wireguard":
         kind = "wireguard"
         dev = field(name, "GENERAL.IP-IFACE") if active else ""
@@ -116,8 +111,6 @@ def connection(name: str, nmtype: str, active: bool, handshakes: dict, endpoints
         service = field(name, "vpn.service-type")
         kind = "openvpn" if service.endswith(".openvpn") else "other"
         dev = field(name, "GENERAL.IP-IFACE") if active else ""
-    if is_proton(name, dev):
-        kind = "proton"
 
     address = endpoint = handshake = ""
     rx = tx = ""
@@ -155,19 +148,43 @@ def connection(name: str, nmtype: str, active: bool, handshakes: dict, endpoints
     }
 
 
-def unmanaged(dev: str) -> dict:
-    """An OpenVPN tunnel NetworkManager doesn't know about."""
-    address = ""
+def ipv4(dev: str) -> str:
     try:
         info = json.loads(output("ip", "-j", "-4", "addr", "show", "dev", dev))
-        address = next((a.get("local", "") for a in info[0].get("addr_info", [])), "")
+        return next((a.get("local", "") for a in info[0].get("addr_info", [])), "")
     except (ValueError, IndexError, AttributeError):
+        return ""
+
+
+def forti(name: str, active: bool, dev: str) -> dict:
+    """An openfortivpn config, /etc/openfortivpn/NAME.conf, and its
+    openfortivpn@NAME service. The server is shown if the config is readable
+    (it is root's when it holds a password)."""
+    endpoint = ""
+    try:
+        conf = dict(
+            (k.strip(), v.strip())
+            for k, _, v in (line.partition("=") for line in (FORTI / f"{name}.conf").read_text().splitlines())
+            if not k.strip().startswith("#")
+        )
+        endpoint = conf.get("host", "") + (f":{conf['port']}" if conf.get("port") else "")
+    except OSError:
         pass
+    rx, tx = counters(dev) if dev else ("", "")
+    return {
+        "name": name, "kind": "forti", "label": LABELS["forti"], "active": active, "managed": True,
+        "device": dev, "address": ipv4(dev) if dev else "", "endpoint": endpoint if active else "",
+        "rx": rx, "tx": tx, "handshake": "",
+    }
+
+
+def unmanaged(dev: str) -> dict:
+    """A tunnel started by hand: OpenVPN's tun, or openfortivpn's ppp."""
     rx, tx = counters(dev)
-    kind = "proton" if dev.startswith("proton") else "openvpn"
+    kind = "forti" if dev.startswith("ppp") else "openvpn"
     return {
         "name": dev, "kind": kind, "label": LABELS[kind], "active": True, "managed": False,
-        "device": dev, "address": address, "endpoint": "", "rx": rx, "tx": tx, "handshake": "",
+        "device": dev, "address": ipv4(dev), "endpoint": "", "rx": rx, "tx": tx, "handshake": "",
     }
 
 
@@ -177,18 +194,23 @@ def listing() -> str:
     for line in output("nmcli", "-t", "-f", "NAME,TYPE,ACTIVE", "connection", "show").splitlines():
         fields = terse(line)
         if len(fields) == 3 and fields[1] in ("wireguard", "vpn"):
-            c = connection(fields[0], fields[1], fields[2] == "yes", handshakes, endpoints)
-            if c:
-                conns.append(c)
+            conns.append(connection(fields[0], fields[1], fields[2] == "yes", handshakes, endpoints))
+    # openfortivpn@NAME services get the ppp devices in order; there's
+    # rarely more than one.
+    names = sorted(p.stem for p in FORTI.glob("*.conf")) if FORTI.is_dir() else []
+    states = output("systemctl", "is-active", *[f"openfortivpn@{n}" for n in names]).split() if names else []
+    ppp = ppp_devices()
+    for name, state in zip(names, states):
+        active = state == "active"
+        conns.append(forti(name, active, ppp.pop(0) if active and ppp else ""))
     owned = {c["device"] for c in conns if c["device"]}
-    conns += [unmanaged(d) for d in tun_devices() if d not in owned]
+    conns += [unmanaged(d) for d in tun_devices() + ppp if d not in owned]
     # Up first, then by kind and name, so the panel lists what's on at the top.
     conns.sort(key=lambda c: (not c["active"], KINDS.index(c["kind"]), c["name"].lower()))
     return json.dumps(
         {
             "up": {k: any(c["active"] and c["kind"] == k for c in conns) for k in KINDS},
             "active": sum(c["active"] for c in conns),
-            "proton_app": shutil.which("protonvpn-app") is not None,
             "connections": conns,
         },
         separators=(",", ":"),
@@ -196,7 +218,13 @@ def listing() -> str:
     )
 
 
-def toggle(name: str) -> None:
+def toggle(kind: str, name: str) -> None:
+    if kind == "forti":
+        # Allowed without a password for wheel (polkit, modules/nixos/vpn.nix).
+        unit = f"openfortivpn@{name}"
+        up = output("systemctl", "is-active", unit).strip() == "active"
+        subprocess.run(["systemctl", "stop" if up else "start", "--no-block", unit], stdout=subprocess.DEVNULL)
+        return
     up = output("nmcli", "-g", "GENERAL.STATE", "connection", "show", "--active", "id", name).strip()
     if up:
         subprocess.run(["nmcli", "connection", "down", "id", name], stdout=subprocess.DEVNULL)
@@ -213,8 +241,8 @@ def toggle(name: str) -> None:
 
 
 def main(args: list[str]) -> None:
-    if args[:1] == ["toggle"] and len(args) > 1:
-        toggle(args[1])
+    if args[:1] == ["toggle"] and len(args) > 2:
+        toggle(args[1], args[2])
         subprocess.run(["eww", "update", f"vpn={listing()}"])
     else:
         print(listing())
