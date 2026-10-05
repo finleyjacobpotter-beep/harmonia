@@ -1,9 +1,32 @@
-# Firefox from Flathub, run inside a tightened flatpak sandbox ("browser jail"),
-# on every host and both architectures (Flathub ships x86_64 and aarch64).
-# Its theme and add-ons are in home/firefox.nix.
-{ lib, ... }:
+# The Flathub apps, each declared once with its sandbox and launcher key:
+#
+#   harmonia.apps."im.riot.Riot" = {
+#     name = "element";  # its word in the open mode's hint on the bar
+#     key = "c";         # Super+o, then c, opens it (home/open-mode.nix)
+#     wayland = true;    # no X11 socket (Wayland only)
+#     sandbox = { ... }; # flatpak overrides on top; "!" revokes
+#   };
+#
+# Each becomes a services.flatpak package and override (nix-flatpak), and
+# sway's open mode and the bar's hint are built from the same list, so a
+# host only gets keys for the apps it installs. Flathub itself and the
+# weekly update timer are here too.
+#
+# Firefox, on every host and both architectures (Flathub ships x86_64 and
+# aarch64), runs in a tightened sandbox ("browser jail"). Its theme and
+# add-ons are in home/firefox.nix.
+{ config, lib, ... }:
 let
-  firefox = "org.mozilla.firefox";
+  inherit (lib) mkOption types;
+  cfg = config.harmonia.apps;
+
+  # `wayland = true`: no X11 socket to snoop on (or be snooped by) other
+  # clients.
+  waylandSockets = [
+    "wayland"
+    "!x11"
+    "!fallback-x11"
+  ];
 
   # Flathub OSTree commit to pin Firefox to; null follows the latest Flathub
   # build. Read the current one on an installed machine with
@@ -12,32 +35,76 @@ let
   firefoxCommit = null;
 in
 {
-  services.flatpak = {
-    enable = true;
-    remotes = [
-      {
-        name = "flathub";
-        location = "https://dl.flathub.org/repo/flathub.flatpakrepo";
+  options.harmonia.apps = mkOption {
+    default = { };
+    description = "Flathub apps by app ID.";
+    type = types.attrsOf (
+      types.submodule {
+        options = {
+          name = mkOption { type = types.str; };
+          key = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "Its key in sway's open mode (Super+o).";
+          };
+          commit = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+          };
+          wayland = mkOption {
+            type = types.bool;
+            default = false;
+          };
+          sandbox = mkOption {
+            # Lists (sockets, filesystems, ...) from several modules add up.
+            type = types.attrsOf (types.attrsOf (types.either (types.listOf types.str) types.str));
+            default = { };
+          };
+        };
       }
-    ];
-    packages = [
-      (
+    );
+  };
+
+  config = {
+    services.flatpak = {
+      enable = true;
+      remotes = [
         {
-          appId = firefox;
+          name = "flathub";
+          location = "https://dl.flathub.org/repo/flathub.flatpakrepo";
+        }
+      ];
+      packages = lib.mapAttrsToList (
+        appId: app:
+        {
+          inherit appId;
           origin = "flathub";
         }
-        // lib.optionalAttrs (firefoxCommit != null) { commit = firefoxCommit; }
-      )
-    ];
-    update.auto = {
-      enable = true;
-      onCalendar = "weekly";
+        // lib.optionalAttrs (app.commit != null) { inherit (app) commit; }
+      ) cfg;
+      update.auto = {
+        enable = true;
+        onCalendar = "weekly";
+      };
+      overrides = lib.mapAttrs (
+        _: app:
+        app.sandbox
+        // lib.optionalAttrs app.wayland {
+          Context = app.sandbox.Context or { } // {
+            sockets = waylandSockets ++ app.sandbox.Context.sockets or [ ];
+          };
+        }
+      ) (lib.filterAttrs (_: app: app.wayland || app.sandbox != { }) cfg);
     };
 
-    # Tighten Flathub's default permissions for Firefox. Anything not listed
-    # keeps the manifest default; entries prefixed with "!" revoke a permission.
-    overrides = {
-      ${firefox} = {
+    harmonia.apps."org.mozilla.firefox" = {
+      name = "firefox";
+      key = "b";
+      commit = firefoxCommit;
+      wayland = true;
+      # Tighten Flathub's default permissions. Anything not listed keeps the
+      # manifest default.
+      sandbox = {
         Context = {
           # No host / home access at all. The only host directory the browser can
           # touch is ~/Downloads/firefox (created on demand).
@@ -47,12 +114,8 @@ in
             "!xdg-download"
             "xdg-download/firefox:create"
           ];
-          # Wayland only — no X11 socket to snoop on other clients.
           sockets = [
-            "wayland"
             "pulseaudio"
-            "!x11"
-            "!fallback-x11"
             "!pcsc"
             "!cups"
           ];

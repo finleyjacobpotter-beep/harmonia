@@ -13,8 +13,8 @@
     ../modules/nixos/lmstudio.nix
     ../modules/nixos/studio.nix
     ../modules/nixos/virtualisation.nix
+    ../modules/nixos/microvms.nix
     ../modules/nixos/nike.nix
     ../modules/nixos/zelus.nix
-    ../modules/nixos/vm-firewall.nix
   ];
 }

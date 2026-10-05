@@ -14,18 +14,12 @@ import sys
 import time
 from pathlib import Path
 
-STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "eww"
+from common import RUN_DIR, STATE_DIR, read
+
 STATE = STATE_DIR / "net-iface"
-PREV = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "eww-net.prev"
+PREV = RUN_DIR / "eww-net.prev"
 SYS = Path("/sys/class/net")
 OFFLINE = {"name": "offline", "state": "down", "wireless": False, "down": "  0.0 bps ", "up": "  0.0 bps ", "address": ""}
-
-
-def read(path: Path, default: str = "") -> str:
-    try:
-        return path.read_text().strip()
-    except OSError:
-        return default
 
 
 def ip_json(*args: str) -> list:

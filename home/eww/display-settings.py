@@ -14,22 +14,17 @@ import sys
 
 import gi
 
+from common import config, output
+
 gi.require_version("Gdk", "3.0")
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gdk, GLib, Gtk  # noqa: E402
 
 APP_ID = "harmonia.display-settings"
-# Replaced with the Miami Wind palette at build time (home/eww.nix).
-COLORS = {"bg": "#181825", "surface": "#313244", "fg": "#cdd6f4", "muted": "#7f849c", "pink": "#f472b6", "cyan": "#22d3ee"}
+# The Miami Wind palette (home/eww.nix).
+COLORS = {"bg": "#181825", "surface": "#313244", "fg": "#cdd6f4", "muted": "#7f849c", "pink": "#f472b6", "cyan": "#22d3ee"} | config().get("colors", {})
 KEEP_SECONDS = 15
 SNAP_PX = 24  # how close (on screen) an edge must be to line up with another
-
-
-def run(*args: str) -> str:
-    try:
-        return subprocess.run(args, capture_output=True, text=True).stdout
-    except OSError:
-        return ""
 
 
 def rgb(name: str) -> tuple:
@@ -77,8 +72,8 @@ class Display:
 def load() -> tuple:
     """The displays as sway has them now, and the primary one."""
     try:
-        listing = json.loads(run("eww-display") or "{}")
-        sway = {o["name"]: o for o in json.loads(run("swaymsg", "-r", "-t", "get_outputs") or "[]")}
+        listing = json.loads(output("eww-display") or "{}")
+        sway = {o["name"]: o for o in json.loads(output("swaymsg", "-r", "-t", "get_outputs") or "[]")}
     except ValueError:
         return [], ""
     displays = [Display(e, sway.get(e["name"], {})) for e in listing.get("outputs", [])]
@@ -445,7 +440,7 @@ class Window(Gtk.ApplicationWindow):
         risky = any(
             d.enabled != b.enabled or (d.enabled and d.mode != b.mode)
             for d in self.displays for b in before_displays if b.name == d.name)
-        run("eww-display", "apply", json.dumps(wanted))
+        output("eww-display", "apply", json.dumps(wanted))
         if risky:
             self.confirm(before)
 
@@ -472,13 +467,13 @@ class Window(Gtk.ApplicationWindow):
             GLib.source_remove(timer)
         dialog.destroy()
         if response != Gtk.ResponseType.ACCEPT:
-            run("eww-display", "apply", json.dumps(before))
+            output("eww-display", "apply", json.dumps(before))
         self.reload()
 
 
 def close_open_window() -> bool:
     try:
-        return json.loads(run("swaymsg", "-r", f'[app_id="{APP_ID}"] kill'))[0]["success"]
+        return json.loads(output("swaymsg", "-r", f'[app_id="{APP_ID}"] kill'))[0]["success"]
     except (ValueError, IndexError, KeyError, TypeError):
         return False
 

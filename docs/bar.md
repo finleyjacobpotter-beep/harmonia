@@ -1,6 +1,9 @@
 # The bar
 
-The eww bar (`home/eww.nix`, scripts in `home/eww/`). Buttons that open a
+The eww bar: the layout is `home/eww/eww.yuck`, the styles
+`home/eww/eww.scss`, and the scripts behind the widgets `home/eww/*.py`
+(packaged together as `harmonia-bar`). `home/eww.nix` fills in the store
+paths, the palette and the widgets for the host's microVMs. Buttons that open a
 panel do so on a left click; each panel has a ✕ to close it, and clicking
 the button again closes it too. Panels open on the primary display.
 

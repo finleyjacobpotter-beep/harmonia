@@ -6,13 +6,12 @@ Usage: eww-clock           JSON: {"text": "Wed Sep 30 14:16", "abbr": "EDT", "zo
 
 import datetime as dt
 import json
-import os
 import subprocess
 import sys
-from pathlib import Path
 from zoneinfo import ZoneInfo
 
-STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "eww"
+from common import STATE_DIR
+
 STATE = STATE_DIR / "timezone"
 
 

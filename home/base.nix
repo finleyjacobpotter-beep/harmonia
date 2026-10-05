@@ -22,6 +22,7 @@
     ./keymap.nix
     ./secrets.nix
     ./firefox.nix
+    ./flatpak-files.nix
   ];
 
   home.username = username;

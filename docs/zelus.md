@@ -40,7 +40,7 @@ or `opencode` ([opencode.md](opencode.md)).
 
 bash, tmux, neovim and ranger are the host's home-manager configs with cyan
 as the primary colour and pink as the second one
-([`zelus/palette.nix`](../zelus/palette.nix)), so a Zelus shell looks like
+(`colors` in [`modules/nixos/zelus.nix`](../modules/nixos/zelus.nix)), so a Zelus shell looks like
 neither the host (pink) nor Nike (orange).
 
 ## Blender and Godot
@@ -105,8 +105,9 @@ works in every mode, since the host starts it. Claude Code needs the internet
 for Anthropic's API, so in lockdown and local inference use opencode with the
 local model. uv fetches the MCP servers on their first start, so start each
 agent once in permissive mode. The rules are in
-[`modules/nixos/zelus.nix`](../modules/nixos/zelus.nix) and
-[`modules/nixos/vm-firewall.nix`](../modules/nixos/vm-firewall.nix).
+[`modules/nixos/zelus.nix`](../modules/nixos/zelus.nix),
+[`modules/nixos/microvms.nix`](../modules/nixos/microvms.nix) (Lockdown and
+Permissive) and [`modules/nixos/vm-firewall.nix`](../modules/nixos/vm-firewall.nix).
 
 ## Bar
 

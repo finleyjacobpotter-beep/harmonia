@@ -6,14 +6,9 @@ The temperature is the package sensor: k10temp (AMD), zenpower or coretemp (Inte
 import json
 from pathlib import Path
 
+from common import read
+
 SENSORS = ("k10temp", "zenpower", "coretemp")
-
-
-def read(path: Path) -> str:
-    try:
-        return path.read_text().strip()
-    except OSError:
-        return ""
 
 
 def model() -> str:

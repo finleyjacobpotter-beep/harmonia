@@ -20,22 +20,16 @@ import sys
 import time
 from pathlib import Path
 
-# home/eww.nix replaces this with the store path of wg.
-WG = "wg"
+from common import config, output
 
+# The exact path sudo allows (modules/nixos/vpn.nix), from home/eww.nix.
+WG = config().get("wg", "wg")
 SYS = Path("/sys/class/net")
 FORTI = Path("/etc/openfortivpn")
 IFF_UP = 0x1  # /sys/class/net/*/flags
 IFF_TUN = 0x0001  # /sys/class/net/*/tun_flags
 KINDS = ("wireguard", "openvpn", "forti", "other")
 LABELS = {"wireguard": "WireGuard", "openvpn": "OpenVPN", "forti": "openfortivpn", "other": "VPN"}
-
-
-def output(*args: str) -> str:
-    try:
-        return subprocess.run(args, capture_output=True, text=True).stdout
-    except OSError:
-        return ""
 
 
 def wg_show(what: str) -> dict:

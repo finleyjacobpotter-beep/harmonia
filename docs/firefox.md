@@ -29,4 +29,5 @@ enabled without a prompt and update only when the pin is bumped.
 All of it is copied into each Firefox profile as `userChrome.css`,
 `userContent.css`, `user.js` and `extensions/*.xpi`. Profiles only exist after
 Firefox has been started once, so after the first launch run
-`firefox-miami-wind` (it also runs on every rebuild) and restart Firefox.
+`flatpak-miami-wind` (it also runs on every rebuild; `firefox-miami-wind` is
+the same command) and restart Firefox.

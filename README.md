@@ -23,7 +23,7 @@ hosts/cadmus/                  the laptop (ThinkPad E14 Gen 2): hardware-configu
 modules/nixos/
   desktop.nix                  sway, greetd/tuigreet, pipewire, portals, console colours
   fonts.nix                    DepartureMono Nerd Font as system default
-  flatpak.nix                  Flathub + Firefox with a tightened sandbox
+  flatpak.nix                  Flathub, `harmonia.apps` (each app's sandbox and Super+o key), Firefox with a tightened sandbox
   gaming.nix                   Lutris from Flathub with a tightened sandbox, controller udev rules, GameMode
   steam.nix                    Steam from Flathub, locked down, sharing only ~/Games with Lutris
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
@@ -31,8 +31,9 @@ modules/nixos/
   studio.nix                   Blender and Godot from Flathub, sharing only ~/Projects
   fans.nix                     harmonia only: LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
   virtualisation.nix           rootless podman + buildah, plain QEMU (no libvirt)
-  nike.nix                     the Nike microVM, host side: its addresses, folders and firewall modes
-  zelus.nix                    the Zelus microVM, host side: its addresses, ~/Projects, LM Studio socket, firewall modes, the Blender/Godot ssh forwards
+  microvms.nix                 `harmonia.microvms`: each VM declared once; its network, NAT, folders, `ssh <vm>`, colours and firewall modes follow
+  nike.nix                     the Nike microVM: its colours and VPN firewall modes
+  zelus.nix                    the Zelus microVM: its colours, ~/Projects, LM Studio socket and firewall mode, the Blender/Godot ssh forwards
   vm-firewall.nix              per-VM firewall modes (nftables on the host) and the `vm-firewall` command
   laptop.nix                   cadmus only: Wi-Fi firmware + regulatory database, suspend on lid close, power profiles
   thinkpad.nix                 cadmus only: thinkfan fan curve, fwupd for BIOS updates
@@ -40,32 +41,32 @@ modules/nixos/
   vpn.nix                      WireGuard and OpenVPN via NetworkManager, openfortivpn services, rules for the bar
 nike/                          the Nike microVM guest (microvm.nix)
   default.nix                  packages, user k and its password, volume sizes, the TUN module
-  palette.nix                  Miami Wind with orange as the primary colour
   tools.nix                    the OSCP toolset and Penelope
   labs.nix                     podman + the Ligolo-ng and BloodHound compose services
   status.py                    writes each VM's utilization (and Nike's VPN) for the bar
 zelus/                         the Zelus microVM guest (microvm.nix): Claude Code and opencode with Blender and Godot MCP
   default.nix                  packages, passwordless user c, the ~/Projects share, opencode, Claude Code
-  palette.nix                  Miami Wind with cyan as the primary colour
   skills/                      skills for Claude Code and opencode (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
 home/                          home-manager, one file per program
   base.nix                     the home every host shares; default.nix (harmonia, cadmus) and dionysus/ add to it
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
   eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio, nike/zelus with firewall modes, display settings, cpu, mem, gpu, network with VPN asterisks, caffeine, volume, battery, clock + calendar)
-  eww/                         the bar's scripts, in Python (displays, network, gpu, volume, clock, calendar, …), and the display settings window
+  eww/                         the bar's layout (eww.yuck), styles (eww.scss) and scripts, in Python (displays, network, gpu, volume, clock, calendar, …, sharing common.py), and the display settings window
+  open-mode.nix                Super+o's keys, for sway and the bar's hint
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
   secrets.nix                  gpg, gpg-agent, pass, ykman, bw, bao
   secrets-backup.py            the `secrets-backup` command
-  flatpak-theme.nix            the desktop GTK theme copied into the Lutris and LACT sandboxes
+  flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
+  flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
   opencode.nix                 opencode on Zelus: LM Studio + Claude providers, oh-my-openagent, Blender and Godot MCP servers
   rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host, Nike and Zelus
   mcp-servers.nix              the Blender and Godot MCP servers, for Claude Code and opencode on Zelus
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix firefox.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
+lib/python-app.nix             packages a folder of Python scripts that share modules as several commands (the bar)
 lib/root-cas.nix               trusts the root CAs in certs/ on the host, Nike and Zelus
-lib/microvm-host.nix           a microVM's host side: tap network + NAT, folders, `ssh <vm>`
 lib/microvm-guest.nix          what every microVM guest shares: network, shares, volumes, user, openssh, status service, shell configs
 certs/                         your own root CAs: all/ for every machine, harmonia/, nike/ or zelus/ for one (empty by default, see certs/README.md)
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks

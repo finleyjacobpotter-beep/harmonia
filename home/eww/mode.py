@@ -3,8 +3,10 @@
 import json
 import subprocess
 
-# home/eww.nix replaces this with the key hints for each mode.
-HINTS: dict = {}
+from common import config
+
+# The key hints for each mode (home/eww.nix).
+HINTS: dict = config().get("hints", {})
 
 
 def emit(name: str) -> None:

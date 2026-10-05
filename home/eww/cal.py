@@ -29,13 +29,15 @@ from zoneinfo import ZoneInfo
 import icalendar
 import recurring_ical_events
 
-# home/eww.nix replaces these with the Miami Wind accents, and "eww" with its store path.
-COLORS = ["#ff5faf", "#5fd7ff", "#ffd75f"]
+from common import RUN_DIR, STATE_DIR, config
+
+# One per calendar, in turn: the Miami Wind accents (home/eww.nix).
+COLORS = config().get("calColors", ["#ff5faf", "#5fd7ff", "#ffd75f"])
 EWW = "eww"
 
 HOME = Path.home()
-STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state")) / "eww"
-VIEW = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "eww-cal.json"
+STATE = STATE_DIR
+VIEW = RUN_DIR / "eww-cal.json"
 ROOT = Path(os.environ.get("HARMONIA_CALENDARS", HOME / ".local/share/calendars"))
 MAX_DOTS = 4
 

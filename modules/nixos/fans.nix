@@ -22,27 +22,18 @@ in
 
   # The GUI from Flathub, themed like the desktop by home/flatpak-theme.nix.
   # Flathub's build is the same LACT release (0.10.1) as nixpkgs' daemon.
-  services.flatpak.packages = [
-    {
-      appId = lactApp;
-      origin = "flathub";
-    }
-  ];
-  services.flatpak.overrides.${lactApp} = {
+  harmonia.apps.${lactApp} = {
+    name = "lact";
+    wayland = true;
     # It only needs the daemon's socket (/run/lactd.sock, from the manifest)
     # and the GPU for its info page. Flathub also grants it
     # org.freedesktop.Flatpak, to install the daemon on the host with
     # flatpak-spawn; NixOS runs the daemon, so that escape is revoked.
-    "Session Bus Policy" = {
-      "org.freedesktop.Flatpak" = "none";
-    };
-    Context = {
-      sockets = [
-        "wayland"
-        "!x11"
-        "!fallback-x11"
-      ];
-      shared = [ "!ipc" ];
+    sandbox = {
+      "Session Bus Policy" = {
+        "org.freedesktop.Flatpak" = "none";
+      };
+      Context.shared = [ "!ipc" ];
     };
   };
 

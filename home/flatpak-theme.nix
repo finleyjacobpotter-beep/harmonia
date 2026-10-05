@@ -7,7 +7,8 @@
 # *copied* into each app's own data and config dirs, which GTK in the sandbox
 # uses as XDG_DATA_HOME and XDG_CONFIG_HOME. Dark mode and the font name come
 # through the settings portal; the font itself is exposed to every flatpak by
-# home/firefox.nix (~/.local/share/fonts).
+# home/firefox.nix (~/.local/share/fonts). The copying itself is
+# home/flatpak-files.nix.
 {
   config,
   pkgs,
@@ -17,7 +18,6 @@
 }:
 let
   p = palette;
-  pyScript = import ../lib/python-script.nix { inherit pkgs lib; };
 
   apps = [
     "net.lutris.Lutris"
@@ -41,70 +41,26 @@ let
   gtk3Css = pkgs.writeText "flatpak-gtk3.css" config.gtk.gtk3.extraCss;
   gtk4Css = pkgs.writeText "flatpak-gtk4.css" config.gtk.gtk4.extraCss;
 
-  sync = pyScript "flatpak-miami-wind" { } ''
-    """Copy the desktop's GTK theme, icons and cursor into each flatpak app's
-    own data and config dirs (see home/flatpak-theme.nix)."""
-
-    import os
-    import shutil
-    import tempfile
-    from pathlib import Path
-
-    APPS = [${lib.concatMapStringsSep ", " (a: ''"${a}"'') apps}]
-
-
-    def install(src: str, dest: Path) -> None:
-        """A real, writable copy (install -Dm644), replacing whatever is there."""
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        if dest.is_symlink() or dest.exists():
-            dest.unlink()
-        shutil.copyfile(src, dest)
-        dest.chmod(0o644)
-
-
-    def copy_tree(src: Path, dest: Path) -> None:
-        """cp -r --no-preserve=mode,ownership: links stay links, the rest is writable."""
-        for root, dirs, files in os.walk(src):
-            target = dest / Path(root).relative_to(src)
-            target.mkdir(parents=True, exist_ok=True)
-            for name in dirs + files:
-                path = Path(root, name)
-                if path.is_symlink():
-                    (target / name).symlink_to(os.readlink(path))
-                elif path.is_file():
-                    shutil.copyfile(path, target / name)
-
-
-    def copy(src: str, dest: Path) -> None:
-        """Real files, recopied only when the store path changes."""
-        marker = dest / ".source"
-        if marker.is_file() and marker.read_text().strip() == src:
-            return
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        tmp = Path(tempfile.mkdtemp(prefix=".copy.", dir=dest.parent))
-        copy_tree(Path(src), tmp)
-        (tmp / ".source").write_text(src + "\n")
-        shutil.rmtree(dest, ignore_errors=True)
-        tmp.rename(dest)
-
-
-    for app_id in APPS:
-        app = Path.home() / ".var/app" / app_id
-        copy("${theme}/share/themes/adw-gtk3-dark", app / "data/themes/adw-gtk3-dark")
-        copy("${tulasi}/share/icons/Tulasi", app / "data/icons/Tulasi")
-        copy("${cursor}/share/icons/Bibata-Modern-Classic", app / "data/icons/Bibata-Modern-Classic")
-        install("${gtkSettings}", app / "config/gtk-3.0/settings.ini")
-        install("${gtk3Css}", app / "config/gtk-3.0/gtk.css")
-        install("${gtkSettings}", app / "config/gtk-4.0/settings.ini")
-        install("${gtk4Css}", app / "config/gtk-4.0/gtk.css")
-  '';
 in
 {
-  home.packages = [ sync ];
+  # Copied by flatpak-miami-wind (home/flatpak-files.nix).
+  harmonia.flatpakFiles = lib.mergeAttrsList (
+    map (
+      appId:
+      lib.mapAttrs' (dest: lib.nameValuePair ".var/app/${appId}/${dest}") {
+        "data/themes/adw-gtk3-dark" = "${theme}/share/themes/adw-gtk3-dark";
+        "data/icons/Tulasi" = "${tulasi}/share/icons/Tulasi";
+        "data/icons/Bibata-Modern-Classic" = "${cursor}/share/icons/Bibata-Modern-Classic";
+        "config/gtk-3.0/settings.ini" = gtkSettings;
+        "config/gtk-3.0/gtk.css" = gtk3Css;
+        "config/gtk-4.0/settings.ini" = gtkSettings;
+        "config/gtk-4.0/gtk.css" = gtk4Css;
+      }
+    ) apps
+  );
 
-  home.activation.flatpakMiamiWind = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    # ~/Games is the only host directory Lutris can see (see gaming.nix).
+  # ~/Games is the only host directory Lutris can see (see gaming.nix).
+  home.activation.gamesDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run mkdir -p "$HOME/Games"
-    run ${sync}/bin/flatpak-miami-wind || true
   '';
 }

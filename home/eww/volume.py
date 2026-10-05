@@ -10,24 +10,19 @@ import re
 import subprocess
 import sys
 
+from common import output
+
 SINK = "@DEFAULT_AUDIO_SINK@"
 
 
-def output(*args: str) -> str:
-    try:
-        return subprocess.run(args, capture_output=True, text=True, check=True).stdout
-    except (OSError, subprocess.CalledProcessError):
-        return ""
-
-
 def state() -> str:
-    out = output("wpctl", "get-volume", SINK) or "Volume: 0"
+    out = output("wpctl", "get-volume", SINK, check=True) or "Volume: 0"
     try:
         pct = int(float(out.split()[1]) * 100 + 0.5)
     except (IndexError, ValueError):
         pct = 0
     muted = "MUTED" in out
-    match = re.search(r'node\.description = "(.*)"', output("wpctl", "inspect", SINK))
+    match = re.search(r'node\.description = "(.*)"', output("wpctl", "inspect", SINK, check=True))
     return json.dumps(
         {
             "pct": pct,

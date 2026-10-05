@@ -1,18 +1,15 @@
 # Nike, the microVM guest. What every microVM shares (network, shares,
 # volumes, ssh, the status service, the host's shell configs) is
 # lib/microvm-guest.nix; the host side (its network, shared folders,
-# `ssh nike`) is modules/nixos/nike.nix, which passes `nike` below.
+# `ssh nike`) is modules/nixos/nike.nix.
 #
 # Login: k / k (ssh nike from the host). The shell, neovim, tmux and ranger
 # are the host's own home-manager configs in orange instead of pink
-# (nike/palette.nix).
-{ pkgs, nike, ... }:
+# (colors in modules/nixos/nike.nix).
+{ pkgs, ... }:
 {
   imports = [
     (import ../lib/microvm-guest.nix {
-      name = "nike";
-      user = "k";
-      vm = nike;
       # /var holds the podman container images and volumes (BloodHound's
       # Neo4j and Postgres data, the pulled images), so it needs room.
       varSize = 24576;

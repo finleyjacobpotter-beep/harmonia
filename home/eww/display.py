@@ -25,36 +25,21 @@ import subprocess
 import sys
 from pathlib import Path
 
-STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "eww"
+from common import RUN_DIR, STATE_DIR, output, read
+
 PRIMARY_FILE = STATE_DIR / "primary-display"
 MODES_FILE = STATE_DIR / "display-modes.json"
 LAYOUT_FILE = STATE_DIR / "display-layout.json"
-RUN_DIR = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp"))
 SEEN_FILE = RUN_DIR / "eww-display.seen"
 LAST_FILE = RUN_DIR / "eww-display.primary"
 
 
-def read(path: Path) -> str:
-    try:
-        return path.read_text().rstrip("\n")
-    except OSError:
-        return ""
-
-
-def run(*args: str) -> str:
-    """Run a command quietly and return its output ("" if it fails)."""
-    try:
-        return subprocess.run(args, capture_output=True, text=True).stdout
-    except OSError:
-        return ""
-
-
 def eww(*args: str) -> str:
-    return run("eww", *args)
+    return output("eww", *args)
 
 
 def swaymsg(*args: str) -> str:
-    return run("swaymsg", *args)
+    return output("swaymsg", *args)
 
 
 def outputs() -> list:
