@@ -93,9 +93,11 @@
       (box :orientation "h" :space-evenly false :spacing 6
         (label :class "icon" :text "󰕓")
         (label :text "${usb.count}")))
+    ; The display settings window opens in the background: eww kills an
+    ; onclick command still running after 200ms, which closed it on a slow VM.
     (button :class "module display"
       :tooltip "${arraylength(displays.outputs)} display${arraylength(displays.outputs) == 1 ? "" : "s"}, primary ${displays.primary}. Click for display settings"
-      :onclick "@bin@/display-settings --toggle"
+      :onclick "@bin@/display-settings --toggle &"
       (box :orientation "h" :space-evenly false :spacing 4
         (label :class "icon" :text "󰍹")
         (label :text "${arraylength(displays.outputs)}")))
