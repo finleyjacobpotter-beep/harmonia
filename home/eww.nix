@@ -149,16 +149,17 @@ let
     pkgs.eww
   ];
 
-  # WireGuard tunnels (NetworkManager connections of type wireguard, see
-  # modules/nixos/wireguard.nix) for the bar button and its panel.
-  wireguard = pyScript "eww-wg" {
+  # VPNs (WireGuard and OpenVPN in NetworkManager, openfortivpn, see
+  # modules/nixos/vpn.nix) for the network button's asterisks and its panel.
+  vpn = pyScript "eww-vpn" {
     runtimeInputs = with pkgs; [
       networkmanager
       iproute2
+      systemd
       eww
     ];
     replace."WG = \"wg\"" = ''WG = "${pkgs.wireguard-tools}/bin/wg"'';
-  } ./eww/wg.py;
+  } ./eww/vpn.py;
 
   # Caps Lock / Num Lock state from the keyboard LEDs.
   locks = script "eww-locks" ./eww/locks.py [ ];
@@ -212,15 +213,14 @@ let
     );
 
   # A VM's bar badge: the same server icon for each, in the VM's own colour
-  # while it runs, a green asterisk while its VPN is up, and the firewall
-  # mode. Every part keeps its width, so the bar never moves.
+  # while it runs, and the firewall mode. Every part keeps its width, so the
+  # bar never moves. Its VPN shows as an asterisk on the network button.
   vmBadge = vm: tooltip: ''
-    (button :class "module vm ${vm} ''${${vm}.running ? "running" : "stopped"} ''${${vm}.running && ${vm}.fresh && ${vm}.vpn.up ? "vpn" : ""}"
+    (button :class "module vm ${vm} ''${${vm}.running ? "running" : "stopped"}"
       :tooltip ${tooltip}
       :onclick "${menu} ${vm}-menu"
       (box :orientation "h" :space-evenly false :spacing 2
         (label :class "icon" :text "󰒋")
-        (label :class "vm-vpn" :text "*")
         (label :class "vm-mode mode-''${${vm}.mode}" :xalign 0 :text "''${${shortText vm}}")))
   '';
 
@@ -258,6 +258,58 @@ let
               '') (vmModes vm)
             }))))
   '';
+
+  # The VPNs the network button can show an asterisk for, top to bottom:
+  # kind is its CSS class (and colour), up a yuck condition, text its name in
+  # the tooltip. The microVMs' come from their status (nike/status.py), and
+  # only on hosts that run them.
+  vpnStars = [
+    {
+      kind = "wireguard";
+      up = "vpn.up.wireguard";
+      text = "WireGuard";
+    }
+    {
+      kind = "openvpn";
+      up = "vpn.up.openvpn";
+      text = "OpenVPN";
+    }
+    {
+      kind = "forti";
+      up = "vpn.up.forti";
+      text = "openfortivpn";
+    }
+    {
+      kind = "other";
+      up = "vpn.up.other";
+      text = "VPN";
+    }
+  ]
+  ++ lib.optionals hasVms (
+    map (vm: {
+      kind = vm;
+      up = "(${vm}.running && ${vm}.fresh && ${vm}.vpn.up)";
+      text = "${lib.toUpper (lib.substring 0 1 vm)}${lib.substring 1 (-1) vm}'s VPN";
+    }) vms
+  );
+
+  # The stack's labels, one per VPN, shown while it is up. At most four fit
+  # the bar, so one shows only while fewer than four above it do; the
+  # tooltip and the panel still name them all.
+  maxStars = 4;
+  vpnStarLabels = lib.concatStringsSep "\n                  " (
+    lib.imap0 (
+      i: s:
+      let
+        above = lib.concatMapStringsSep " + " (a: "(${a.up} ? 1 : 0)") (lib.take i vpnStars);
+        fits = lib.optionalString (i >= maxStars) " && (${above}) < ${toString maxStars}";
+      in
+      ''(label :class "vpn-star ${s.kind}" :visible {${s.up}${fits}} :text "*")''
+    ) vpnStars
+  );
+
+  # The tooltip's list of VPNs that are up, as a yuck string expression.
+  vpnTooltip = lib.concatMapStrings (s: ''''${${s.up} ? " · ${s.text}" : ""}'') vpnStars;
 
   battery = script "eww-battery" ./eww/battery.py [ ];
 
@@ -328,7 +380,9 @@ in
           :initial "{\"auto\":true,\"default\":\"\",\"shown\":{\"name\":\"\",\"state\":\"down\",\"wireless\":false,\"down\":\"\",\"up\":\"\",\"address\":\"\"},\"ifaces\":[]}"
           "${net}/bin/eww-net")
         (deflisten displays :initial "{\"primary\":\"\",\"outputs\":[]}" "${display}/bin/eww-display watch")
-        (defpoll wg :interval "5s" :initial "{\"active\":0,\"tunnels\":[]}" "${wireguard}/bin/eww-wg")
+        (defpoll vpn :interval "5s"
+          :initial "{\"up\":{\"wireguard\":false,\"openvpn\":false,\"forti\":false,\"other\":false},\"active\":0,\"connections\":[]}"
+          "${vpn}/bin/eww-vpn")
         (defpoll activity :interval "5s"
           :initial "{\"gamemode\":false,\"steam\":false,\"lmstudio\":{\"running\":false,\"serving\":false,\"first\":\"\",\"list\":\"\"}}"
           "${activity}/bin/eww-activity")
@@ -434,19 +488,18 @@ ${lib.optionalString hasVms ''
               :tooltip "GPU ''${gpu.use}% · ''${gpu.temp}°C · VRAM ''${gpu.vram_text} (''${gpu.vram}%)"
               (label :class "icon" :text "󰢮")
               (label :unindent false :text "''${gpu.text}"))
+            ; Network, with an asterisk per VPN that is up beside the icon,
+            ; stacked and coloured by VPN (vpnStars).
             (button :class "module net ''${net.shown.state == "up" ? "" : "down"}"
-              :tooltip "''${net.shown.name} ''${net.shown.address}: click for all interfaces"
+              :tooltip "''${net.shown.name} ''${net.shown.address}${vpnTooltip}: click for interfaces and VPNs"
               :onclick "${menu} net-menu"
-              (box :orientation "h" :space-evenly false :spacing 6
+              (box :orientation "h" :space-evenly false :spacing 2
                 (label :class "icon" :text {net.shown.wireless ? "󰖩" : "󰈀"})
-                (label :text "''${net.shown.name} ↓''${net.shown.down} ↑''${net.shown.up}")))
-            (button
-              :class "module wg ''${wg.active > 0 ? "on" : ""}"
-              :tooltip "WireGuard: click for tunnels"
-              :onclick "${menu} wg"
-              (box :orientation "h" :space-evenly false :spacing 6
-                (label :class "icon" :text "󰖂")
-                (label :text "''${wg.active}")))
+                ; A space between the icon and the asterisks.
+                (label :unindent false :text " ")
+                (box :class "vpn-stars" :orientation "v" :valign "center" :space-evenly false
+                  ${vpnStarLabels})
+                (label :class "net-text" :text "''${net.shown.name} ↓''${net.shown.down} ↑''${net.shown.up}")))
             (button
               :class "module caffeine ''${caffeine}"
               :tooltip "Caffeine ''${caffeine}: click to ''${caffeine == "on" ? "allow" : "stop"} locking and screen blanking"
@@ -473,25 +526,6 @@ ${lib.optionalString hasVms ''
             (center)
             (right)))
 
-        (defwidget wg-panel []
-          (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
-            (box :orientation "h" :space-evenly false
-              (label :class "wg-title" :hexpand true :halign "start" :text "WireGuard")
-              (button :class "wg-close" :onclick "${pkgs.eww}/bin/eww close wg" "✕"))
-            (label :class "wg-detail" :visible {arraylength(wg.tunnels) == 0} :halign "start" :wrap true
-              :text "No tunnels yet. Import one with: nmcli connection import type wireguard file wg0.conf")
-            (for t in {wg.tunnels}
-              (box :class "wg-tunnel ''${t.active ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
-                (box :orientation "v" :space-evenly false :hexpand true :spacing 2
-                  (label :class "wg-name" :halign "start" :text "''${t.active ? "●" : "○"} ''${t.name}")
-                  (label :class "wg-detail" :halign "start" :text "''${t.address}")
-                  (label :class "wg-detail" :visible {t.active} :halign "start"
-                    :text "''${t.endpoint != "" ? t.endpoint : "no peer endpoint"} · handshake ''${t.handshake}")
-                  (label :class "wg-detail" :visible {t.active} :halign "start" :text "↓ ''${t.rx}  ↑ ''${t.tx}"))
-                (button :class "wg-toggle" :valign "center"
-                  :onclick "${wireguard}/bin/eww-wg toggle \"''${t.name}\""
-                  "''${t.active ? "Disconnect" : "Connect"}")))))
-
         ; Session: opened by the logo at the top left.
         (defwidget power-action [icon name onclick]
           (button :class "wg-toggle power-action" :onclick "${eww} close power-menu; ''${onclick}"
@@ -509,7 +543,7 @@ ${lib.optionalString hasVms ''
             (power-action :icon "󰐥" :name "Power off" :onclick "${pkgs.systemd}/bin/systemctl poweroff")))
 
         ; Panels opened by the Steam and LM Studio buttons, laid out like the
-        ; WireGuard panel.
+        ; network panel.
         (defwidget app-panel [title name status action onclose onaction]
           (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
             (box :orientation "h" :space-evenly false
@@ -629,12 +663,31 @@ ${lib.optionalString hasVms ''
               :text "ssh zelus (c, no password) · claude, opencode · ~/zelus-share is ~/share, ~/Projects is shared")))
 ''}
 
-        ; Network: every interface's rates, and which one the bar shows.
+        ; Network: the VPNs with Connect/Disconnect, then every interface's
+        ; rates and which one the bar shows.
         (defwidget net-panel []
           (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
             (box :orientation "h" :space-evenly false
               (label :class "wg-title" :hexpand true :halign "start" :text "Network")
               (button :class "wg-close" :onclick "${eww} close net-menu" "✕"))
+            (label :class "wg-name" :halign "start" :text "VPN")
+            (label :class "wg-detail" :visible {arraylength(vpn.connections) == 0} :halign "start" :wrap true
+              :text "No VPNs yet. docs/vpn.md shows how to add WireGuard, OpenVPN and openfortivpn ones.")
+            (for t in {vpn.connections}
+              (box :class "wg-tunnel ''${t.active ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
+                (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+                  (box :orientation "h" :space-evenly false :spacing 6
+                    (label :class "vpn-star ''${t.kind}" :text "''${t.active ? "*" : " "}")
+                    (label :class "wg-name" :halign "start" :limit-width 30 :text "''${t.name}"))
+                  (label :class "wg-detail" :halign "start"
+                    :text "''${t.label}''${t.device != "" ? " · ''${t.device}" : ""}''${t.address != "" ? " · ''${t.address}" : ""}")
+                  (label :class "wg-detail" :visible {t.active && (t.endpoint != "" || t.handshake != "")} :halign "start"
+                    :text "''${t.endpoint != "" ? t.endpoint : "no peer endpoint"}''${t.handshake != "" ? " · handshake ''${t.handshake}" : ""}")
+                  (label :class "wg-detail" :visible {t.active && t.rx != ""} :halign "start" :text "↓ ''${t.rx}  ↑ ''${t.tx}"))
+                (button :class "wg-toggle" :valign "center" :visible {t.managed}
+                  :onclick "${vpn}/bin/eww-vpn toggle ''${t.kind} \"''${t.name}\" &"
+                  "''${t.active ? "Disconnect" : "Connect"}")))
+            (label :class "wg-name" :halign "start" :text "Interfaces")
             (box :class "wg-tunnel ''${net.auto ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
               (box :orientation "v" :space-evenly false :hexpand true :spacing 2
                 (label :class "wg-name" :halign "start" :text "''${net.auto ? "●" : "○"} Automatic")
@@ -784,13 +837,6 @@ ${lib.optionalString hasVms ''
           :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
           (lms-menu))
 
-        (defwindow wg
-          :monitor 0
-          :stacking "overlay"
-          :namespace "eww-wg"
-          :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-          (wg-panel))
-
         (defwindow bar
           :monitor 0
           :exclusive true
@@ -867,27 +913,39 @@ ${lib.optionalString hasVms ''
       &.vm .icon { color: $muted; }
       &.nike.running .icon { color: $orange; }
       &.zelus.running .icon { color: $cyan; }
-      // Always drawn so it keeps its space; only visible while the VPN is up.
-      &.vm .vm-vpn { color: transparent; }
-      &.vm.vpn .vm-vpn { color: $green; }
       // Firewall modes: open is the plain one, lockdown red, the
       // restricted ones (OSCP, Hack The Box, local inference) purple.
       .vm-mode { color: $purple; }
       .vm-mode.mode-permissive { color: $muted; }
       .vm-mode.mode-lockdown { color: $red; }
-      &.wg { color: $muted; &:hover { background-color: $surface; } }
-      &.wg.on { color: $cyan; }
       &.caffeine { color: $muted; &:hover { background-color: $surface; } }
       &.caffeine.on { color: $orange; }
       &.gpu .icon { color: $red; }
       &.net .icon { color: $blue; }
       &.net.down { color: $muted; }
+      // One small asterisk per VPN that is up, stacked in a column that
+      // always keeps its width, so the bar doesn't shift.
+      .vpn-stars { min-width: 6px; }
+      .vpn-stars .vpn-star {
+        font-size: 8pt;
+        margin: -6px 0;
+      }
       &.vol.muted { color: $muted; .icon { color: $muted; } }
       &.display .icon { color: $pink; }
       &.usb { color: $muted; }
       &.usb.on { color: $fg; .icon { color: $yellow; } }
       &.display, &.usb, &.net, &.vol, &.clock { &:hover { background-color: $surface; } }
       .tz { color: $muted; }
+    }
+
+    // Each VPN's asterisk colour, on the bar and in the network panel.
+    .vpn-star {
+      &.wireguard { color: $green; }
+      &.openvpn { color: $yellow; }
+      &.forti { color: $purple; }
+      &.other { color: $blue; }
+      &.nike { color: $orange; }
+      &.zelus { color: $cyan; }
     }
 
     .lock {

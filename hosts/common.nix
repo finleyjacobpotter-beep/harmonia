@@ -25,7 +25,7 @@
     ../modules/nixos/zelus.nix
     ../modules/nixos/vm-firewall.nix
     ../modules/nixos/secrets.nix
-    ../modules/nixos/wireguard.nix
+    ../modules/nixos/vpn.nix
   ];
 
   boot.loader.systemd-boot.enable = true;

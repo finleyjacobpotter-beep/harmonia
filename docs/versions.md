@@ -24,6 +24,8 @@ only change when an input's commit is bumped; update this table when you do.
 | greetd / tuigreet | 0.10.3 / 0.11.1 |
 | NetworkManager | 1.58.1 |
 | wireguard-tools | 1.0.20260223 |
+| OpenVPN / NetworkManager-openvpn | 2.6.23 / 1.12.5 |
+| openfortivpn | 1.24.1 |
 | PipeWire / WirePlumber | 1.6.8 / 0.5.17 |
 | BlueZ / Blueman | 5.87 / 2.4.6 |
 | UPower | 1.91.4 |
