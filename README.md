@@ -12,7 +12,7 @@ colour scheme, **DepartureMono Nerd Font** and the pixel-art
 ## Layout
 
 ```
-flake.nix                      inputs, username, the hosts (nixosConfigurations.harmonia / .cadmus)
+flake.nix                      inputs, defaultUsername, mkHost and the hosts (harmonia, cadmus, dionysus, dionysus-aarch64)
 theme/miami-wind.nix           the palette — every app reads its colours from here
 keys.nix                       the keyboard contract (which layer owns which modifier)
 hosts/base.nix                 what every host shares: desktop modules, user, locale, nix settings
@@ -83,11 +83,11 @@ Wi-Fi firmware, suspend on lid close and power profiles
 laptop. On cadmus, Super+o n opens `nmtui` to join a Wi-Fi network.
 
 Start from a base NixOS install with flakes and git enabled and a user named
-`u` (or whatever you set as `username`). [Installing base NixOS](docs/install.md)
+`u` (or whatever you set as `defaultUsername`). [Installing base NixOS](docs/install.md)
 walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
 [`scripts/install.py`](scripts/install.py) does it for you.
 
-1. Clone this repo and edit `username` in `flake.nix`, and the
+1. Clone this repo and edit `defaultUsername` in `flake.nix`, and the
    timezone/locale/keymap in `hosts/base.nix`:
    ```sh
    git clone https://github.com/finleyjacobpotter-beep/harmonia ~/harmonia && cd ~/harmonia

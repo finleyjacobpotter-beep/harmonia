@@ -199,7 +199,7 @@ the switch later is small:
 }
 ```
 
-If you use a different login name, change `u` here **and** `username` in
+If you use a different login name, change `u` here **and** `defaultUsername` in
 harmonia's `flake.nix` later. If your timezone or keymap is different, you
 can set them here too, and in `hosts/base.nix` later.
 

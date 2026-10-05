@@ -39,10 +39,9 @@
       ...
     }@inputs:
     let
-      system = "x86_64-linux";
-
-      # Change this to your login. Host names are the attribute names below.
-      username = "u";
+      # Change this to your login (Dionysus's is "d", below). Host names are
+      # the attribute names below.
+      defaultUsername = "u";
 
       palette = import ./theme/miami-wind.nix;
       keys = import ./keys.nix;
@@ -54,11 +53,21 @@
         }
       );
 
-      # Every host gets the same desktop, home-manager config and microVMs;
-      # hosts/<name>/default.nix adds its hardware and what only it needs.
+      # Builds one host from hosts/<hostname>/default.nix and its home
+      # config. harmonia and cadmus share the desktop, the home config and the
+      # microVMs; Dionysus has its own user and home (home/dionysus) and no
+      # microVMs, and is built for whichever architecture is passed.
       mkHost =
-        hostname:
+        {
+          hostname,
+          system ? "x86_64-linux",
+          username ? defaultUsername,
+          home ? ./home,
+          vms ? true,
+        }:
         let
+          # `system` lets a home config decide, statically, whether to pull
+          # in x86_64-only pieces (home/dionysus/default.nix).
           specialArgs = {
             inherit
               inputs
@@ -66,6 +75,7 @@
               username
               palette
               keys
+              system
               ;
           };
         in
@@ -78,7 +88,6 @@
             }
             ./hosts/${hostname}
             nix-flatpak.nixosModules.nix-flatpak
-            microvm.nixosModules.host
             home-manager.nixosModules.home-manager
             {
               home-manager = {
@@ -86,60 +95,34 @@
                 useUserPackages = true;
                 backupFileExtension = "hm-backup";
                 extraSpecialArgs = specialArgs;
-                users.${username} = import ./home;
+                users.${username} = import home;
               };
             }
-          ];
+          ]
+          ++ nixpkgs.lib.optional vms microvm.nixosModules.host;
         };
 
       # Dionysus: harmonia's Sway desktop with the coding/creative toolset
       # built in natively (Blender, Godot, opencode, Claude Code, the MCP
-      # servers and the Rust tools) and no microVMs. One module list, built
-      # for whichever architecture is passed, so the same config works on
-      # aarch64-linux and x86_64-linux.
-      dionysusArgs = {
-        inherit inputs palette keys;
-        hostname = "dionysus";
-        username = "d";
-      };
+      # servers and the Rust tools) and no microVMs, so the same config works
+      # on aarch64-linux and x86_64-linux.
       mkDionysus =
-        sys:
-        let
-          # `system` lets the home config decide, statically, whether to pull
-          # in the x86_64-only Zen theming (home/dionysus/default.nix).
-          args = dionysusArgs // {
-            system = sys;
-          };
-        in
-        nixpkgs.lib.nixosSystem {
-          specialArgs = args;
-          modules = [
-            {
-              nixpkgs.hostPlatform = sys;
-              nixpkgs.overlays = [ iconOverlay ];
-            }
-            ./hosts/dionysus
-            nix-flatpak.nixosModules.nix-flatpak
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                backupFileExtension = "hm-backup";
-                extraSpecialArgs = args;
-                users.${dionysusArgs.username} = import ./home/dionysus;
-              };
-            }
-          ];
+        system:
+        mkHost {
+          hostname = "dionysus";
+          inherit system;
+          username = "d";
+          home = ./home/dionysus;
+          vms = false;
         };
     in
     {
       nixosConfigurations = {
         # The desktop.
-        harmonia = mkHost "harmonia";
+        harmonia = mkHost { hostname = "harmonia"; };
         # The laptop (ThinkPad E14 Gen 2): the same, plus Wi-Fi, lid/power
         # handling and ThinkPad fan control.
-        cadmus = mkHost "cadmus";
+        cadmus = mkHost { hostname = "cadmus"; };
 
         # Dionysus: the dev/creative desktop with everything native and no
         # microVMs. Same two outputs so `nixos-rebuild --flake .#dionysus`
