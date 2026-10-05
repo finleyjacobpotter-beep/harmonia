@@ -1,6 +1,6 @@
 # Laptop bits: Wi-Fi, suspend on lid close, power profiles.
 #
-# Wi-Fi goes through NetworkManager (enabled in hosts/common.nix, with
+# Wi-Fi goes through NetworkManager (enabled in hosts/base.nix, with
 # wpa_supplicant behind it): Super+o n opens nmtui to pick a network, and
 # `nmcli device wifi connect <SSID> --ask` does the same from a shell. Saved
 # networks live in /etc/NetworkManager/system-connections and survive

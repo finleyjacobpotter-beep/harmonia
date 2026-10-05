@@ -15,7 +15,8 @@ colour scheme, **DepartureMono Nerd Font** and the pixel-art
 flake.nix                      inputs, username, the hosts (nixosConfigurations.harmonia / .cadmus)
 theme/miami-wind.nix           the palette — every app reads its colours from here
 keys.nix                       the keyboard contract (which layer owns which modifier)
-hosts/common.nix               everything both hosts share: modules, user, locale, nix settings
+hosts/base.nix                 what every host shares: desktop modules, user, locale, nix settings
+hosts/common.nix               base.nix plus the apps and microVMs harmonia and cadmus share
 hosts/harmonia/                the desktop: hardware-configuration.nix (placeholder!) + fans.nix
 hosts/cadmus/                  the laptop (ThinkPad E14 Gen 2): hardware-configuration.nix (placeholder!), laptop.nix, thinkpad.nix,
                                nixos-hardware's E14 Gen 2 profile (set `cpu` to intel or amd)
@@ -87,7 +88,7 @@ walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
 [`scripts/install.py`](scripts/install.py) does it for you.
 
 1. Clone this repo and edit `username` in `flake.nix`, and the
-   timezone/locale/keymap in `hosts/common.nix`:
+   timezone/locale/keymap in `hosts/base.nix`:
    ```sh
    git clone https://github.com/finleyjacobpotter-beep/harmonia ~/harmonia && cd ~/harmonia
    ```
@@ -137,7 +138,7 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 
 ## Unfree packages
 
-Only one non-free package is allowed (`hosts/common.nix`):
+Only one non-free package is allowed (`harmonia.allowedUnfree` in `hosts/base.nix`):
 the Tulasi icon theme (CC BY-NC-SA 4.0, free for non-commercial use with
 attribution).
 

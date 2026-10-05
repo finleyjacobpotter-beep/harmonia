@@ -23,8 +23,8 @@ x86 one.
   - the **Rust command-line tools** (ripgrep, fd, bat, eza, …) with the usual
     aliases in interactive shells only;
   - `uv`, Node, Python, a C toolchain, and a native Firefox.
-- Flatpak apps (`hosts/dionysus/flatpak.nix`, same tightened sandboxes as
-  harmonia):
+- Flatpak apps (`modules/nixos/flatpak.nix` and `element.nix`, the same
+  tightened sandboxes as harmonia):
   - **Element** (Matrix) — on both architectures (Flathub ships x86_64 and
     aarch64 builds);
   - **Zen** (browser) — **x86_64 only**, because Zen has no ARM64 Linux build;
