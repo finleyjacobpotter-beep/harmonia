@@ -274,8 +274,8 @@ treesitter grammars, the Tulasi icon theme build), so it takes a while. When
 it finishes, reboot; you'll get the tuigreet login, and logging in as `u`
 (with your password from step 8) starts sway.
 
-After that, see the docs: `zen-miami-wind` after first launching Zen
-([zen.md](zen.md)), starting the Nike microVM
+After that, see the docs: `firefox-miami-wind` after first launching Firefox
+([firefox.md](firefox.md)), starting the Nike microVM
 ([nike.md](nike.md)), and the secrets first-run steps ([secrets.md](secrets.md)).
 
 ---

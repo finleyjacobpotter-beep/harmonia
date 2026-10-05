@@ -136,11 +136,12 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | Bitwarden CLI (`bw`) | 2026.9.0 |
 | OpenBao (`bao`) | 2.7.0 |
 
-## Zen browser
+## Firefox
 
 | Package | Version |
 | --- | --- |
-| Zen (Flathub `app.zen_browser.zen`) | follows Flathub (1.22.3b on 2026-09-27) until `zenCommit` is set in `modules/nixos/flatpak.nix` |
+| Firefox (Flathub `org.mozilla.firefox`) | follows Flathub until `firefoxCommit` is set in `modules/nixos/flatpak.nix` |
+| uBlock Origin add-on | 1.75.0 |
 | Vimium add-on | 2.4.2 |
 
 ## Lutris, Element and LM Studio

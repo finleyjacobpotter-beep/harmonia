@@ -1,7 +1,7 @@
 # Gaming
 
 Lutris comes from Flathub (`net.lutris.Lutris`) and runs in a Flatpak
-sandbox, the same way as the [Zen browser](zen.md). Start it with `Super+o g`
+sandbox, the same way as [Firefox](firefox.md). Start it with `Super+o g`
 or from fuzzel. From Lutris you can install GOG, Epic (through the Heroic or
 Legendary integrations), Battle.net and plain Windows installers under Wine or
 Proton (umu).
@@ -42,7 +42,7 @@ break without them:
 - **Network.** Games can reach the internet and your LAN.
 - **X11.** Wine and most games are X11 apps under Xwayland. An X11 app can
   read input to and screenshots of other Xwayland windows. Native Wayland apps
-  (alacritty, Zen, Element, most of the desktop) are invisible to it.
+  (alacritty, Firefox, Element, most of the desktop) are invisible to it.
 - **Devices.** `--device=all` stays so controllers and wheels work. That
   includes webcams and microphones.
 - **`~/.local/share/umu`.** Flathub lets Lutris keep the umu (Proton) runtime

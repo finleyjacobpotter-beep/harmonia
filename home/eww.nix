@@ -33,7 +33,7 @@ let
   modeHints = {
     resize = "h/j/k/l resize · Shift = ×5 · Esc done";
     open =
-      "b zen · f ranger · e nvim · t tmux · s btop · a audio · u bluetooth · n network · v nike · z zelus · g lutris"
+      "b firefox · f ranger · e nvim · t tmux · s btop · a audio · u bluetooth · n network · v nike · z zelus · g lutris"
       + lib.optionalString hasSteam " · G steam"
       + " · c element · l lm-studio";
     media = "j/k volume · m mute · M mic · h/l prev/next · p play · J/K brightness";

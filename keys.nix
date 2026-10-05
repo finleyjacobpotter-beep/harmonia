@@ -6,10 +6,10 @@
 #   Ctrl+Space …     tmux prefix only. tmux has no prefix-less (root table)
 #                    bindings, so every other key reaches the program inside.
 #   Ctrl+Shift + …   alacritty only (copy/paste, search, font size, hints).
-#   everything else  the focused app: Zen (+ Vimium), neovim, ranger, bash
+#   everything else  the focused app: Firefox (+ Vimium), neovim, ranger, bash
 #                    (vi mode), btop, pulsemixer, bluetuith, …
 #
-# Zen and tmux never see each other's keys (only one is focused), so they may
+# Firefox and tmux never see each other's keys (only one is focused), so they may
 # overlap; CLI tools always run inside alacritty/tmux, so they may not use
 # Super, Ctrl+Space or Ctrl+Shift.
 {

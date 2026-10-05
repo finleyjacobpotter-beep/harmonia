@@ -4,7 +4,7 @@
 # top of the bundled one; in the sandbox that is
 # ~/.var/app/im.riot.Riot/config/Element. It defines a "Miami Wind" custom
 # theme with the palette and font and makes it the default. The font is
-# exposed to every flatpak by home/zen.nix (~/.local/share/fonts).
+# exposed to every flatpak by home/firefox.nix (~/.local/share/fonts).
 {
   pkgs,
   lib,

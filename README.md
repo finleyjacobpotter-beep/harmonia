@@ -4,7 +4,7 @@
 icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, two **microVMs** (Nike and Zelus), **podman**, and **Zen browser**, **Lutris**, **Steam**, **Element**, **LM Studio**, **Blender** and **Godot** jailed in Flatpak —
+**neovim**, two **microVMs** (Nike and Zelus), **podman**, and **Firefox** (vertical tabs, uBlock Origin, Vimium), **Lutris**, **Steam**, **Element**, **LM Studio**, **Blender** and **Godot** jailed in Flatpak —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -23,7 +23,7 @@ hosts/cadmus/                  the laptop (ThinkPad E14 Gen 2): hardware-configu
 modules/nixos/
   desktop.nix                  sway, greetd/tuigreet, pipewire, portals, console colours
   fonts.nix                    DepartureMono Nerd Font as system default
-  flatpak.nix                  Flathub + Zen browser with a tightened sandbox
+  flatpak.nix                  Flathub + Firefox with a tightened sandbox
   gaming.nix                   Lutris from Flathub with a tightened sandbox, controller udev rules, GameMode
   steam.nix                    Steam from Flathub, locked down, sharing only ~/Games with Lutris
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
@@ -62,7 +62,7 @@ home/                          home-manager, one file per program
   opencode.nix                 opencode on Zelus: LM Studio + Claude providers, oh-my-openagent, Blender and Godot MCP servers
   rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host, Nike and Zelus
   mcp-servers.nix              the Blender and Godot MCP servers, for Claude Code and opencode on Zelus
-  alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix zen.nix
+  alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix firefox.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
 lib/root-cas.nix               trusts the root CAs in certs/ on the host, Nike and Zelus
 lib/microvm-host.nix           a microVM's host side: tap network + NAT, folders, `ssh <vm>`
@@ -124,7 +124,7 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 - [Installing base NixOS](docs/install.md): the base system harmonia installs onto
 - [Pinned versions](docs/versions.md): exact commits and package versions
 - [Keyboard](docs/keyboard.md): the modifier contract and every binding
-- [Zen browser jail](docs/zen.md): the Flatpak sandbox and its theming
+- [Firefox jail](docs/firefox.md): the Flatpak sandbox, add-ons and theming
 - [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
@@ -170,7 +170,7 @@ harmonia stands on other people's work:
 - **[Departure Mono](https://departuremono.com/)** via
   [Nerd Fonts](https://www.nerdfonts.com/): the font.
 - **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
-  Flatpak setup for Zen, Lutris, Steam, Element, LM Studio, Blender and
+  Flatpak setup for Firefox, Lutris, Steam, Element, LM Studio, Blender and
   Godot.
 - **[microvm.nix](https://github.com/microvm-nix/microvm.nix)**: the Nike
   and Zelus microVMs.

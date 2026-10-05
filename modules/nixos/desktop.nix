@@ -67,7 +67,7 @@ in
   services.upower.enable = true;
 
   # Portals: wlr for screen sharing (enabled by programs.sway), gtk for file
-  # pickers / settings — required for flatpak apps such as Zen.
+  # pickers / settings — required for flatpak apps such as Firefox.
   xdg.portal = {
     enable = true;
     extraPortals = [ pkgs.xdg-desktop-portal-gtk ];

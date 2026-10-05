@@ -20,12 +20,12 @@ a document, folders → a folder, hardware → a computer, anything else → "?"
 This covers every standard icon name and every `Icon=` in the desktop files
 of installed packages, so the theme is rebuilt when your package set changes.
 
-**Inside the Zen sandbox** the same icons are used without opening the jail:
-Tulasi is copied (as real files) into Zen's own private data dir,
-`~/.var/app/app.zen_browser.zen/data/icons`, and a sandbox-local
-`config/gtk-3.0/settings.ini` selects it. Zen already owns that directory, so
+**Inside the Firefox sandbox** the same icons are used without opening the jail:
+Tulasi is copied (as real files) into Firefox's own private data dir,
+`~/.var/app/org.mozilla.firefox/data/icons`, and a sandbox-local
+`config/gtk-3.0/settings.ini` selects it. Firefox already owns that directory, so
 no flatpak permission is added. The copy is the generic build, without the
-list of your installed programs. Zen's launcher icon, notifications and file
+list of your installed programs. Firefox's launcher icon, notifications and file
 picker are drawn on the host and use Tulasi anyway.
 
 ## Wallpaper
