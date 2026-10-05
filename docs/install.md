@@ -6,12 +6,16 @@ harmonia expects, and stops where harmonia's own install steps begin.
 harmonia assumes:
 
 - **UEFI** with **systemd-boot**, ESP mounted at `/boot`
-- a user named **`u`** (set in `flake.nix`) in the `wheel` group
+- a user named **`u`** (set in `flake.nix`) in the `wheel` group, or **`d`**
+  on dionysus
 - **flakes** enabled (`nix-command` + `flakes`)
-- host name **`harmonia`** for a desktop or **`cadmus`** for a laptop (the
-  flake outputs are `.#harmonia` and `.#cadmus`; on a laptop, read `cadmus`
-  wherever this guide says `harmonia` in a host name or `hosts/` path)
-- an **x86_64** machine
+- host name **`harmonia`** for a desktop, **`cadmus`** for a laptop or
+  **`dionysus`** for a VM with the dev tools built in and no microVMs (the
+  flake outputs are `.#harmonia`, `.#cadmus`, and `.#dionysus` on x86_64 or
+  `.#dionysus-aarch64` on aarch64; on another host, read its name wherever
+  this guide says `harmonia` in a host name or `hosts/` path, and `d` for `u`
+  on dionysus)
+- an **x86_64** machine (dionysus also runs on **aarch64**)
 - a real `hosts/<host>/hardware-configuration.nix` from *your* machine (the ones in the repo are placeholders)
 
 **Scripted version:** [`scripts/install.py`](../scripts/install.py) does steps
@@ -22,10 +26,11 @@ curl -LO https://raw.githubusercontent.com/finleyjacobpotter-beep/harmonia/main/
 chmod +x install.py && sudo ./install.py   # fetches Python via nix-shell
 ```
 
-It asks for the disk, whether to use LUKS (the passphrase is read in, then
+It asks for the disk, the host (for dionysus it picks `.#dionysus` or
+`.#dionysus-aarch64` from the machine's architecture), whether to use LUKS (the passphrase is read in, then
 shown back to you to confirm before anything is written), and a swap size,
 then asks you to type `ERASE` before touching the disk. It ends with your
-hardware config already in `~u/harmonia`, ready for step 11.
+hardware config already in `~/harmonia` of the host's user, ready for step 11.
 
 The layout below is GPT with two partitions: a 1 GiB ESP and an ext4 root.
 LUKS encryption is optional and marked **(LUKS)** where the steps differ.

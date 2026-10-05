@@ -73,7 +73,6 @@ pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-on
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          the rest of the documentation (linked below)
 scripts/install.py             base NixOS install from the minimal ISO (docs/install.md)
-scripts/ubuntu-install.py      Ubuntu: Blender + Blender MCP, Godot 4 + Godot MCP, Tau, Caffeine
 scripts/cleanup-deprecated.py  `sudo harmonia-cleanup`: removes what older harmonia versions left behind (Zen, libvirt VMs, ...)
 ```
 
@@ -91,6 +90,12 @@ Start from a base NixOS install with flakes and git enabled and a user named
 `u` (or whatever you set as `defaultUsername`). [Installing base NixOS](docs/install.md)
 walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
 [`scripts/install.py`](scripts/install.py) does it for you.
+
+**dionysus** is the third host: the same Sway desktop for a VM, with the dev
+tools (Claude Code, opencode, the Rust tools) built in, no microVMs and its
+own user `d`. Its flake output is `.#dionysus` on x86_64 and
+`.#dionysus-aarch64` on aarch64; `scripts/install.py` offers it and picks
+the right one for the machine.
 
 1. Clone this repo and edit `defaultUsername` in `flake.nix`, and the
    timezone/locale/keymap in `hosts/base.nix`:
@@ -110,16 +115,6 @@ walks through that from the minimal ISO: UEFI, systemd-boot, optional LUKS;
    after the base install), use its existing password. The initial password
    `changeme` only applies when harmonia creates the user; in that case, run
    `passwd` straight away.
-
-### Ubuntu
-
-[`scripts/ubuntu-install.py`](scripts/ubuntu-install.py) is separate from the
-NixOS setup: on an Ubuntu GNOME desktop it installs Blender with
-[Blender MCP](https://github.com/ahujasid/blender-mcp), Godot 4 with
-[Godot MCP](https://github.com/Coding-Solo/godot-mcp), Hugging Face's
-[Tau](https://github.com/huggingface/tau) coding agent (via pipx), and the
-[Caffeine](https://extensions.gnome.org/extension/517/caffeine/) extension.
-Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 
 ## Documentation
 

@@ -4,10 +4,11 @@
 
 Wipes one disk, creates a GPT table with a 1 GiB ESP and a root partition
 (optionally LUKS2-encrypted, always ext4), installs a small base system
-that matches harmonia (systemd-boot, user u, flakes, git), and clones
-harmonia into ~u/harmonia with this machine's hardware-configuration.nix
-already in place for the host you pick: harmonia (desktop) or cadmus
-(laptop, with Wi-Fi).
+that matches harmonia (systemd-boot, flakes, git), and clones harmonia
+into the user's ~/harmonia with this machine's hardware-configuration.nix
+already in place for the host you pick: harmonia (desktop, user u), cadmus
+(laptop with Wi-Fi, user u) or dionysus (a VM with the dev tools built in
+and no microVMs, user d; x86_64 or aarch64, picked from this machine).
 
 Run it as root from the live ISO (the nix-shell line above fetches Python,
 which the minimal ISO doesn't ship):
@@ -19,6 +20,7 @@ The walkthrough in docs/install.md explains each step.
 
 import getpass
 import os
+import platform
 import re
 import shlex
 import shutil
@@ -27,8 +29,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-HOSTS = {"harmonia": "desktop", "cadmus": "laptop, with Wi-Fi"}
-USERNAME = "u"
+# host -> (description, login name set for it in flake.nix)
+HOSTS = {
+    "harmonia": ("desktop", "u"),
+    "cadmus": ("laptop, with Wi-Fi", "u"),
+    "dionysus": ("VM, dev tools built in, no microVMs", "d"),
+}
 REPO = "https://github.com/finleyjacobpotter-beep/harmonia"
 STATE_VERSION = "26.05"
 
@@ -122,7 +128,7 @@ def ask_settings() -> dict:
     if not (Path(disk).exists() and stat.S_ISBLK(os.stat(disk).st_mode)):
         die(f"{disk} is not a block device")
 
-    print("Hosts: " + ", ".join(f"{h} ({what})" for h, what in HOSTS.items()))
+    print("Hosts: " + ", ".join(f"{h} ({what})" for h, (what, _) in HOSTS.items()))
     host = input("Host to install: ").strip()
     if host not in HOSTS:
         die(f"{host!r} is not one of {', '.join(HOSTS)}")
@@ -135,6 +141,8 @@ def ask_settings() -> dict:
     esp, root = partitions(disk)
     return {
         "host": host,
+        "flake": flake_output(host),
+        "user": HOSTS[host][1],
         "disk": disk,
         "esp": esp,
         "root": root,
@@ -144,13 +152,25 @@ def ask_settings() -> dict:
     }
 
 
+def flake_output(host: str) -> str:
+    """Dionysus has one flake output per architecture; pick this machine's."""
+    if host != "dionysus":
+        return host
+    machine = platform.machine()
+    if machine == "x86_64":
+        return "dionysus"
+    if machine == "aarch64":
+        return "dionysus-aarch64"
+    die(f"dionysus is built for x86_64 and aarch64, not {machine}")
+
+
 def confirm(s: dict) -> None:
     print(f"\nAbout to ERASE {s['disk']} and install:")
     print(f"  {s['esp']}  1 GiB ESP (vfat, label boot) at /boot")
     print(f"  {s['root']} rest of the disk, ext4 (label nixos){' inside LUKS2' if s['luks'] else ''}")
     if s["swap_gib"]:
         print(f"  {s['swap_gib']} GiB swap file at /swap/swapfile")
-    print(f"  host {s['host']}, user {USERNAME}")
+    print(f"  host {s['host']} (flake .#{s['flake']}), user {s['user']}")
     if input("Type ERASE to continue: ") != "ERASE":
         die("aborted")
 
@@ -199,19 +219,19 @@ def partition_and_mount(s: dict) -> None:
 def install(s: dict) -> None:
     run("nixos-generate-config", "--root", str(MNT))
     (MNT / "etc/nixos/configuration.nix").write_text(
-        CONFIGURATION_NIX.format(hostname=s["host"], username=USERNAME, state_version=STATE_VERSION)
+        CONFIGURATION_NIX.format(hostname=s["host"], username=s["user"], state_version=STATE_VERSION)
     )
 
     print("\nInstalling. nixos-install asks for the root password at the end.")
     run("nixos-install")
 
-    print(f"\nSet the password for {USERNAME} (you log in to harmonia with it):")
-    while not run("nixos-enter", "--root", str(MNT), "-c", f"passwd {USERNAME}", check=False):
+    print(f"\nSet the password for {s['user']} (you log in to {s['host']} with it):")
+    while not run("nixos-enter", "--root", str(MNT), "-c", f"passwd {s['user']}", check=False):
         pass
 
 
 def clone_harmonia(s: dict) -> bool:
-    dest = MNT / "home" / USERNAME / "harmonia"
+    dest = MNT / "home" / s["user"] / "harmonia"
     if shutil.which("git"):
         cloned = run("git", "clone", REPO, str(dest), check=False)
     else:
@@ -223,7 +243,7 @@ def clone_harmonia(s: dict) -> bool:
 
     shutil.copy(MNT / "etc/nixos/hardware-configuration.nix",
                 dest / "hosts" / s["host"] / "hardware-configuration.nix")
-    run("nixos-enter", "--root", str(MNT), "-c", f"chown -R {USERNAME}:users /home/{USERNAME}/harmonia")
+    run("nixos-enter", "--root", str(MNT), "-c", f"chown -R {s['user']}:users /home/{s['user']}/harmonia")
     return True
 
 
@@ -240,10 +260,10 @@ def main() -> None:
     if settings["luks"]:
         run("cryptsetup", "close", "cryptroot")
 
-    print(f"\nBase NixOS is installed. Remove the USB stick and reboot, then log in as {USERNAME} and run:")
+    print(f"\nBase NixOS is installed. Remove the USB stick and reboot, then log in as {settings['user']} and run:")
     if not cloned:
         print(f"  git clone {REPO} ~/harmonia && cp /etc/nixos/hardware-configuration.nix ~/harmonia/hosts/{settings['host']}/")
-    print(f"  cd ~/harmonia && sudo nixos-rebuild switch --flake .#{settings['host']}")
+    print(f"  cd ~/harmonia && sudo nixos-rebuild switch --flake .#{settings['flake']}")
 
 
 if __name__ == "__main__":
