@@ -74,7 +74,7 @@ assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          the rest of the documentation (linked below)
 scripts/install.py             base NixOS install from the minimal ISO (docs/install.md)
 scripts/ubuntu-install.py      Ubuntu: Blender + Blender MCP, Godot 4 + Godot MCP, Tau, Caffeine
-scripts/cleanup-deprecated.py  removes what older harmonia versions left behind (Zen, libvirt VMs, ...): dry run, then --apply
+scripts/cleanup-deprecated.py  `sudo harmonia-cleanup`: removes what older harmonia versions left behind (Zen, libvirt VMs, ...)
 ```
 
 ## Install

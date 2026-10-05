@@ -29,9 +29,12 @@ It only reports, never deletes, the pass entry opencode/anthropic-api-key.
 
 Dry run by default: it lists what it would remove and changes nothing.
 
-    sudo ./scripts/cleanup-deprecated.py                # list
-    sudo ./scripts/cleanup-deprecated.py --apply        # remove
-    sudo ./scripts/cleanup-deprecated.py --apply --user-files
+    sudo harmonia-cleanup                       # list
+    sudo harmonia-cleanup --apply               # remove
+    sudo harmonia-cleanup --apply --user-files
+
+Every host has it on its PATH (hosts/base.nix); before the first rebuild
+that adds it, run this file directly: sudo ./scripts/cleanup-deprecated.py
 
 Things that hold your own files (a non-empty ~/Downloads/zen or
 ~/vms/kali-shared, Dionysus's old ~/.mozilla profile, home-manager's
