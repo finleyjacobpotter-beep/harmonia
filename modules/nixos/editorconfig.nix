@@ -28,6 +28,11 @@
     indent_style = space
     indent_size = 2
 
+    # Nix: two spaces, as nixfmt writes it.
+    [*.nix]
+    indent_style = space
+    indent_size = 2
+
     # Make needs real tabs.
     [{Makefile,makefile,GNUmakefile,BSDmakefile,Makefile.*,makefile.*,*.mk,*.mak,*.make}]
     indent_style = tab

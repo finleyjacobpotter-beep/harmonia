@@ -11,6 +11,7 @@ directory tree, so it applies to every file on the system:
 | --- | --- |
 | everything | 4 spaces (tabs shown 4 wide) |
 | YAML and JSON: `*.yml`, `*.yaml`, `*.json`, `*.jsonc`, `*.json5`, `*.jsonl`, `*.ndjson`, `*.geojson`, `*.topojson`, `*.webmanifest`, `*.har`, plus `flake.lock`, `.prettierrc`, `.babelrc`, `.eslintrc`, `.jshintrc`, `.swcrc`, `.clang-format`, `.clang-tidy`, `.clangd` | 2 spaces |
+| Nix: `*.nix` | 2 spaces |
 | Make: `Makefile`, `makefile`, `GNUmakefile`, `BSDmakefile`, `Makefile.*`, `makefile.*`, `*.mk`, `*.mak`, `*.make` | tabs |
 
 Neovim applies it on its own (built-in EditorConfig support), as do most
