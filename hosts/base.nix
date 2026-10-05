@@ -85,6 +85,22 @@
       fd
       unzip
       htop
+      # `sudo harmonia-cleanup`: removes what older harmonia versions left
+      # behind (scripts/cleanup-deprecated.py). Its nix-shell lines are
+      # dropped; the writer adds its own interpreter line.
+      (import ../lib/python-script.nix { inherit pkgs lib; } "harmonia-cleanup"
+        {
+          runtimeInputs = [
+            util-linux # runuser
+            iproute2
+          ];
+        }
+        (
+          lib.concatStringsSep "\n" (
+            lib.drop 2 (lib.splitString "\n" (builtins.readFile ../scripts/cleanup-deprecated.py))
+          )
+        )
+      )
     ];
 
     system.stateVersion = "26.05";
