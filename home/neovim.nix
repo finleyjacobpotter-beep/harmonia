@@ -22,6 +22,13 @@ in
       indent-blankline-nvim
     ];
 
+    # On neovim's PATH only: the JSON/YAML commands (nvim/json.lua).
+    extraPackages = with pkgs; [
+      jq
+      yq-go
+      prettier
+    ];
+
     initLua = ''
       vim.g.mapleader = " "
       local o = vim.opt
@@ -30,9 +37,11 @@ in
       o.cursorline = true
       o.termguicolors = true
       o.signcolumn = "yes"
+      -- Indents follow the system EditorConfig (modules/nixos/editorconfig.nix);
+      -- these are the same defaults for buffers without a file.
       o.expandtab = true
-      o.shiftwidth = 2
-      o.tabstop = 2
+      o.shiftwidth = 4
+      o.tabstop = 4
       o.smartindent = true
       o.ignorecase = true
       o.smartcase = true
@@ -58,6 +67,8 @@ in
       require("nvim-web-devicons").setup({ default = true })
       require("gitsigns").setup()
       require("which-key").setup()
+      require("harmonia.json").setup()
+      require("which-key").add({ { "<leader>j", group = "JSON/YAML" } })
       require("ibl").setup({ indent = { char = "│" }, scope = { enabled = true } })
 
       local mw = require("miami-wind.lualine")
@@ -94,6 +105,8 @@ in
     ripgrep
     fd
   ];
+
+  xdg.configFile."nvim/lua/harmonia/json.lua".source = ./nvim/json.lua;
 
   # lualine theme
   xdg.configFile."nvim/lua/miami-wind/lualine.lua".text = ''

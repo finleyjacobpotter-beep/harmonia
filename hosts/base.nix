@@ -13,6 +13,7 @@
 {
   imports = [
     ../modules/nixos/desktop.nix
+    ../modules/nixos/editorconfig.nix
     ../modules/nixos/fonts.nix
     ../modules/nixos/flatpak.nix
     ../modules/nixos/element.nix

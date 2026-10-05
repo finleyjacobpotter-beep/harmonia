@@ -45,6 +45,7 @@ in
   imports = [
     inputs.home-manager.nixosModules.home-manager
     (import ./root-cas.nix name)
+    ../modules/nixos/editorconfig.nix
   ];
 
   microvm = {
