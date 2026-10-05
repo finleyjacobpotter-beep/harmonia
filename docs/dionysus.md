@@ -37,7 +37,10 @@ x86 one.
     shared folders (`d` is in the `vboxsf` group). The VirtualBox services
     only start when the hypervisor is VirtualBox, so they sit idle under
     QEMU. Give the VM the **VMSVGA** graphics controller and enable **EFI**
-    (Dionysus boots with systemd-boot).
+    (Dionysus boots with systemd-boot). See "VirtualBox on a Mac" below.
+- Sway renders in software with a software cursor (`WLR_RENDERER=pixman`,
+  `WLR_NO_HARDWARE_CURSORS=1`), since VM display adapters have no usable
+  GPU or cursor plane.
 - Login `d`, initial password `changeme` (change it after first boot).
 
 ## What harmonia has that Dionysus leaves out
@@ -70,6 +73,22 @@ Both outputs set the hostname `dionysus`, so a bare `--flake .` always picks
 the x86_64 one and fails on aarch64 with "a 'x86_64-linux' with features {}
 is required to build ..., but I am a 'aarch64-linux'". Once installed, the
 `rebuild` alias names the right output for the machine.
+
+## VirtualBox on a Mac
+
+- **Display:** Settings > Display: graphics controller **VMSVGA**, 128 MB
+  video memory, **3D acceleration off** (not supported on Apple silicon).
+- **Keyboard access:** System Settings > Privacy & Security: allow
+  VirtualBox under **Accessibility** and **Input Monitoring**, then restart
+  VirtualBox.
+- **Super key:** VirtualBox's default Host key on macOS is Left ⌘, which is
+  the key the guest sees as Super, so Sway never gets it. In VirtualBox
+  Settings > Input > Virtual Machine, set **Host Key Combination** to Right ⌘
+  (or Right ⌥) and tick **Auto Capture Keyboard**. Clicking into the VM
+  then captures the keyboard; the Host key releases it.
+- **Mouse:** with the guest additions the pointer moves in and out freely.
+  To capture it instead, turn off Input > **Mouse Integration** (Host+I);
+  a click captures and the Host key releases.
 
 Replace `hosts/dionysus/hardware-configuration.nix` with the output of
 `nixos-generate-config` on real hardware; the checked-in file is an
