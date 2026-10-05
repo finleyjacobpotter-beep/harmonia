@@ -62,9 +62,14 @@ sudo nixos-rebuild switch --flake .#dionysus
 # On an aarch64 host:
 sudo nixos-rebuild switch --flake .#dionysus-aarch64
 
-# Try it as a throwaway VM (matches your current architecture):
+# Try it as a throwaway VM (use .#dionysus-aarch64 on aarch64):
 nixos-rebuild build-vm --flake .#dionysus && ./result/bin/run-dionysus-vm
 ```
+
+Both outputs set the hostname `dionysus`, so a bare `--flake .` always picks
+the x86_64 one and fails on aarch64 with "a 'x86_64-linux' with features {}
+is required to build ..., but I am a 'aarch64-linux'". Once installed, the
+`rebuild` alias names the right output for the machine.
 
 Replace `hosts/dionysus/hardware-configuration.nix` with the output of
 `nixos-generate-config` on real hardware; the checked-in file is an
