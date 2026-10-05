@@ -33,4 +33,14 @@
   virtualisation.virtualbox.guest.enable = true;
   # vboxsf shared folders are mounted group vboxsf.
   users.users.${username}.extraGroups = [ "vboxsf" ];
+
+  # Sway in a VM: VMSVGA (VirtualBox) and plain virtio-gpu have no working
+  # hardware cursor plane and, on Apple silicon or with 3D off, no GPU, so
+  # the cursor glitches and the GL renderer draws a broken screen. Draw the
+  # cursor in software and render with pixman (CPU) instead; apps still get
+  # OpenGL through Mesa's llvmpipe.
+  environment.sessionVariables = {
+    WLR_NO_HARDWARE_CURSORS = "1";
+    WLR_RENDERER = "pixman";
+  };
 }
