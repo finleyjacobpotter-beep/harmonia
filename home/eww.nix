@@ -24,10 +24,18 @@ let
   # Emits the focused window's title whenever focus or titles change.
   title = script "eww-sway-title" ./eww/title.py [ pkgs.sway ];
 
+  # Steam's launcher is only bound where its flatpak is installed (sway.nix).
+  hasSteam = lib.any (p: (p.appId or p) == "com.valvesoftware.Steam") (
+    osConfig.services.flatpak.packages or [ ]
+  );
+
   # Key hints for sway's modes (home/sway.nix), shown while a mode is active.
   modeHints = {
     resize = "h/j/k/l resize · Shift = ×5 · Esc done";
-    open = "b zen · f ranger · e nvim · t tmux · s btop · a audio · u bluetooth · n network · v nike · z zelus · g lutris · G steam · c element · l lm-studio";
+    open =
+      "b zen · f ranger · e nvim · t tmux · s btop · a audio · u bluetooth · n network · v nike · z zelus · g lutris"
+      + lib.optionalString hasSteam " · G steam"
+      + " · c element · l lm-studio";
     media = "j/k volume · m mute · M mic · h/l prev/next · p play · J/K brightness";
     system = "l lock · e exit · s suspend · r reboot · P poweroff";
   };

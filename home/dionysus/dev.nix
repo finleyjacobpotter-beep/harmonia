@@ -1,36 +1,11 @@
-# Dionysus's dev toolset, on the host itself (not in a VM): Blender, Godot,
-# opencode and Claude Code with the Blender and Godot MCP servers, plus the
-# Rust command-line tools. On harmonia these live in a microVM (Zelus) or in
-# flatpak sandboxes; Dionysus has no microVMs, so they run natively here and
-# are built from nixpkgs, which keeps them buildable on both aarch64 and
-# x86_64.
+# Dionysus's dev toolset, on the host itself (not in a VM): opencode and
+# Claude Code, plus the Rust command-line tools. On harmonia these live in a
+# microVM (Zelus) or in flatpak sandboxes; Dionysus has no microVMs, so they
+# run natively here and are built from nixpkgs, which keeps them buildable on
+# both aarch64 and x86_64.
 { pkgs, lib, ... }:
 let
-  # The Blender and Godot MCP servers, pinned to a release so a new upstream
-  # commit doesn't run unreviewed. uv runs them with nixpkgs' Python: a Python
-  # uv downloads itself can't run on NixOS.
-  blenderMcp = pkgs.writeShellApplication {
-    name = "blender-mcp";
-    runtimeInputs = [ pkgs.uv ];
-    text = ''
-      export UV_PYTHON=${pkgs.python3}/bin/python3
-      exec uvx mcp-for-blender==2.1.3 "$@"
-    '';
-  };
-  godotMcp = pkgs.writeShellApplication {
-    name = "godot-mcp";
-    runtimeInputs = [
-      pkgs.uv
-      pkgs.git
-    ];
-    text = ''
-      export UV_PYTHON=${pkgs.python3}/bin/python3
-      exec uvx --from git+https://github.com/bebabinlarsson-blip/Godot-MCP.git@v5.0.9 godot-ai "$@"
-    '';
-  };
-
-  # opencode's providers and MCP servers. The MCP servers run right here, so
-  # the commands point straight at the wrappers above (no flatpak-spawn).
+  # opencode's providers.
   local = "lmstudio/qwopus3.5-9b-v3";
   opus = "anthropic/claude-opus-5-5";
   sonnet = "anthropic/claude-sonnet-5-5";
@@ -89,18 +64,6 @@ let
         # /connect, to reach Claude.
         anthropic.options.apiKey = "{env:ANTHROPIC_API_KEY}";
       };
-      mcp = {
-        blender = {
-          type = "local";
-          command = [ "${blenderMcp}/bin/blender-mcp" ];
-          enabled = true;
-        };
-        godot = {
-          type = "local";
-          command = [ "${godotMcp}/bin/godot-mcp" ];
-          enabled = true;
-        };
-      };
     }
   );
 
@@ -124,12 +87,9 @@ let
 in
 {
   home.packages = with pkgs; [
-    # The creative editors the MCP servers drive.
-    blender
-    godot_4
     # The coding agents.
     opencode
-    # Toolchains the agents and the MCP servers lean on.
+    # Toolchains the agents lean on.
     uv
     nodejs
     python3
@@ -162,14 +122,8 @@ in
     tealdeer # tldr pages
   ];
 
-  # Claude Code, with the same Blender and Godot MCP servers.
-  programs.claude-code = {
-    enable = true;
-    mcpServers = {
-      blender.command = "${blenderMcp}/bin/blender-mcp";
-      godot.command = "${godotMcp}/bin/godot-mcp";
-    };
-  };
+  # Claude Code.
+  programs.claude-code.enable = true;
 
   # opencode's config (native, so a plain symlink into the store is fine).
   xdg.configFile."opencode/opencode.json".source = opencodeConfig;

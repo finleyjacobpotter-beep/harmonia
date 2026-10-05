@@ -1,6 +1,7 @@
 {
   pkgs,
   lib,
+  osConfig,
   palette,
   keys,
   ...
@@ -18,6 +19,11 @@ let
   # screen height and centres it (plain `center` would crop a 1468px-tall
   # image on a 1080p screen).
   wallpaper = ../assets/wallpaper.png;
+
+  # Launchers for flatpaks only some hosts install (Dionysus has no Steam,
+  # Blender or Godot), bound only where the flatpak is actually there.
+  flatpaks = map (p: p.appId or p) (osConfig.services.flatpak.packages or [ ]);
+  ifFlatpak = appId: binds: lib.optionalAttrs (lib.elem appId flatpaks) binds;
 in
 {
   wayland.windowManager.sway = {
@@ -219,24 +225,26 @@ in
             "Shift+k" = "resize shrink height 100 px";
             "Shift+l" = "resize grow width 100 px";
           };
-          open = leave // {
-            b = run "flatpak run app.zen_browser.zen";
-            f = term "ranger";
-            e = term "nvim";
-            t = run "alacritty -e tmux new-session -A -s main";
-            s = term "btop";
-            a = term "pulsemixer";
-            u = term "bluetuith";
-            n = term "nmtui";
-            v = run "alacritty --class nike -e ssh nike";
-            z = run "alacritty --class zelus -e ssh zelus";
-            g = run "flatpak run net.lutris.Lutris";
-            "Shift+g" = run "flatpak run com.valvesoftware.Steam";
-            c = run "flatpak run im.riot.Riot";
-            l = run "flatpak run ai.lmstudio.lm-studio";
-            "Shift+b" = run "flatpak run org.blender.Blender";
-            d = run "flatpak run org.godotengine.Godot";
-          };
+          open =
+            leave
+            // {
+              b = run "flatpak run app.zen_browser.zen";
+              f = term "ranger";
+              e = term "nvim";
+              t = run "alacritty -e tmux new-session -A -s main";
+              s = term "btop";
+              a = term "pulsemixer";
+              u = term "bluetuith";
+              n = term "nmtui";
+              v = run "alacritty --class nike -e ssh nike";
+              z = run "alacritty --class zelus -e ssh zelus";
+              g = run "flatpak run net.lutris.Lutris";
+              c = run "flatpak run im.riot.Riot";
+              l = run "flatpak run ai.lmstudio.lm-studio";
+            }
+            // ifFlatpak "com.valvesoftware.Steam" { "Shift+g" = run "flatpak run com.valvesoftware.Steam"; }
+            // ifFlatpak "org.blender.Blender" { "Shift+b" = run "flatpak run org.blender.Blender"; }
+            // ifFlatpak "org.godotengine.Godot" { d = run "flatpak run org.godotengine.Godot"; };
           media = leave // {
             k = "exec ${volUp}";
             j = "exec ${volDown}";

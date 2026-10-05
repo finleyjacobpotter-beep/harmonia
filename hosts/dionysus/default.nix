@@ -1,11 +1,10 @@
-# Dionysus: harmonia's Sway desktop with the coding/creative toolset built in,
-# and no microVMs. Where harmonia keeps Blender, Godot and the coding agents
-# in a microVM (Zelus) or in flatpak sandboxes, Dionysus runs them natively
-# (home/dionysus/dev.nix) so the whole thing builds on aarch64 and x86_64
-# alike. The architecture-specific and flatpak-only modules harmonia uses
-# (Steam, gaming, LM Studio, the studio flatpaks, the Nike microVM) are left
-# out for the same reason; Zen is installed on x86_64 only
-# (modules/nixos/flatpak.nix).
+# Dionysus: harmonia's Sway desktop with the coding agents built in, and no
+# microVMs. Where harmonia keeps the coding agents in a microVM (Zelus),
+# Dionysus runs them natively (home/dionysus/dev.nix) so the whole thing
+# builds on aarch64 and x86_64 alike. Steam, Blender and Godot are not on
+# Dionysus, and the other architecture-specific and flatpak-only modules
+# harmonia uses (gaming, LM Studio, the Nike microVM) are left out too; Zen
+# is installed on x86_64 only (modules/nixos/flatpak.nix).
 { lib, ... }:
 {
   imports = [
