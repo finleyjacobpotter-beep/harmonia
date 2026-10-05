@@ -8,9 +8,8 @@
 #   ~/zelus-share                          is ~/share on Zelus, read-write
 #   ~/Projects                             is ~/Projects on Zelus, read-write
 #
-# Zelus sits on its own tap interface (vm-zelus) with a /32 route each way,
-# and the host NATs its traffic to the internet. Nothing else on your LAN can
-# reach it. Its status service writes utilization numbers to
+# Zelus sits on its own tap interface (vm-zelus); the network, folders and
+# `ssh zelus` are lib/microvm-host.nix. Its status service writes utilization numbers to
 # /var/lib/zelus/status for the bar (home/eww/microvm.py).
 #
 # LM Studio (on the host, modules/nixos/lmstudio.nix) is reachable from Zelus
@@ -30,7 +29,6 @@
 # connection (ControlMaster) for 10 minutes after it closes.
 {
   pkgs,
-  inputs,
   palette,
   keys,
   username,
@@ -46,27 +44,36 @@ let
     projectsDir = "/home/${username}/Projects";
     statusDir = "/var/lib/zelus/status";
     lmstudioPort = 1234;
+    nameservers = [
+      "9.9.9.9"
+      "149.112.112.112"
+    ];
     palette = import ../../zelus/palette.nix palette;
     inherit keys;
   };
 in
 {
-  microvm.vms.zelus = {
-    autostart = false;
-    # Zelus builds its own package set so it can allow Claude Code (unfree)
-    # without allowing it on the host; it's the same nixpkgs, so the store
-    # paths are shared.
-    pkgs = null;
-    specialArgs = { inherit inputs zelus; };
-    config = ../../zelus;
-  };
-
-  systemd.tmpfiles.rules = [
-    "d ${zelus.shareDir} 0755 ${username} users -"
-    "d ${zelus.projectsDir} 0755 ${username} users -"
-    "d /var/lib/zelus 0755 root root -"
-    "d ${zelus.statusDir} 0755 root root -"
+  imports = [
+    (import ../../lib/microvm-host.nix {
+      name = "zelus";
+      user = "c";
+      vm = zelus;
+      config = ../../zelus;
+      # Zelus builds its own package set so it can allow Claude Code (unfree)
+      # without allowing it on the host; it's the same nixpkgs, so the store
+      # paths are shared.
+      vmArgs.pkgs = null;
+      sshOptions = [
+        "RemoteForward 127.0.0.1:9876 127.0.0.1:9876"
+        "LocalForward 127.0.0.1:9500 127.0.0.1:9500"
+        "ControlMaster auto"
+        "ControlPath /run/user/%i/ssh-zelus-%C"
+        "ControlPersist 10m"
+      ];
+    })
   ];
+
+  systemd.tmpfiles.rules = [ "d ${zelus.projectsDir} 0755 ${username} users -" ];
 
   # LM Studio for Zelus: listens on the host's end of the tap (FreeBind, so
   # it can start before Zelus brings the tap up) and hands each connection to
@@ -122,30 +129,4 @@ in
       }
     ];
   };
-
-  # The host's end of the tap, as for Nike (modules/nixos/nike.nix).
-  systemd.network.enable = true;
-  systemd.network.networks."30-zelus" = {
-    matchConfig.Name = zelus.tap;
-    address = [ "${zelus.hostAddress}/32" ];
-    routes = [ { Destination = "${zelus.address}/32"; } ];
-    linkConfig.RequiredForOnline = "no";
-  };
-  networking.networkmanager.unmanaged = [ "interface-name:${zelus.tap}" ];
-
-  networking.nat = {
-    enable = true;
-    internalIPs = [ "${zelus.address}/32" ];
-  };
-
-  programs.ssh.extraConfig = ''
-    Host zelus
-      HostName ${zelus.address}
-      User c
-      RemoteForward 127.0.0.1:9876 127.0.0.1:9876
-      LocalForward 127.0.0.1:9500 127.0.0.1:9500
-      ControlMaster auto
-      ControlPath /run/user/%i/ssh-zelus-%C
-      ControlPersist 10m
-  '';
 }

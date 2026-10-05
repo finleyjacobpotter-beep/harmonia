@@ -1,5 +1,5 @@
 # Rust command-line tools, on the host, Nike and Zelus alike (imported by
-# home/default.nix, nike/default.nix and zelus/default.nix). Your interactive
+# home/default.nix and lib/microvm-guest.nix). Your interactive
 # bash gets aliases from the classic commands to them. On Zelus, Claude Code
 # and opencode also get skills for them (zelus/skills/).
 { pkgs, lib, ... }:
