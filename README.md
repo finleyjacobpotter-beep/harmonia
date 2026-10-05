@@ -30,7 +30,8 @@ modules/nixos/
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
   studio.nix                   Blender and Godot from Flathub, sharing only ~/Projects
   fans.nix                     harmonia only: LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
-  virtualisation.nix           rootless podman + buildah, plain QEMU (no libvirt)
+  podman.nix                   rootless podman, podman-compose, buildah (all hosts)
+  virtualisation.nix           plain QEMU (no libvirt)
   microvms.nix                 `harmonia.microvms`: each VM declared once; its network, NAT, folders, `ssh <vm>`, colours and firewall modes follow
   nike.nix                     the Nike microVM: its colours and VPN firewall modes
   zelus.nix                    the Zelus microVM: its colours, ~/Projects, LM Studio socket and firewall mode, the Blender/Godot ssh forwards

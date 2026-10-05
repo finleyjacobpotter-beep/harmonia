@@ -16,6 +16,7 @@
     ../modules/nixos/editorconfig.nix
     ../modules/nixos/fonts.nix
     ../modules/nixos/flatpak.nix
+    ../modules/nixos/podman.nix
     ../modules/nixos/element.nix
     ../modules/nixos/secrets.nix
     ../modules/nixos/vpn.nix
