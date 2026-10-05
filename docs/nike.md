@@ -95,7 +95,7 @@ leaves it alone; everything else stays with NetworkManager.
 
 `~/nike-share` is a virtiofs share, so files keep their owner: `k` on Nike
 and your user on the host are both uid 1000. If your host user has a
-different uid (`id -u`), change `uid` in `nike/default.nix` to match.
+different uid (`id -u`), change `uid` in `lib/microvm-guest.nix` to match (it applies to Zelus too).
 
 ### Root CAs
 
