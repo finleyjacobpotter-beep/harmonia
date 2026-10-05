@@ -259,6 +259,93 @@ let
             }))))
   '';
 
+  # The status poll for each VM (home/eww/microvm.py).
+  vmPoll = vm: ''
+    (defpoll ${vm} :interval "3s"
+      :initial "{\"running\":false,\"fresh\":false,\"mode\":\"\",\"cpu\":0,\"mem\":0,\"disk\":0,\"vpn\":{\"up\":false,\"via_vpn\":false}}"
+      "${microvm}/bin/eww-microvm ${vm}")
+  '';
+
+  # What differs between the VMs' panels: `extra` goes above the System block
+  # while the VM runs, `footer` says how to reach it.
+  vmPanelInfo = {
+    # Nike: where its traffic leaves (through the VPN or not).
+    nike = {
+      title = "Nike";
+      extra = ''
+        (box :class "wg-tunnel ''${nike.vpn.via_vpn ? "up" : "warn"}" :orientation "v" :space-evenly false :spacing 6
+          (box :orientation "h" :space-evenly false
+            (label :class "wg-name" :hexpand true :halign "start"
+              :text "''${nike.vpn.via_vpn ? "●" : "○"} VPN outbound")
+            (label :class "wg-detail" :text "via ''${nike.vpn.outbound}"))
+          (label :class "wg-detail" :halign "start" :wrap true :text "''${nike.vpn.summary}")
+          (label :class "wg-detail" :visible {nike.vpn.up} :halign "start"
+            :text "Tunnel down ''${nike.vpn.rx_text} · up ''${nike.vpn.tx_text}"))
+      '';
+      footer = "ssh nike (k / k) · ~/nike-share is ~/share on Nike";
+    };
+    zelus = {
+      title = "Zelus";
+      footer = "ssh zelus (c, no password) · claude, opencode · ~/zelus-share is ~/share, ~/Projects is shared";
+    };
+  };
+
+  # A VM's panel, opened from its badge: start/stop, its CPU, memory and disk
+  # as its status service reports them from inside the VM, the firewall
+  # dropdown and how to reach it.
+  vmPanel =
+    vm:
+    let
+      info = {
+        title = vm;
+        extra = "";
+        footer = "ssh ${vm}";
+      }
+      // vmPanelInfo.${vm} or { };
+    in
+    ''
+      ${powerButton vm}
+      ${firewallDropdown vm}
+      (defwidget ${vm}-panel []
+        (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+          (box :orientation "h" :space-evenly false
+            (label :class "wg-title ${vm}" :hexpand true :halign "start" :text "${info.title}")
+            (${vm}-power)
+            (button :class "wg-close" :onclick "${eww} close ${vm}-menu" "✕"))
+          (label :class "wg-detail" :visible {!${vm}.running} :halign "start" :wrap true
+            :text "${info.title} is stopped.")
+          (label :class "wg-detail" :visible {${vm}.running && !${vm}.fresh} :halign "start" :wrap true
+            :text "${info.title} is starting: no status from it yet.")
+          (box :visible {${vm}.running && ${vm}.fresh} :orientation "v" :space-evenly false :spacing 10
+            ${info.extra}
+            (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 6
+              (label :class "wg-name" :halign "start" :text "System")
+              (vm-meter :name "CPU" :value {${vm}.cpu} :text "''${${vm}.cpu_text}")
+              (vm-meter :name "Memory" :value {${vm}.mem} :text "''${${vm}.mem_text}")
+              (vm-meter :name "Disk (/home)" :value {${vm}.disk} :text "''${${vm}.disk_text}")
+              (label :class "wg-detail" :halign "start" :text "Load ''${${vm}.load} · up ''${${vm}.uptime_text}")))
+          (${vm}-firewall)
+          (label :class "wg-detail" :halign "start" :wrap true
+            :text "${info.footer}")))
+    '';
+
+  # A popup panel under the bar, opened by a bar button.
+  menuWindow =
+    {
+      name,
+      widget,
+      width ? "360px",
+      anchor ? "top right",
+    }:
+    ''
+      (defwindow ${name}
+        :monitor 0
+        :stacking "overlay"
+        :namespace "eww-menu"
+        :geometry (geometry :x "8px" :y "34px" :width "${width}" :anchor "${anchor}")
+        (${widget}))
+    '';
+
   # The VPNs the network button can show an asterisk for, top to bottom:
   # kind is its CSS class (and colour), up a yuck condition, text its name in
   # the tooltip. The microVMs' come from their status (nike/status.py), and
@@ -386,14 +473,7 @@ in
         (defpoll activity :interval "5s"
           :initial "{\"gamemode\":false,\"steam\":false,\"lmstudio\":{\"running\":false,\"serving\":false,\"first\":\"\",\"list\":\"\"}}"
           "${activity}/bin/eww-activity")
-${lib.optionalString hasVms ''
-        (defpoll nike :interval "3s"
-          :initial "{\"running\":false,\"fresh\":false,\"mode\":\"\",\"cpu\":0,\"mem\":0,\"disk\":0,\"vpn\":{\"up\":false,\"via_vpn\":false}}"
-          "${microvm}/bin/eww-microvm nike")
-        (defpoll zelus :interval "3s"
-          :initial "{\"running\":false,\"fresh\":false,\"mode\":\"\",\"cpu\":0,\"mem\":0,\"disk\":0,\"vpn\":{\"up\":false,\"via_vpn\":false}}"
-          "${microvm}/bin/eww-microvm zelus")
-''}
+        ${lib.concatMapStrings vmPoll vms}
         (deflisten usb :initial "{\"count\":0,\"devices\":[]}" "${usb}/bin/eww-usb watch")
         (defpoll locks :interval "500ms" :initial "{\"caps\":false,\"num\":false}" "${locks}/bin/eww-locks")
         (defpoll caffeine :interval "10s" "${caffeine}/bin/eww-caffeine")
@@ -575,8 +655,7 @@ ${lib.optionalString hasVms ''
             :onclose "${pkgs.eww}/bin/eww close steam-menu"
             :onaction "${pkgs.eww}/bin/eww close steam-menu; ${steamClose}/bin/eww-steam-close"))
 
-        ; Nike: where its traffic leaves (through the VPN or not), and its CPU,
-        ; memory and disk, as nike/status.py reports them from inside the VM.
+        ; A meter in a VM's panel (vmPanel).
         (defwidget vm-meter [name value text]
           (box :orientation "v" :space-evenly false :spacing 2
             (box :orientation "h" :space-evenly false
@@ -584,43 +663,7 @@ ${lib.optionalString hasVms ''
               (label :class "wg-detail" :text text))
             (progress :class "vm-meter ''${value >= 90 ? "high" : ""}" :orientation "h" :value value)))
 
-${lib.optionalString hasVms ''
-        ${firewallDropdown "nike"}
-        ${firewallDropdown "zelus"}
-        ${powerButton "nike"}
-        ${powerButton "zelus"}
-''}
-
-${lib.optionalString hasVms ''
-        (defwidget nike-panel []
-          (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
-            (box :orientation "h" :space-evenly false
-              (label :class "wg-title nike" :hexpand true :halign "start" :text "Nike")
-              (nike-power)
-              (button :class "wg-close" :onclick "${eww} close nike-menu" "✕"))
-            (label :class "wg-detail" :visible {!nike.running} :halign "start" :wrap true
-              :text "Nike is stopped.")
-            (label :class "wg-detail" :visible {nike.running && !nike.fresh} :halign "start" :wrap true
-              :text "Nike is starting: no status from it yet.")
-            (box :visible {nike.running && nike.fresh} :orientation "v" :space-evenly false :spacing 10
-              (box :class "wg-tunnel ''${nike.vpn.via_vpn ? "up" : "warn"}" :orientation "v" :space-evenly false :spacing 6
-                (box :orientation "h" :space-evenly false
-                  (label :class "wg-name" :hexpand true :halign "start"
-                    :text "''${nike.vpn.via_vpn ? "●" : "○"} VPN outbound")
-                  (label :class "wg-detail" :text "via ''${nike.vpn.outbound}"))
-                (label :class "wg-detail" :halign "start" :wrap true :text "''${nike.vpn.summary}")
-                (label :class "wg-detail" :visible {nike.vpn.up} :halign "start"
-                  :text "Tunnel down ''${nike.vpn.rx_text} · up ''${nike.vpn.tx_text}"))
-              (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 6
-                (label :class "wg-name" :halign "start" :text "System")
-                (vm-meter :name "CPU" :value {nike.cpu} :text "''${nike.cpu_text}")
-                (vm-meter :name "Memory" :value {nike.mem} :text "''${nike.mem_text}")
-                (vm-meter :name "Disk (/home)" :value {nike.disk} :text "''${nike.disk_text}")
-                (label :class "wg-detail" :halign "start" :text "Load ''${nike.load} · up ''${nike.uptime_text}")))
-            (nike-firewall)
-            (label :class "wg-detail" :halign "start" :wrap true
-              :text "ssh nike (k / k) · ~/nike-share is ~/share on Nike")))
-''}
+        ${lib.concatMapStrings vmPanel vms}
 
         ; USB: every connected device, hubs included, in port order.
         (defwidget usb-panel []
@@ -639,29 +682,6 @@ ${lib.optionalString hasVms ''
                   (label :class "wg-detail" :halign "start"
                     :text "''${d.kind}''${d.speed != "" ? " · ''${d.speed}" : ""}")
                   (label :class "wg-detail" :halign "start" :text "ID ''${d.id} · port ''${d.port}"))))))
-
-${lib.optionalString hasVms ''
-        ; Zelus: its CPU, memory and disk, and its firewall mode.
-        (defwidget zelus-panel []
-          (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
-            (box :orientation "h" :space-evenly false
-              (label :class "wg-title zelus" :hexpand true :halign "start" :text "Zelus")
-              (zelus-power)
-              (button :class "wg-close" :onclick "${eww} close zelus-menu" "✕"))
-            (label :class "wg-detail" :visible {!zelus.running} :halign "start" :wrap true
-              :text "Zelus is stopped.")
-            (label :class "wg-detail" :visible {zelus.running && !zelus.fresh} :halign "start" :wrap true
-              :text "Zelus is starting: no status from it yet.")
-            (box :class "wg-tunnel" :visible {zelus.running && zelus.fresh} :orientation "v" :space-evenly false :spacing 6
-              (label :class "wg-name" :halign "start" :text "System")
-              (vm-meter :name "CPU" :value {zelus.cpu} :text "''${zelus.cpu_text}")
-              (vm-meter :name "Memory" :value {zelus.mem} :text "''${zelus.mem_text}")
-              (vm-meter :name "Disk (/home)" :value {zelus.disk} :text "''${zelus.disk_text}")
-              (label :class "wg-detail" :halign "start" :text "Load ''${zelus.load} · up ''${zelus.uptime_text}"))
-            (zelus-firewall)
-            (label :class "wg-detail" :halign "start" :wrap true
-              :text "ssh zelus (c, no password) · claude, opencode · ~/zelus-share is ~/share, ~/Projects is shared")))
-''}
 
         ; Network: the VPNs with Connect/Disconnect, then every interface's
         ; rates and which one the bar shows.
@@ -772,70 +792,21 @@ ${lib.optionalString hasVms ''
                 (label :class "wg-detail" :text "''${e.time}")
                 (label :hexpand true :halign "start" :limit-width 36 :text "''${e.summary}")))))
 
-        (defwindow power-menu
-          :monitor 0
-          :stacking "overlay"
-          :namespace "eww-menu"
-          :geometry (geometry :x "8px" :y "34px" :width "220px" :anchor "top left")
-          (power-panel))
+        ${menuWindow { name = "power-menu"; widget = "power-panel"; width = "220px"; anchor = "top left"; }}
 
-        (defwindow net-menu
-          :monitor 0
-          :stacking "overlay"
-          :namespace "eww-menu"
-          :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-          (net-panel))
+        ${menuWindow { name = "net-menu"; widget = "net-panel"; }}
 
-        (defwindow vol-menu
-          :monitor 0
-          :stacking "overlay"
-          :namespace "eww-menu"
-          :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-          (vol-panel))
+        ${menuWindow { name = "vol-menu"; widget = "vol-panel"; }}
 
-        (defwindow cal-menu
-          :monitor 0
-          :stacking "overlay"
-          :namespace "eww-menu"
-          :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-          (cal-panel))
+        ${menuWindow { name = "cal-menu"; widget = "cal-panel"; }}
 
-        (defwindow usb-menu
-          :monitor 0
-          :stacking "overlay"
-          :namespace "eww-menu"
-          :geometry (geometry :x "8px" :y "34px" :width "440px" :anchor "top right")
-          (usb-panel))
+        ${menuWindow { name = "usb-menu"; widget = "usb-panel"; width = "440px"; }}
 
-${lib.optionalString hasVms ''
-        (defwindow nike-menu
-          :monitor 0
-          :stacking "overlay"
-          :namespace "eww-menu"
-          :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-          (nike-panel))
+        ${lib.concatMapStrings (vm: menuWindow { name = "${vm}-menu"; widget = "${vm}-panel"; }) vms}
 
-        (defwindow zelus-menu
-          :monitor 0
-          :stacking "overlay"
-          :namespace "eww-menu"
-          :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-          (zelus-panel))
-''}
+        ${menuWindow { name = "steam-menu"; widget = "steam-menu"; }}
 
-        (defwindow steam-menu
-          :monitor 0
-          :stacking "overlay"
-          :namespace "eww-menu"
-          :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-          (steam-menu))
-
-        (defwindow lms-menu
-          :monitor 0
-          :stacking "overlay"
-          :namespace "eww-menu"
-          :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-          (lms-menu))
+        ${menuWindow { name = "lms-menu"; widget = "lms-menu"; }}
 
         (defwindow bar
           :monitor 0
