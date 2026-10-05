@@ -65,8 +65,13 @@ NetworkManager stores private keys and saved passwords in
 
 ## The bar
 
-Each kind of VPN that is up adds a small asterisk beside the network icon,
-stacked top to bottom, each its own colour:
+Each kind of VPN whose interface is up adds a small asterisk beside the
+network icon, after a space, stacked top to bottom in this order, each its
+own colour. The asterisks follow the interfaces themselves (`wg*`, `tun*`,
+`ppp*`), so a tunnel started by hand (`wg-quick up`, `sudo openvpn`,
+`sudo openfortivpn`) shows too. At most four fit, so a fifth or sixth
+kind (only possible with the microVMs' VPNs) shows only in the tooltip and
+the panel:
 
 | Asterisk | VPN |
 |---|---|

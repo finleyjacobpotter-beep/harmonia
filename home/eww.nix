@@ -293,10 +293,20 @@ let
     }) vms
   );
 
-  # The stack's labels, one per VPN, shown while it is up.
-  vpnStarLabels = lib.concatMapStringsSep "\n                  " (
-    s: ''(label :class "vpn-star ${s.kind}" :visible {${s.up}} :text "*")''
-  ) vpnStars;
+  # The stack's labels, one per VPN, shown while it is up. At most four fit
+  # the bar, so one shows only while fewer than four above it do; the
+  # tooltip and the panel still name them all.
+  maxStars = 4;
+  vpnStarLabels = lib.concatStringsSep "\n                  " (
+    lib.imap0 (
+      i: s:
+      let
+        above = lib.concatMapStringsSep " + " (a: "(${a.up} ? 1 : 0)") (lib.take i vpnStars);
+        fits = lib.optionalString (i >= maxStars) " && (${above}) < ${toString maxStars}";
+      in
+      ''(label :class "vpn-star ${s.kind}" :visible {${s.up}${fits}} :text "*")''
+    ) vpnStars
+  );
 
   # The tooltip's list of VPNs that are up, as a yuck string expression.
   vpnTooltip = lib.concatMapStrings (s: ''''${${s.up} ? " · ${s.text}" : ""}'') vpnStars;
@@ -485,6 +495,8 @@ ${lib.optionalString hasVms ''
               :onclick "${menu} net-menu"
               (box :orientation "h" :space-evenly false :spacing 2
                 (label :class "icon" :text {net.shown.wireless ? "󰖩" : "󰈀"})
+                ; A space between the icon and the asterisks.
+                (label :unindent false :text " ")
                 (box :class "vpn-stars" :orientation "v" :valign "center" :space-evenly false
                   ${vpnStarLabels})
                 (label :class "net-text" :text "''${net.shown.name} ↓''${net.shown.down} ↑''${net.shown.up}")))

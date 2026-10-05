@@ -25,7 +25,8 @@ WG = "wg"
 
 SYS = Path("/sys/class/net")
 FORTI = Path("/etc/openfortivpn")
-IFF_TUN = 0x0001
+IFF_UP = 0x1  # /sys/class/net/*/flags
+IFF_TUN = 0x0001  # /sys/class/net/*/tun_flags
 KINDS = ("wireguard", "openvpn", "forti", "other")
 LABELS = {"wireguard": "WireGuard", "openvpn": "OpenVPN", "forti": "openfortivpn", "other": "VPN"}
 
@@ -82,6 +83,26 @@ def counters(dev: str) -> tuple[str, str]:
         return iec(rx), iec(tx)
     except (OSError, ValueError):
         return "", ""
+
+
+def is_up(dev: str) -> bool:
+    """Whether the interface exists and is administratively up."""
+    try:
+        return bool(int((SYS / dev / "flags").read_text().strip(), 16) & IFF_UP)
+    except (OSError, ValueError):
+        return False
+
+
+def wg_devices() -> list[str]:
+    """WireGuard interfaces, NetworkManager's or wg-quick's."""
+    devs = []
+    for d in sorted(SYS.iterdir()):
+        try:
+            if "DEVTYPE=wireguard" in (d / "uevent").read_text().split():
+                devs.append(d.name)
+        except OSError:
+            pass
+    return devs
 
 
 def ppp_devices() -> list[str]:
@@ -179,9 +200,13 @@ def forti(name: str, active: bool, dev: str) -> dict:
 
 
 def unmanaged(dev: str) -> dict:
-    """A tunnel started by hand: OpenVPN's tun, or openfortivpn's ppp."""
+    """A tunnel started by hand: wg-quick's WireGuard, OpenVPN's tun, or
+    openfortivpn's ppp."""
     rx, tx = counters(dev)
-    kind = "forti" if dev.startswith("ppp") else "openvpn"
+    if dev in wg_devices():
+        kind = "wireguard"
+    else:
+        kind = "forti" if dev.startswith("ppp") else "openvpn"
     return {
         "name": dev, "kind": kind, "label": LABELS[kind], "active": True, "managed": False,
         "device": dev, "address": ipv4(dev), "endpoint": "", "rx": rx, "tx": tx, "handshake": "",
@@ -204,12 +229,15 @@ def listing() -> str:
         active = state == "active"
         conns.append(forti(name, active, ppp.pop(0) if active and ppp else ""))
     owned = {c["device"] for c in conns if c["device"]}
-    conns += [unmanaged(d) for d in tun_devices() + ppp if d not in owned]
+    conns += [unmanaged(d) for d in wg_devices() + tun_devices() + ppp if d not in owned and is_up(d)]
+    # The bar's asterisks follow the interfaces: a kind is up while one of
+    # its interfaces is, whatever NetworkManager or systemd say.
+    up = {k: any(c["kind"] == k and c["device"] and is_up(c["device"]) for c in conns) for k in KINDS}
     # Up first, then by kind and name, so the panel lists what's on at the top.
     conns.sort(key=lambda c: (not c["active"], KINDS.index(c["kind"]), c["name"].lower()))
     return json.dumps(
         {
-            "up": {k: any(c["active"] and c["kind"] == k for c in conns) for k in KINDS},
+            "up": up,
             "active": sum(c["active"] for c in conns),
             "connections": conns,
         },
