@@ -20,7 +20,7 @@
     ../../modules/nixos/fonts.nix
     ../../modules/nixos/element.nix
     ../../modules/nixos/secrets.nix
-    ../../modules/nixos/wireguard.nix
+    ../../modules/nixos/vpn.nix
   ];
 
   boot.loader.systemd-boot.enable = true;

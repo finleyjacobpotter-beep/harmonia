@@ -36,7 +36,7 @@ modules/nixos/
   laptop.nix                   cadmus only: Wi-Fi firmware + regulatory database, suspend on lid close, power profiles
   thinkpad.nix                 cadmus only: thinkfan fan curve, fwupd for BIOS updates
   secrets.nix                  pcscd + YubiKey udev rules
-  wireguard.nix                WireGuard via NetworkManager, sudo rule for the bar
+  vpn.nix                      WireGuard, OpenVPN and Proton VPN via NetworkManager, sudo rule for the bar
 nike/                          the Nike microVM guest (microvm.nix)
   default.nix                  packages, user k, network, shares and volumes, home-manager
   palette.nix                  Miami Wind with orange as the primary colour
@@ -49,7 +49,7 @@ zelus/                         the Zelus microVM guest (microvm.nix): Claude Cod
   skills/                      skills for Claude Code and opencode (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
 home/                          home-manager, one file per program
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio, nike/zelus with firewall modes, display settings, cpu, mem, gpu, network, wireguard, caffeine, volume, battery, clock + calendar)
+  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio, nike/zelus with firewall modes, display settings, cpu, mem, gpu, network with VPN asterisks, caffeine, volume, battery, clock + calendar)
   eww/                         the bar's scripts, in Python (displays, network, gpu, volume, clock, calendar, …), and the display settings window
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
@@ -131,7 +131,7 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 - [Zelus](docs/zelus.md): the Zelus microVM (Claude Code, opencode, dev tools, Blender and Godot over MCP, firewall modes)
 - [The bar](docs/bar.md): what each part of the eww bar shows, its panels, and the display settings window
 - [Calendar](docs/calendar.md): the clock's calendar, time zones and CalDAV sync with vdirsyncer
-- [WireGuard](docs/wireguard.md): importing tunnels and the bar panel
+- [VPNs](docs/vpn.md): WireGuard, OpenVPN and Proton VPN, and their asterisks on the bar
 - [Secrets](docs/secrets.md): gpg, pass, YubiKey, Bitwarden, OpenBao and `secrets-backup`
 - [Theme](docs/theme.md): Miami Wind colours, Tulasi icons, the wallpaper
 

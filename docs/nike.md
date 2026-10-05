@@ -50,8 +50,8 @@ Put your `.ovpn` file in `~/nike-share` on the host, then on Nike:
 sudo openvpn --config ~/share/client.ovpn
 ```
 
-(in a tmux window, or add `--daemon`). A green **\*** appears next to the
-bar's Nike badge while the tunnel is up; see [the bar](bar.md#nike-and-zelus).
+(in a tmux window, or add `--daemon`). An orange **\*** appears beside the
+bar's network icon while the tunnel is up; see [VPNs](vpn.md#the-bar).
 A config without `redirect-gateway` brings the tunnel up without routing the
 internet through it: the badge's tooltip and panel say whether Nike's traffic
 actually leaves through it. DNS goes to Quad9 (`9.9.9.9`) unless the VPN config changes it;
