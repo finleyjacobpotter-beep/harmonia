@@ -7,31 +7,26 @@
 #
 #   imports = [
 #     (import ../lib/microvm-guest.nix {
-#       name = "nike";
-#       user = "k";
-#       vm = nike; # from the host side (modules/nixos/nike.nix)
 #       varSize = 24576;
 #       homeSize = 16384;
 #     })
 #   ];
 #
-# `vm` carries tap, mac, address, hostAddress, nameservers, shareDir,
-# statusDir, palette and keys. The guest adds its own shares, packages, user
-# settings and home-manager modules on top.
-{
-  name,
-  user,
-  vm,
-  varSize,
-  homeSize,
-}:
+# The `vm` module argument (harmonia.microvms.<name>.vm, see
+# modules/nixos/microvms.nix) carries name, user, tap, mac, address,
+# hostAddress, nameservers, shareDir, statusDir, palette and keys. The guest
+# adds its own shares, packages, user settings and home-manager modules on
+# top.
+{ varSize, homeSize }:
 {
   lib,
   pkgs,
   inputs,
+  vm,
   ...
 }:
 let
+  inherit (vm) name user;
   pyScript = import ./python-script.nix { inherit pkgs lib; };
 
   # Writes utilization (and, on Nike, VPN) status for the host's bar.
@@ -39,7 +34,6 @@ let
     runtimeInputs = [ pkgs.iproute2 ];
   } ../nike/status.py;
   statusMount = "/run/${name}-status";
-  Name = lib.toUpper (lib.substring 0 1 name) + lib.substring 1 (-1) name;
 in
 {
   imports = [
@@ -168,7 +162,7 @@ in
   };
 
   systemd.services."${name}-status" = {
-    description = "Write ${Name}'s status for the host's bar";
+    description = "Write ${vm.title}'s status for the host's bar";
     wantedBy = [ "multi-user.target" ];
     unitConfig.RequiresMountsFor = statusMount;
     serviceConfig = {

@@ -80,16 +80,16 @@ in
     colors = {
       "bg+" = p.surface;
       bg = p.bg;
-      spinner = p.pink;
-      hl = p.pink;
+      spinner = p.primary;
+      hl = p.primary;
       fg = p.fg;
       header = p.blue;
       info = p.purple;
-      pointer = p.pink;
-      marker = p.cyan;
+      pointer = p.primary;
+      marker = p.secondary;
       "fg+" = p.fg;
-      prompt = p.cyan;
-      "hl+" = p.pink;
+      prompt = p.secondary;
+      "hl+" = p.primary;
       border = p.surfaceHi;
     };
   };

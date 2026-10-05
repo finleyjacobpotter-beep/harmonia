@@ -4,9 +4,9 @@
 # Vomnibar.
 #
 # The sandbox can't follow symlinks into /nix/store, so everything here is
-# *copied* into the app's own data dir (~/.var/app/org.mozilla.firefox) and
-# into ~/.local/share/fonts, which flatpak exposes to apps as
-# /run/host/user-fonts.
+# *copied* (home/flatpak-files.nix) into the app's own data dir
+# (~/.var/app/org.mozilla.firefox) and into ~/.local/share/fonts, which
+# flatpak exposes to apps as /run/host/user-fonts.
 {
   pkgs,
   lib,
@@ -15,7 +15,6 @@
 }:
 let
   p = palette;
-  pyScript = import ../lib/python-script.nix { inherit pkgs lib; };
 
   userChrome = pkgs.writeText "userChrome.css" ''
     /* Miami Wind for Firefox */
@@ -226,11 +225,6 @@ let
     };
   };
 
-  # { "<add-on id>": "<xpi in the store>" }, read by the sync script below.
-  addonXpis = builtins.toJSON (
-    lib.listToAttrs (map (a: lib.nameValuePair a.id "${a.xpi}") (lib.attrValues addons))
-  );
-
   # Icons inside the sandbox. Firefox may read and write its own
   # ~/.var/app/org.mozilla.firefox, and GTK in the sandbox looks for icon
   # themes in its data/icons (XDG_DATA_HOME) and reads its config/gtk-3.0
@@ -246,92 +240,28 @@ let
     gtk-font-name=${p.font.name} ${toString (p.font.size - 1)}
   '';
 
-  sync = pyScript "firefox-miami-wind" { } ''
-    """Copy the Miami Wind theme into the Firefox flatpak's own data dir:
-    Tulasi icons, GTK settings, and userChrome.css, userContent.css, user.js,
-    uBlock Origin and Vimium into every Firefox profile."""
-
-    import json
-    import os
-    import shutil
-    import sys
-    import tempfile
-    from pathlib import Path
-
-    TULASI = "${tulasi}"
-    ADDONS = json.loads('${addonXpis}')
-    APP = Path.home() / ".var/app/org.mozilla.firefox"
-    # Profiles live in ~/.mozilla/firefox, or in the XDG location newer
-    # Firefox uses for fresh installs (~/.config inside the sandbox).
-    ROOTS = [APP / ".mozilla/firefox", APP / "config/mozilla/firefox"]
-
-
-    def install(src: str, dest: Path) -> None:
-        """A real, writable copy (install -Dm644), replacing whatever is there."""
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        if dest.is_symlink() or dest.exists():
-            dest.unlink()
-        shutil.copyfile(src, dest)
-        dest.chmod(0o644)
-
-
-    def copy_tree(src: Path, dest: Path) -> None:
-        """cp -r --no-preserve=mode,ownership: links stay links, the rest is writable."""
-        for root, dirs, files in os.walk(src):
-            target = dest / Path(root).relative_to(src)
-            target.mkdir(parents=True, exist_ok=True)
-            for name in dirs + files:
-                path = Path(root, name)
-                if path.is_symlink():
-                    (target / name).symlink_to(os.readlink(path))
-                elif path.is_file():
-                    shutil.copyfile(path, target / name)
-
-
-    # Tulasi as real files (the sandbox can't follow links into /nix/store);
-    # recopied only when the theme changes.
-    icons = APP / "data/icons"
-    marker = icons / ".tulasi-source"
-    if not marker.is_file() or marker.read_text().strip() != TULASI:
-        icons.mkdir(parents=True, exist_ok=True)
-        tmp = Path(tempfile.mkdtemp(prefix=".tulasi.", dir=icons))
-        copy_tree(Path(TULASI, "share/icons/Tulasi"), tmp)
-        shutil.rmtree(icons / "Tulasi", ignore_errors=True)
-        tmp.rename(icons / "Tulasi")
-        marker.write_text(TULASI + "\n")
-        print("firefox-miami-wind: installed Tulasi icons into the sandbox")
-    install("${gtkSettings}", APP / "config/gtk-3.0/settings.ini")
-
-    profiles = []
-    for root in ROOTS:
-        if not root.is_dir():
-            continue
-        for profile in sorted(root.iterdir()):
-            if (profile / "prefs.js").is_file() or (profile / "times.json").is_file():
-                profiles.append(profile)
-    if not profiles:
-        print("firefox-miami-wind: no Firefox profile yet — start Firefox once, then re-run.", file=sys.stderr)
-        sys.exit(0)
-    for profile in profiles:
-        install("${userChrome}", profile / "chrome/userChrome.css")
-        install("${userContent}", profile / "chrome/userContent.css")
-        install("${userJs}", profile / "user.js")
-        for addon_id, xpi in ADDONS.items():
-            install(xpi, profile / "extensions" / f"{addon_id}.xpi")
-        print(f"firefox-miami-wind: themed {profile}/")
+  # Real copies of the font for flatpak apps, in ~/.local/share/fonts, which
+  # flatpak exposes to every app as /run/host/user-fonts.
+  fontFiles = pkgs.runCommand "departure-mono-otf" { } ''
+    mkdir $out
+    find ${font}/share/fonts -type f -name '*.otf' -exec install -m644 -t $out {} +
   '';
 in
 {
-  home.packages = [ sync ];
   programs.bash.shellAliases.firefox = "flatpak run org.mozilla.firefox";
 
-  home.activation.firefoxMiamiWind = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    # Real copies of the font for flatpak apps (symlinks into /nix/store are
-    # invisible inside the sandbox).
-    fontdir="$HOME/.local/share/fonts/departure-mono-nerd"
-    run mkdir -p "$fontdir"
-    run find ${font}/share/fonts -type f -name '*.otf' -exec install -m644 -t "$fontdir" {} +
-
-    run ${sync}/bin/firefox-miami-wind || true
-  '';
+  # Copied by flatpak-miami-wind (home/flatpak-files.nix) on every rebuild;
+  # the profile files only once Firefox has made a profile, so run
+  # `flatpak-miami-wind` after starting Firefox the first time.
+  harmonia.flatpakFiles = {
+    ".var/app/org.mozilla.firefox/data/icons/Tulasi" = "${tulasi}/share/icons/Tulasi";
+    ".var/app/org.mozilla.firefox/config/gtk-3.0/settings.ini" = gtkSettings;
+    ".local/share/fonts/departure-mono-nerd" = fontFiles;
+  };
+  harmonia.firefoxProfileFiles = {
+    "chrome/userChrome.css" = userChrome;
+    "chrome/userContent.css" = userContent;
+    "user.js" = userJs;
+  }
+  // lib.mapAttrs' (_: a: lib.nameValuePair "extensions/${a.id}.xpi" a.xpi) addons;
 }

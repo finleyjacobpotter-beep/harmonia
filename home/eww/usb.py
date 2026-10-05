@@ -10,9 +10,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+from common import config, read
+
 DEVICES = Path("/sys/bus/usb/devices")
-# home/eww.nix replaces this with the usb.ids from hwdata.
-USB_IDS = "/usr/share/hwdata/usb.ids"
+# hwdata's usb.ids (home/eww.nix).
+USB_IDS = config().get("usbIds", "/usr/share/hwdata/usb.ids")
 
 # (icon, kind) per interface class; HID is split by protocol below.
 CLASSES = {
@@ -29,13 +31,6 @@ CLASSES = {
     "e0": ("󰂯", "Wireless"),
 }
 GENERIC = ("󰕓", "Device")
-
-
-def read(path: Path) -> str:
-    try:
-        return path.read_text().strip()
-    except OSError:
-        return ""
 
 
 def load_ids() -> dict:

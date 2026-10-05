@@ -26,15 +26,15 @@ in
 
   __mw_prompt() {
     local status=$?
-    local mark="${rgb p.pink}❯"
+    local mark="${rgb p.primary}❯"
     [ $status -ne 0 ] && mark="${rgb p.redBright}❯"
-    PS1="\n${rgb p.cyan}\u${rgb p.muted}@${rgb p.purple}\h ${rgb p.yellow}\w${rgb p.pink}$(__git_ps1 '  %s')${reset}\n$mark${reset} "
+    PS1="\n${rgb p.secondary}\u${rgb p.muted}@${rgb p.purple}\h ${rgb p.yellow}\w${rgb p.primary}$(__git_ps1 '  %s')${reset}\n$mark${reset} "
   }
   PROMPT_COMMAND="__mw_prompt''${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 
   # Colours for less / man pages
-  export LESS_TERMCAP_md=$'\e[1;38;2;${rgbBytes p.pink}m'   # bold      -> accent
-  export LESS_TERMCAP_us=$'\e[4;38;2;${rgbBytes p.cyan}m'    # underline -> cyan
+  export LESS_TERMCAP_md=$'\e[1;38;2;${rgbBytes p.primary}m'   # bold      -> accent
+  export LESS_TERMCAP_us=$'\e[4;38;2;${rgbBytes p.secondary}m'    # underline -> secondary
   export LESS_TERMCAP_so=$'\e[38;2;${rgbBytes p.bg};48;2;${rgbBytes p.yellow}m' # standout -> yellow bg
   export LESS_TERMCAP_me=$'\e[0m'
   export LESS_TERMCAP_ue=$'\e[0m'

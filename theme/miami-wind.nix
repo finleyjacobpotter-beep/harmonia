@@ -54,9 +54,16 @@ rec {
   fgDim = grey200;
   muted = grey600;
   comment = blue;
-  accent = pink; # focusBorder, cursor
-  accentAlt = cyan;
-  selection = "${pink}40"; # editor.selectionBackground
+  # The two colours the shell, tmux, ranger and neovim lead with. A microVM
+  # swaps them for its own (harmonia.microvms.<name>.colors), so a shell on
+  # it never looks like one on the host.
+  primary = pink;
+  primaryBright = pinkBright;
+  secondary = cyan;
+  secondaryBright = cyanBright;
+  accent = primary; # focusBorder, cursor
+  accentAlt = secondary;
+  selection = "${primary}40"; # editor.selectionBackground
   selectionSolid = "#4a2d45"; # the selection blended over bg, for neovim
   accentAnsi = "magenta"; # the ANSI slot nearest the accent, for ranger
 

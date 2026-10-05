@@ -1,0 +1,393 @@
+; The eww bar. home/eww.nix fills in the names between @ signs: the bar
+; scripts' bin directory (home/eww/*.py), the programs' store paths, and the
+; widgets generated from the host's microVMs (modules/nixos/microvms.nix)
+; and VPN asterisks.
+
+(deflisten workspaces :initial "[]" "@bin@/eww-sway-workspaces")
+(deflisten title :initial "" "@bin@/eww-sway-title")
+(deflisten mode :initial "{\"name\":\"default\",\"hint\":\"\"}" "@bin@/eww-sway-mode")
+(defpoll volume :interval "2s" :initial "{\"pct\":0,\"muted\":false,\"sink\":\"\",\"text\":\"\"}"
+  "@bin@/eww-volume")
+(defpoll cpuinfo :interval "5s" :initial "{\"model\":\"\",\"temp\":\"\",\"load\":\"\"}" "@bin@/eww-cpu")
+(defpoll gpu :interval "3s" :initial "{\"ok\":false,\"use\":0,\"temp\":0,\"vram\":0,\"vram_text\":\"\",\"text\":\"\"}"
+  "@bin@/eww-gpu")
+(defpoll net :interval "2s"
+  :initial "{\"auto\":true,\"default\":\"\",\"shown\":{\"name\":\"\",\"state\":\"down\",\"wireless\":false,\"down\":\"\",\"up\":\"\",\"address\":\"\"},\"ifaces\":[]}"
+  "@bin@/eww-net")
+(deflisten displays :initial "{\"primary\":\"\",\"outputs\":[]}" "@bin@/eww-display watch")
+(defpoll vpn :interval "5s"
+  :initial "{\"up\":{\"wireguard\":false,\"openvpn\":false,\"forti\":false,\"other\":false},\"active\":0,\"connections\":[]}"
+  "@bin@/eww-vpn")
+(defpoll activity :interval "5s"
+  :initial "{\"gamemode\":false,\"steam\":false,\"lmstudio\":{\"running\":false,\"serving\":false,\"first\":\"\",\"list\":\"\"}}"
+  "@bin@/eww-activity")
+@vmPolls@
+(deflisten usb :initial "{\"count\":0,\"devices\":[]}" "@bin@/eww-usb watch")
+(defpoll locks :interval "500ms" :initial "{\"caps\":false,\"num\":false}" "@bin@/eww-locks")
+(defpoll caffeine :interval "10s" "@bin@/eww-caffeine")
+(defpoll battery :interval "30s" "@bin@/eww-battery")
+(defpoll time :interval "10s" :initial "{\"text\":\"\",\"abbr\":\"\",\"zone\":\"local\"}"
+  "@bin@/eww-clock")
+(defpoll cal :interval "60s"
+  :initial "{\"title\":\"\",\"zone\":\"\",\"calendars\":[],\"weeks\":[],\"selected\":{\"label\":\"\",\"events\":[]}}"
+  "@bin@/eww-cal")
+
+(defwidget workspaces []
+  (box :class "workspaces" :orientation "h" :space-evenly false :spacing 2
+    (for ws in workspaces
+      (button
+        :class "ws ${ws.focused ? "focused" : ""} ${ws.urgent ? "urgent" : ""}"
+        :onclick "@swaymsg@ workspace ${ws.name}"
+        "${ws.name}"))))
+
+(defwidget left []
+  (box :orientation "h" :space-evenly false :halign "start" :spacing 12
+    (button :class "logo-button" :tooltip "Lock, log out or power off"
+      :onclick "@bin@/eww-display menu power-menu"
+      (label :class "logo" :text ""))
+    (workspaces)
+    (box :class "mode" :visible {mode.name != "default"} :orientation "h" :space-evenly false :spacing 8
+      (label :class "mode-name" :text "${mode.name}")
+      (label :class "mode-hint" :text "${mode.hint}"))))
+
+(defwidget center []
+  (label :class "title" :limit-width 80 :text title))
+
+(defwidget module [icon text ?class ?visible ?tooltip]
+  (box :class "module ${class}" :visible {visible ?: true} :tooltip {tooltip ?: ""}
+    :orientation "h" :space-evenly false :spacing 6
+    (label :class "icon" :text icon)
+    ; unindent would strip the padding that keeps widths fixed.
+    (label :unindent false :text text)))
+
+; A percentage padded to "100%" so the bar doesn't shift (the font is monospace).
+(defwidget module-pct [icon value ?class ?tooltip]
+  (module :class class :icon icon :tooltip tooltip
+    :text "${value < 10 ? "  " : (value < 100 ? " " : "")}${value}%"))
+
+(defwidget right []
+  (box :orientation "h" :space-evenly false :halign "end" :spacing 4
+    (label :class "lock caps" :visible {locks.caps} :text "CAPS")
+    (label :class "lock num" :visible {locks.num} :text "NUM")
+    (box :class "module gamemode" :visible {activity.gamemode} :tooltip "GameMode is on"
+      (label :class "icon" :text "󰊗"))
+    (button :class "module steam" :visible {activity.steam}
+      :tooltip "Steam is running: click for options"
+      :onclick "@bin@/eww-display menu steam-menu"
+      (label :class "icon" :text "󰓓"))
+    (button :class "module lmstudio ${activity.lmstudio.serving ? "serving" : ""}"
+      :visible {activity.lmstudio.running}
+      :tooltip {activity.lmstudio.serving
+        ? "LM Studio is serving: ${activity.lmstudio.list} (click for options)"
+        : "LM Studio is running, no model loaded (click for options)"}
+      :onclick "@bin@/eww-display menu lms-menu"
+      (box :orientation "h" :space-evenly false :spacing 6
+        (label :class "icon" :text "󰚩")
+        (label :visible {activity.lmstudio.serving} :limit-width 24 :text "${activity.lmstudio.first}")))
+    ; The microVMs (generated in home/eww.nix): grey while stopped, in the
+    ; VM's own colour while running, with the firewall mode.
+    @vmBadges@
+    (button :class "module usb ${usb.count > 0 ? "on" : ""}"
+      :tooltip "${usb.count} USB device${usb.count == 1 ? "" : "s"}: click for the list"
+      :onclick "@bin@/eww-display menu usb-menu"
+      (box :orientation "h" :space-evenly false :spacing 6
+        (label :class "icon" :text "󰕓")
+        (label :text "${usb.count}")))
+    (button :class "module display"
+      :tooltip "${arraylength(displays.outputs)} display${arraylength(displays.outputs) == 1 ? "" : "s"}, primary ${displays.primary}. Click for display settings"
+      :onclick "@bin@/display-settings --toggle"
+      (box :orientation "h" :space-evenly false :spacing 4
+        (label :class "icon" :text "󰍹")
+        (label :text "${arraylength(displays.outputs)}")))
+    (module-pct :class "cpu" :icon "" :value {round(EWW_CPU.avg, 0)}
+      :tooltip "CPU ${round(EWW_CPU.avg, 0)}%${cpuinfo.temp} · ${arraylength(EWW_CPU.cores)} threads · ${round(EWW_CPU.cores[0].freq / 1000, 1)} GHz · load ${cpuinfo.load}
+    ${cpuinfo.model}")
+    (module-pct :class "mem" :icon "" :value {round(EWW_RAM.used_mem_perc, 0)}
+      :tooltip "RAM ${round(EWW_RAM.used_mem / 1073741824, 1)}/${round(EWW_RAM.total_mem / 1073741824, 1)} GiB (${round(EWW_RAM.used_mem_perc, 0)}%) · ${round(EWW_RAM.available_mem / 1073741824, 1)} GiB available · swap ${round((EWW_RAM.total_swap - EWW_RAM.free_swap) / 1073741824, 1)}/${round(EWW_RAM.total_swap / 1073741824, 1)} GiB")
+    (box :class "module gpu" :visible {gpu.ok} :orientation "h" :space-evenly false :spacing 6
+      :tooltip "GPU ${gpu.use}% · ${gpu.temp}°C · VRAM ${gpu.vram_text} (${gpu.vram}%)"
+      (label :class "icon" :text "󰢮")
+      (label :unindent false :text "${gpu.text}"))
+    ; Network, with an asterisk per VPN that is up beside the icon,
+    ; stacked and coloured by VPN (vpnStars).
+    (button :class "module net ${net.shown.state == "up" ? "" : "down"}"
+      :tooltip "${net.shown.name} ${net.shown.address}@vpnTooltip@: click for interfaces and VPNs"
+      :onclick "@bin@/eww-display menu net-menu"
+      (box :orientation "h" :space-evenly false :spacing 2
+        (label :class "icon" :text {net.shown.wireless ? "󰖩" : "󰈀"})
+        ; A space between the icon and the asterisks.
+        (label :unindent false :text " ")
+        (box :class "vpn-stars" :orientation "v" :valign "center" :space-evenly false
+          @vpnStars@)
+        (label :class "net-text" :text "${net.shown.name} ↓${net.shown.down} ↑${net.shown.up}")))
+    (button
+      :class "module caffeine ${caffeine}"
+      :tooltip "Caffeine ${caffeine}: click to ${caffeine == "on" ? "allow" : "stop"} locking and screen blanking"
+      :onclick "@bin@/eww-caffeine toggle"
+      (label :class "icon" :text {caffeine == "on" ? "󰅶" : "󰛊"}))
+    (eventbox :class "module vol ${volume.muted ? "muted" : ""}"
+      :tooltip "${volume.sink}: click for volume, scroll to change"
+      :onclick "@bin@/eww-display menu vol-menu"
+      :onscroll "@bin@/eww-volume {}"
+      (box :orientation "h" :space-evenly false :spacing 6
+        (label :class "icon" :text {volume.muted ? "󰖁" : "󰕾"})
+        (label :unindent false :text "${volume.text}")))
+    (module :class "bat" :icon "󰁹" :text "${battery}%" :visible {battery != ""})
+    (button :class "module clock" :tooltip "${time.zone}: click for the calendar and time zones"
+      :onclick "@bin@/eww-cal today; @bin@/eww-display menu cal-menu"
+      (box :orientation "h" :space-evenly false :spacing 6
+        (label :class "icon" :text "󰥔")
+        (label :text "${time.text}")
+        (label :class "tz" :text "${time.abbr}")))))
+
+(defwidget bar []
+  (centerbox :class "bar" :orientation "h"
+    (left)
+    (center)
+    (right)))
+
+; Session: opened by the logo at the top left.
+(defwidget power-action [icon name onclick]
+  (button :class "wg-toggle power-action" :onclick "@eww@ close power-menu; ${onclick}"
+    (box :orientation "h" :space-evenly false :spacing 10
+      (label :class "icon" :text icon)
+      (label :halign "start" :text name))))
+
+(defwidget power-panel []
+  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+    (box :orientation "h" :space-evenly false
+      (label :class "wg-title" :hexpand true :halign "start" :text "Session")
+      (button :class "wg-close" :onclick "@eww@ close power-menu" "✕"))
+    (power-action :icon "󰌾" :name "Lock" :onclick "@swaylock@ -f")
+    (power-action :icon "󰍃" :name "Log out" :onclick "@swaymsg@ exit")
+    (power-action :icon "󰐥" :name "Power off" :onclick "@systemctl@ poweroff")))
+
+; Panels opened by the Steam and LM Studio buttons, laid out like the
+; network panel.
+(defwidget app-panel [title name status action onclose onaction]
+  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+    (box :orientation "h" :space-evenly false
+      (label :class "wg-title" :hexpand true :halign "start" :text title)
+      (button :class "wg-close" :onclick onclose "✕"))
+    (box :class "wg-tunnel up" :orientation "h" :space-evenly false :spacing 16
+      (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+        (label :class "wg-name" :halign "start" :text "● ${name}")
+        (label :class "wg-detail" :halign "start" :wrap true :text status))
+      (button :class "wg-toggle" :valign "center" :onclick onaction action))))
+
+(defwidget lms-menu []
+  (app-panel
+    :title "LM Studio"
+    :name "LM Studio"
+    :status {activity.lmstudio.serving
+      ? "Serving: ${activity.lmstudio.list}"
+      : "Running, no model loaded"}
+    :action "Close"
+    :onclose "@eww@ close lms-menu"
+    :onaction "@eww@ close lms-menu; @flatpak@ kill ai.lmstudio.lm-studio"))
+
+(defwidget steam-menu []
+  (app-panel
+    :title "Steam"
+    :name "Steam"
+    :status "Running"
+    :action "Close"
+    :onclose "@eww@ close steam-menu"
+    :onaction "@eww@ close steam-menu; @bin@/eww-steam-close"))
+
+; A meter in a VM's panel (vmPanel).
+(defwidget vm-meter [name value text]
+  (box :orientation "v" :space-evenly false :spacing 2
+    (box :orientation "h" :space-evenly false
+      (label :class "wg-detail" :hexpand true :halign "start" :text name)
+      (label :class "wg-detail" :text text))
+    (progress :class "vm-meter ${value >= 90 ? "high" : ""}" :orientation "h" :value value)))
+
+; Each microVM's panel (generated in home/eww.nix).
+@vmPanels@
+
+; USB: every connected device, hubs included, in port order.
+(defwidget usb-panel []
+  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+    (box :orientation "h" :space-evenly false
+      (label :class "wg-title" :hexpand true :halign "start" :text "USB")
+      (button :class "wg-close" :onclick "@eww@ close usb-menu" "✕"))
+    (label :class "wg-detail" :visible {arraylength(usb.devices) == 0} :halign "start"
+      :text "No USB devices connected")
+    (for d in {usb.devices}
+      (box :class "wg-tunnel usb-device ${d.kind == "Hub" ? "hub" : ""}" :orientation "h" :space-evenly false :spacing 12
+        (label :class "usb-icon" :valign "start" :text "${d.icon}")
+        (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+          (label :class "wg-name" :halign "start" :limit-width 34 :text "${d.name}")
+          (label :class "wg-detail" :visible {d.vendor != ""} :halign "start" :limit-width 34 :text "${d.vendor}")
+          (label :class "wg-detail" :halign "start"
+            :text "${d.kind}${d.speed != "" ? " · ${d.speed}" : ""}")
+          (label :class "wg-detail" :halign "start" :text "ID ${d.id} · port ${d.port}"))))))
+
+; Network: the VPNs with Connect/Disconnect, then every interface's
+; rates and which one the bar shows.
+(defwidget net-panel []
+  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+    (box :orientation "h" :space-evenly false
+      (label :class "wg-title" :hexpand true :halign "start" :text "Network")
+      (button :class "wg-close" :onclick "@eww@ close net-menu" "✕"))
+    (label :class "wg-name" :halign "start" :text "VPN")
+    (label :class "wg-detail" :visible {arraylength(vpn.connections) == 0} :halign "start" :wrap true
+      :text "No VPNs yet. docs/vpn.md shows how to add WireGuard, OpenVPN and openfortivpn ones.")
+    (for t in {vpn.connections}
+      (box :class "wg-tunnel ${t.active ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
+        (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+          (box :orientation "h" :space-evenly false :spacing 6
+            (label :class "vpn-star ${t.kind}" :text "${t.active ? "*" : " "}")
+            (label :class "wg-name" :halign "start" :limit-width 30 :text "${t.name}"))
+          (label :class "wg-detail" :halign "start"
+            :text "${t.label}${t.device != "" ? " · ${t.device}" : ""}${t.address != "" ? " · ${t.address}" : ""}")
+          (label :class "wg-detail" :visible {t.active && (t.endpoint != "" || t.handshake != "")} :halign "start"
+            :text "${t.endpoint != "" ? t.endpoint : "no peer endpoint"}${t.handshake != "" ? " · handshake ${t.handshake}" : ""}")
+          (label :class "wg-detail" :visible {t.active && t.rx != ""} :halign "start" :text "↓ ${t.rx}  ↑ ${t.tx}"))
+        (button :class "wg-toggle" :valign "center" :visible {t.managed}
+          :onclick "@bin@/eww-vpn toggle ${t.kind} \"${t.name}\" &"
+          "${t.active ? "Disconnect" : "Connect"}")))
+    (label :class "wg-name" :halign "start" :text "Interfaces")
+    (box :class "wg-tunnel ${net.auto ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
+      (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+        (label :class "wg-name" :halign "start" :text "${net.auto ? "●" : "○"} Automatic")
+        (label :class "wg-detail" :halign "start"
+          :text "Default route: ${net.default != "" ? net.default : "none"}"))
+      (button :class "wg-toggle ${net.auto ? "active" : ""}" :valign "center"
+        :onclick "@bin@/eww-net show auto"
+        "${net.auto ? "Shown" : "Show"}"))
+    (for i in {net.ifaces}
+      (box :class "wg-tunnel ${i.state == "up" ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
+        (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+          (label :class "wg-name" :halign "start"
+            :text "${i.state == "up" ? "●" : "○"} ${i.name}${i.default ? " (default route)" : ""}")
+          (label :class "wg-detail" :halign "start" :text "${i.state} ${i.address}")
+          (label :class "wg-detail" :halign "start" :text "↓ ${i.down}  ↑ ${i.up}"))
+        (button :class "wg-toggle ${i.shown && !net.auto ? "active" : ""}" :valign "center"
+          :onclick "@bin@/eww-net show ${i.name}"
+          "${i.shown && !net.auto ? "Shown" : "Show"}")))))
+
+; Volume of the default output: slider, ±5% and mute.
+(defwidget vol-panel []
+  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+    (box :orientation "h" :space-evenly false
+      (label :class "wg-title" :hexpand true :halign "start" :text "Volume")
+      (button :class "wg-close" :onclick "@eww@ close vol-menu" "✕"))
+    (box :class "wg-tunnel ${volume.muted ? "down" : "up"}" :orientation "v" :space-evenly false :spacing 10
+      (box :orientation "h" :space-evenly false :spacing 8
+        (label :class "wg-name" :hexpand true :halign "start" :limit-width 28
+          :text "${volume.muted ? "○" : "●"} ${volume.sink != "" ? volume.sink : "Default output"}")
+        (label :class "wg-detail" :text "${volume.text}"))
+      (scale :class "vol-scale" :min 0 :max 101 :value {volume.pct}
+        :onchange "@bin@/eww-volume set {}")
+      (box :orientation "h" :space-evenly true :spacing 8
+        (button :class "wg-toggle" :onclick "@bin@/eww-volume down" "− 5%")
+        (button :class "wg-toggle" :onclick "@bin@/eww-volume mute"
+          "${volume.muted ? "Unmute" : "Mute"}")
+        (button :class "wg-toggle" :onclick "@bin@/eww-volume up" "+ 5%")))))
+
+; Calendar: time zone, month grid with a dot per calendar with events
+; that day (docs/calendar.md), and the picked day's events.
+(defwidget tz-button [zone name]
+  (button :class "wg-toggle ${time.zone == zone ? "active" : ""}"
+    :onclick "@bin@/eww-clock tz ${zone}" name))
+
+(defwidget cal-panel []
+  (box :class "wg-panel cal-panel" :orientation "v" :space-evenly false :spacing 10
+    (box :orientation "h" :space-evenly false
+      (label :class "wg-title" :hexpand true :halign "start" :text "${time.text} ${time.abbr}")
+      (button :class "wg-close" :onclick "@eww@ close cal-menu" "✕"))
+    (box :orientation "h" :space-evenly true :spacing 6
+      (tz-button :zone "America/New_York" :name "Eastern")
+      (tz-button :zone "America/Los_Angeles" :name "Pacific")
+      (tz-button :zone "UTC" :name "UTC"))
+    (box :orientation "h" :space-evenly false :spacing 6
+      (button :class "cal-nav" :onclick "@bin@/eww-cal prev" "‹")
+      (label :class "cal-title" :hexpand true :text "${cal.title}")
+      (button :class "cal-nav" :onclick "@bin@/eww-cal today" "Today")
+      (button :class "cal-nav" :onclick "@bin@/eww-cal next" "›"))
+    (box :class "cal-grid" :orientation "v" :space-evenly false :spacing 2
+      (box :class "cal-head" :orientation "h" :space-evenly true
+        (label :text "Su") (label :text "Mo") (label :text "Tu") (label :text "We")
+        (label :text "Th") (label :text "Fr") (label :text "Sa"))
+      (for week in {cal.weeks}
+        (box :orientation "h" :space-evenly true :spacing 2
+          (for d in week
+            (button
+              :class "cal-day ${d.other ? "other" : ""} ${d.today ? "today" : ""} ${d.selected ? "selected" : ""}"
+              :onclick "@bin@/eww-cal day ${d.date}"
+              (box :orientation "v" :space-evenly false
+                (label :class "cal-num" :text "${d.day}")
+                (box :class "cal-dots" :orientation "h" :halign "center" :space-evenly false :spacing 1
+                  (for c in {d.dots}
+                    (label :class "cal-dot" :style "color: ${c};" :text "󰝥")))))))))
+    (label :class "wg-name cal-day-title" :halign "start" :text "${cal.selected.label}")
+    (label :class "wg-detail" :visible {arraylength(cal.selected.events) == 0} :halign "start" :wrap true
+      :text {arraylength(cal.calendars) == 0
+        ? "No calendars synced yet. See docs/calendar.md to set up vdirsyncer."
+        : "No events"})
+    (for e in {cal.selected.events}
+      (box :class "cal-event" :orientation "h" :space-evenly false :spacing 8
+        (label :class "cal-dot" :style "color: ${e.color};" :text "󰝥")
+        (label :class "wg-detail" :text "${e.time}")
+        (label :hexpand true :halign "start" :limit-width 36 :text "${e.summary}")))))
+
+(defwindow power-menu
+  :monitor 0
+  :stacking "overlay"
+  :namespace "eww-menu"
+  :geometry (geometry :x "8px" :y "34px" :width "220px" :anchor "top left")
+  (power-panel))
+
+(defwindow net-menu
+  :monitor 0
+  :stacking "overlay"
+  :namespace "eww-menu"
+  :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
+  (net-panel))
+
+(defwindow vol-menu
+  :monitor 0
+  :stacking "overlay"
+  :namespace "eww-menu"
+  :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
+  (vol-panel))
+
+(defwindow cal-menu
+  :monitor 0
+  :stacking "overlay"
+  :namespace "eww-menu"
+  :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
+  (cal-panel))
+
+(defwindow usb-menu
+  :monitor 0
+  :stacking "overlay"
+  :namespace "eww-menu"
+  :geometry (geometry :x "8px" :y "34px" :width "440px" :anchor "top right")
+  (usb-panel))
+
+@vmWindows@
+
+(defwindow steam-menu
+  :monitor 0
+  :stacking "overlay"
+  :namespace "eww-menu"
+  :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
+  (steam-menu))
+
+(defwindow lms-menu
+  :monitor 0
+  :stacking "overlay"
+  :namespace "eww-menu"
+  :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
+  (lms-menu))
+
+(defwindow bar
+  :monitor 0
+  :exclusive true
+  :stacking "fg"
+  :namespace "eww-bar"
+  :geometry (geometry :x "0%" :y "0px" :width "100%" :height "28px" :anchor "top center")
+  (bar))

@@ -47,7 +47,7 @@ Models are large. To keep them elsewhere, grant that directory back and point
 LM Studio's models folder (in *My Models*) at it:
 
 ```nix
-services.flatpak.overrides."ai.lmstudio.lm-studio".Context.filesystems = [ "/mnt/models" ];
+harmonia.apps."ai.lmstudio.lm-studio".sandbox.Context.filesystems = [ "/mnt/models" ];
 ```
 
 ## On the bar

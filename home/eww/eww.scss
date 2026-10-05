@@ -1,0 +1,166 @@
+// The eww bar's styles (home/eww.nix). home/eww.nix puts the Miami Wind
+// colours ($bg, $pink, ...), $font and $font-size above this, and each
+// microVM's colour rules below it.
+
+* {
+  all: unset;
+  font-family: $font;
+  font-size: $font-size;
+}
+
+.bar {
+  background-color: $bg;
+  color: $fg;
+  padding: 0 10px;
+  border-bottom: 2px solid $surface;
+}
+
+.logo {
+  color: $cyan;
+  font-size: $font-size + 3;
+  padding: 0 6px;
+}
+.logo-button:hover .logo { color: $pink; }
+
+.ws {
+  padding: 0 8px;
+  color: $muted;
+  &:hover { color: $fg; background-color: $surface; }
+  &.focused { color: $bg; background-color: $pink; }
+  &.urgent { color: $bg; background-color: $red; }
+}
+
+.title { color: $fg; }
+
+.mode {
+  padding: 0 8px;
+  .mode-name { color: $bg; background-color: $cyan; padding: 0 8px; }
+  .mode-hint { color: $yellow; }
+}
+
+.module {
+  padding: 0 8px;
+  .icon { font-size: $font-size + 1; }
+  &.cpu .icon { color: $green; }
+  &.mem .icon { color: $purple; }
+  &.vol .icon { color: $cyan; }
+  &.bat .icon { color: $yellow; }
+  &.clock .icon { color: $pink; }
+  &.gamemode .icon { color: $green; }
+  &.steam .icon { color: $blue; }
+  &.steam, &.lmstudio, &.vm { &:hover { background-color: $surface; } }
+  &.lmstudio .icon { color: $muted; }
+  &.lmstudio.serving .icon { color: $pink; }
+  &.vm .icon { color: $muted; }
+  // Firewall modes: open is the plain one, lockdown red, the
+  // restricted ones (OSCP, Hack The Box, local inference) purple.
+  .vm-mode { color: $purple; }
+  .vm-mode.mode-permissive { color: $muted; }
+  .vm-mode.mode-lockdown { color: $red; }
+  &.caffeine { color: $muted; &:hover { background-color: $surface; } }
+  &.caffeine.on { color: $orange; }
+  &.gpu .icon { color: $red; }
+  &.net .icon { color: $blue; }
+  &.net.down { color: $muted; }
+  // One small asterisk per VPN that is up, stacked in a column that
+  // always keeps its width, so the bar doesn't shift.
+  .vpn-stars { min-width: 6px; }
+  .vpn-stars .vpn-star {
+    font-size: 8pt;
+    margin: -6px 0;
+  }
+  &.vol.muted { color: $muted; .icon { color: $muted; } }
+  &.display .icon { color: $pink; }
+  &.usb { color: $muted; }
+  &.usb.on { color: $fg; .icon { color: $yellow; } }
+  &.display, &.usb, &.net, &.vol, &.clock { &:hover { background-color: $surface; } }
+  .tz { color: $muted; }
+}
+
+// Each VPN's asterisk colour, on the bar and in the network panel.
+.vpn-star {
+  &.wireguard { color: $green; }
+  &.openvpn { color: $yellow; }
+  &.forti { color: $purple; }
+  &.other { color: $blue; }
+}
+
+.lock {
+  padding: 0 8px;
+  color: $bg;
+  font-weight: bold;
+  &.caps { background-color: $yellow; }
+  &.num { background-color: $purple; }
+}
+
+.wg-panel {
+  background-color: $bg;
+  color: $fg;
+  border: 2px solid $surface;
+  padding: 12px;
+  .wg-title { color: $cyan; font-weight: bold; }
+  .wg-close { color: $muted; padding: 0 4px; &:hover { color: $fg; } }
+  .wg-tunnel { background-color: $bg-alt; padding: 8px 10px; }
+  .wg-tunnel.up .wg-name { color: $green; }
+  .wg-tunnel.down .wg-name { color: $muted; }
+  .wg-tunnel.warn .wg-name { color: $orange; }
+  .vm-power {
+    padding: 0 8px;
+    margin-right: 6px;
+    background-color: $surface;
+    &.start { color: $green; &:hover { color: $bg; background-color: $green; } }
+    &.stop { color: $red; &:hover { color: $bg; background-color: $red; } }
+    &.busy { color: $muted; }
+  }
+  .vm-fw-current { padding: 0; &:hover .wg-name { color: $fg; } }
+  .vm-fw-mode { color: $purple; }
+  .vm-fw-mode.mode-permissive { color: $fg; }
+  .vm-fw-mode.mode-lockdown { color: $red; }
+  .vm-fw-item {
+    padding: 4px 8px;
+    &:hover { background-color: $surface; }
+    &.active { background-color: $surface; .vm-fw-label { color: $cyan; } }
+  }
+  .wg-detail { color: $muted; }
+  .wg-toggle {
+    padding: 4px 10px;
+    background-color: $surface;
+    &:hover { color: $bg; background-color: $pink; }
+    &.active { color: $bg; background-color: $cyan; }
+  }
+
+  .vol-scale {
+    trough { background-color: $surface; min-height: 6px; min-width: 300px; }
+    highlight { background-color: $cyan; }
+    slider { background-color: $pink; min-width: 14px; min-height: 14px; margin: -4px 0; }
+  }
+
+  .cal-nav { padding: 2px 10px; color: $muted; &:hover { color: $fg; background-color: $surface; } }
+  .cal-title { color: $fg; font-weight: bold; }
+  .cal-head { color: $muted; }
+  .cal-day {
+    padding: 2px 0;
+    &:hover { background-color: $surface; }
+    &.other .cal-num { color: $muted; }
+    &.today .cal-num { color: $pink; font-weight: bold; }
+    &.selected { background-color: $bg-alt; }
+  }
+  .cal-dots { min-height: 8px; }
+  .cal-dot { font-size: $font-size - 4; }
+  .cal-day-title { color: $cyan; }
+  .cal-event { background-color: $bg-alt; padding: 4px 8px; }
+
+  .vm-meter {
+    trough { background-color: $surface; min-height: 6px; min-width: 300px; }
+    progress { background-color: $cyan; min-height: 6px; }
+    &.high progress { background-color: $orange; }
+  }
+
+  .power-action { padding: 8px 12px; }
+
+  .usb-device .wg-name { color: $fg; }
+  .usb-device.hub .wg-name { color: $muted; }
+  .usb-icon { color: $yellow; font-size: $font-size + 4; min-width: 24px; }
+  .usb-device.hub .usb-icon { color: $muted; }
+
+}

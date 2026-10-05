@@ -1,6 +1,7 @@
 # Firewall modes for the microVMs (Nike, Zelus), enforced on the host so
-# nothing inside a VM (root included) can lift them. Each VM declares its
-# modes in its own module (modules/nixos/nike.nix, zelus.nix); this turns
+# nothing inside a VM (root included) can lift them. modules/nixos/microvms.nix
+# sets each VM's modes (Lockdown, Permissive and the VM's own, from
+# modules/nixos/nike.nix and zelus.nix); this turns
 # every mode into an nftables table, prebuilt in /etc/vm-firewall, and adds
 # the `vm-firewall` command that switches between them:
 #

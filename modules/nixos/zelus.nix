@@ -9,8 +9,9 @@
 #   ~/Projects                             is ~/Projects on Zelus, read-write
 #
 # Zelus sits on its own tap interface (vm-zelus); the network, folders and
-# `ssh zelus` are lib/microvm-host.nix. Its status service writes utilization numbers to
-# /var/lib/zelus/status for the bar (home/eww/microvm.py).
+# `ssh zelus` come from modules/nixos/microvms.nix. Its status service writes
+# utilization numbers to /var/lib/zelus/status for the bar
+# (home/eww/microvm.py).
 #
 # LM Studio (on the host, modules/nixos/lmstudio.nix) is reachable from Zelus
 # at 10.20.1.1:1234, for opencode's local model: a socket on the tap's
@@ -29,104 +30,77 @@
 # connection (ControlMaster) for 10 minutes after it closes.
 {
   pkgs,
-  palette,
-  keys,
+  config,
   username,
   ...
 }:
 let
-  zelus = {
-    tap = "vm-zelus";
-    mac = "02:00:00:5a:4c:01";
-    hostAddress = "10.20.1.1";
-    address = "10.20.1.2";
-    shareDir = "/home/${username}/zelus-share";
-    projectsDir = "/home/${username}/Projects";
-    statusDir = "/var/lib/zelus/status";
-    lmstudioPort = 1234;
-    nameservers = [
-      "9.9.9.9"
-      "149.112.112.112"
-    ];
-    palette = import ../../zelus/palette.nix palette;
-    inherit keys;
-  };
+  inherit (config.harmonia.microvms.zelus) vm;
 in
 {
-  imports = [
-    (import ../../lib/microvm-host.nix {
-      name = "zelus";
-      user = "c";
-      vm = zelus;
-      config = ../../zelus;
-      # Zelus builds its own package set so it can allow Claude Code (unfree)
-      # without allowing it on the host; it's the same nixpkgs, so the store
-      # paths are shared.
-      vmArgs.pkgs = null;
-      sshOptions = [
-        "RemoteForward 127.0.0.1:9876 127.0.0.1:9876"
-        "LocalForward 127.0.0.1:9500 127.0.0.1:9500"
-        "ControlMaster auto"
-        "ControlPath /run/user/%i/ssh-zelus-%C"
-        "ControlPersist 10m"
-      ];
-    })
-  ];
-
-  systemd.tmpfiles.rules = [ "d ${zelus.projectsDir} 0755 ${username} users -" ];
-
-  # LM Studio for Zelus: listens on the host's end of the tap (FreeBind, so
-  # it can start before Zelus brings the tap up) and hands each connection to
-  # LM Studio's local server. The firewall modes below decide whether Zelus
-  # may use it.
-  systemd.sockets.lmstudio-zelus = {
-    description = "LM Studio for Zelus";
-    wantedBy = [ "sockets.target" ];
-    listenStreams = [ "${zelus.hostAddress}:${toString zelus.lmstudioPort}" ];
-    socketConfig.FreeBind = true;
-  };
-  systemd.services.lmstudio-zelus = {
-    description = "LM Studio for Zelus (proxy to localhost:${toString zelus.lmstudioPort})";
-    requires = [ "lmstudio-zelus.socket" ];
-    serviceConfig = {
-      ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd 127.0.0.1:${toString zelus.lmstudioPort}";
-      DynamicUser = true;
-      PrivateTmp = true;
+  harmonia.microvms.zelus = {
+    index = 1;
+    user = "c";
+    guest = ../../zelus;
+    key = "z";
+    # Cyan instead of the host's pink, and pink as the second colour, which
+    # keeps neovim's normal and insert modes (primary and secondary) apart.
+    colors = {
+      primary = "cyan";
+      secondary = "pink";
+      selection = "#1f4b5e";
+      ansi = "cyan";
     };
-  };
-  networking.firewall.interfaces.${zelus.tap}.allowedTCPPorts = [ zelus.lmstudioPort ];
-
-  # Firewall modes, switched from the bar's Zelus panel or with
-  # `sudo vm-firewall set zelus MODE` (modules/nixos/vm-firewall.nix).
-  harmonia.vmFirewall.zelus = {
-    inherit (zelus) tap;
-    default = "permissive";
-    modes = [
-      {
-        name = "permissive";
-        label = "Permissive";
-        short = "open";
-        description = "Internet and the host's LM Studio";
-        forwardPolicy = "accept";
-        inputPolicy = "accept";
-      }
-      {
-        name = "lockdown";
-        label = "Lockdown";
-        short = "lock";
-        description = "Nothing out; only ssh from the host";
-        forwardPolicy = "drop";
-        inputPolicy = "drop";
-      }
+    panel.footer = "ssh zelus (c, no password) · claude, opencode · ~/zelus-share is ~/share, ~/Projects is shared";
+    extra = {
+      projectsDir = "/home/${username}/Projects";
+      lmstudioPort = 1234;
+    };
+    # Zelus builds its own package set so it can allow Claude Code (unfree)
+    # without allowing it on the host; it's the same nixpkgs, so the store
+    # paths are shared.
+    vmArgs.pkgs = null;
+    sshOptions = [
+      "RemoteForward 127.0.0.1:9876 127.0.0.1:9876"
+      "LocalForward 127.0.0.1:9500 127.0.0.1:9500"
+      "ControlMaster auto"
+      "ControlPath /run/user/%i/ssh-zelus-%C"
+      "ControlPersist 10m"
+    ];
+    # Besides Lockdown and Permissive (modules/nixos/microvms.nix).
+    firewall.modes = [
       {
         name = "local";
         label = "Local inference";
         short = "local";
         description = "Only the host's LM Studio; no internet";
         forwardPolicy = "drop";
-        input = [ "tcp dport ${toString zelus.lmstudioPort} accept" ];
+        input = [ "tcp dport ${toString vm.lmstudioPort} accept" ];
         inputPolicy = "drop";
       }
     ];
   };
+
+  systemd.tmpfiles.rules = [ "d ${vm.projectsDir} 0755 ${username} users -" ];
+
+  # LM Studio for Zelus: listens on the host's end of the tap (FreeBind, so
+  # it can start before Zelus brings the tap up) and hands each connection to
+  # LM Studio's local server. The firewall modes decide whether Zelus may use
+  # it.
+  systemd.sockets.lmstudio-zelus = {
+    description = "LM Studio for Zelus";
+    wantedBy = [ "sockets.target" ];
+    listenStreams = [ "${vm.hostAddress}:${toString vm.lmstudioPort}" ];
+    socketConfig.FreeBind = true;
+  };
+  systemd.services.lmstudio-zelus = {
+    description = "LM Studio for Zelus (proxy to localhost:${toString vm.lmstudioPort})";
+    requires = [ "lmstudio-zelus.socket" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd 127.0.0.1:${toString vm.lmstudioPort}";
+      DynamicUser = true;
+      PrivateTmp = true;
+    };
+  };
+  networking.firewall.interfaces.${vm.tap}.allowedTCPPorts = [ vm.lmstudioPort ];
 }

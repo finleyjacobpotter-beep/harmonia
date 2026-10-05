@@ -1,17 +1,16 @@
 # Zelus, the microVM guest. What every microVM shares (network, shares,
 # volumes, ssh, the status service, the host's shell configs) is
 # lib/microvm-guest.nix; the host side (its network, shared folders,
-# `ssh zelus` and the Blender/Godot forwards) is modules/nixos/zelus.nix,
-# which passes `zelus` below.
+# `ssh zelus` and the Blender/Godot forwards) is modules/nixos/zelus.nix.
 #
 # Login: c, no password (ssh zelus from the host). The shell, neovim, tmux
 # and ranger are the host's own home-manager configs in cyan instead of pink
-# (zelus/palette.nix). Claude Code and opencode (home/opencode.nix) both have
+# (colors in modules/nixos/zelus.nix). Claude Code and opencode (home/opencode.nix) both have
 # the Blender and Godot MCP servers (home/mcp-servers.nix).
 {
   lib,
   pkgs,
-  zelus,
+  vm,
   ...
 }:
 let
@@ -20,9 +19,6 @@ in
 {
   imports = [
     (import ../lib/microvm-guest.nix {
-      name = "zelus";
-      user = "c";
-      vm = zelus;
       varSize = 4096;
       homeSize = 32768;
     })
@@ -37,7 +33,7 @@ in
     {
       proto = "virtiofs";
       tag = "projects";
-      source = zelus.projectsDir;
+      source = vm.projectsDir;
       mountPoint = "/home/c/Projects";
     }
   ];
@@ -66,7 +62,7 @@ in
     nodejs
   ];
 
-  home-manager.extraSpecialArgs = { inherit zelus; };
+  home-manager.extraSpecialArgs.zelus = vm;
   home-manager.users.c = {
     imports = [ ../home/opencode.nix ];
 

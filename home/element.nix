@@ -39,8 +39,26 @@ let
           timeline-text-secondary-color = p.fgDim;
           timeline-highlights-color = p.bgAlt;
           # 8 each
-          username-colors = with p; [ pink cyan yellow purple blue green orange red ];
-          avatar-background-colors = with p; [ pink cyan purple blue green orange yellow red ];
+          username-colors = with p; [
+            pink
+            cyan
+            yellow
+            purple
+            blue
+            green
+            orange
+            red
+          ];
+          avatar-background-colors = with p; [
+            pink
+            cyan
+            purple
+            blue
+            green
+            orange
+            yellow
+            red
+          ];
         };
         # Element's design tokens for accent text and icons.
         compound = {
@@ -55,12 +73,10 @@ let
     ];
   };
 
-  configFile = pkgs.writeText "element-config.json" (builtins.toJSON config);
 in
 {
-  # A real copy: the sandbox can't follow a home-manager symlink into
-  # /nix/store.
-  home.activation.elementMiamiWind = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run install -Dm644 ${configFile} "$HOME/.var/app/im.riot.Riot/config/Element/config.json"
-  '';
+  # A real copy (home/flatpak-files.nix): the sandbox can't follow a
+  # home-manager symlink into /nix/store.
+  harmonia.flatpakFiles.".var/app/im.riot.Riot/config/Element/config.json" =
+    pkgs.writeText "element-config.json" (builtins.toJSON config);
 }

@@ -10,15 +10,9 @@ import json
 import subprocess
 import urllib.request
 
+from common import output
+
 LMSTUDIO_MODELS = "http://127.0.0.1:1234/api/v0/models"
-
-
-def output(*args: str) -> str:
-    """A command's output ("" if it is missing)."""
-    try:
-        return subprocess.run(args, capture_output=True, text=True).stdout
-    except OSError:
-        return ""
 
 
 def loaded_models() -> list[str]:
