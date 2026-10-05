@@ -13,6 +13,7 @@
     # Extra root CAs: certs/all plus certs/<hostname>, if present.
     (import ../lib/root-cas.nix hostname)
     ../modules/nixos/desktop.nix
+    ../modules/nixos/editorconfig.nix
     ../modules/nixos/fonts.nix
     ../modules/nixos/flatpak.nix
     ../modules/nixos/gaming.nix

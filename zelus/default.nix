@@ -29,6 +29,7 @@ in
   imports = [
     inputs.home-manager.nixosModules.home-manager
     (import ../lib/root-cas.nix "zelus")
+    ../modules/nixos/editorconfig.nix
   ];
 
   # The only non-free package, and only on Zelus.

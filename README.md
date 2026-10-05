@@ -134,6 +134,7 @@ Run it as your normal user: `python3 scripts/ubuntu-install.py`.
 - [VPNs](docs/vpn.md): WireGuard, OpenVPN and openfortivpn, and their asterisks on the bar
 - [Secrets](docs/secrets.md): gpg, pass, YubiKey, Bitwarden, OpenBao and `secrets-backup`
 - [Theme](docs/theme.md): Miami Wind colours, Tulasi icons, the wallpaper
+- [Editing](docs/editing.md): the system-wide EditorConfig and Neovim's JSON/YAML commands
 
 ## Unfree packages
 

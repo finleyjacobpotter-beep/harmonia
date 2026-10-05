@@ -24,6 +24,7 @@ in
   imports = [
     inputs.home-manager.nixosModules.home-manager
     (import ../lib/root-cas.nix "nike")
+    ../modules/nixos/editorconfig.nix
     ./tools.nix # the OSCP toolset and Penelope
     ./labs.nix # podman + the Ligolo-ng and BloodHound compose services
   ];
