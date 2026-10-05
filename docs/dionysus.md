@@ -29,6 +29,15 @@ x86 one.
     aarch64 builds);
   - **Firefox** — on both architectures, with the same vertical tabs,
     uBlock Origin, Vimium and theming as harmonia.
+- Guest tools for both hypervisors, on both architectures, side by side:
+  - **SPICE** (virt-manager/QEMU): `spice-vdagentd` for clipboard and display
+    resizing, `spice-webdavd` for the shared folder;
+  - **VirtualBox guest additions** (x86_64, or VirtualBox 7.1+ on Apple
+    silicon): display resizing, shared clipboard, drag and drop, and `vboxsf`
+    shared folders (`d` is in the `vboxsf` group). The VirtualBox services
+    only start when the hypervisor is VirtualBox, so they sit idle under
+    QEMU. Give the VM the **VMSVGA** graphics controller and enable **EFI**
+    (Dionysus boots with systemd-boot).
 - Login `d`, initial password `changeme` (change it after first boot).
 
 ## What harmonia has that Dionysus leaves out

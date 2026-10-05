@@ -4,7 +4,7 @@
 # builds on aarch64 and x86_64 alike. Steam, Blender and Godot are not on
 # Dionysus, and the other architecture-specific and flatpak-only modules
 # harmonia uses (gaming, LM Studio, the Nike microVM) are left out too.
-{ lib, ... }:
+{ lib, username, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -23,4 +23,14 @@
   # webdavd serves the host's shared folder (spice-webdav channel).
   services.spice-vdagentd.enable = true;
   services.spice-webdavd.enable = true;
+
+  # VirtualBox guest additions, for running Dionysus under VirtualBox (x86_64,
+  # or VirtualBox 7.1+ on Apple silicon): display resizing (VMSVGA), shared
+  # clipboard, drag and drop, and vboxsf shared folders. Every guest service
+  # is conditioned on the hypervisor being VirtualBox, so this and the SPICE
+  # services above coexist: under QEMU these stay idle, under VirtualBox SPICE
+  # has no channel and stays idle.
+  virtualisation.virtualbox.guest.enable = true;
+  # vboxsf shared folders are mounted group vboxsf.
+  users.users.${username}.extraGroups = [ "vboxsf" ];
 }
