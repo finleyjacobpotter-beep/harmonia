@@ -1,16 +1,9 @@
-# Rootless Podman + Buildah for containers, and plain QEMU for one-off VMs.
-# The managed VM is the Nike microVM (modules/nixos/nike.nix); there is no
-# libvirt or virt-manager.
+# Plain QEMU for one-off VMs. The managed VMs are the Nike and Zelus microVMs
+# (modules/nixos/nike.nix, zelus.nix); there is no libvirt or virt-manager.
+# Podman comes from modules/nixos/podman.nix via hosts/base.nix.
 { pkgs, username, ... }:
 {
-  # Rootless Podman, no Docker daemon.
-  virtualisation.podman = {
-    enable = true;
-    defaultNetwork.settings.dns_enabled = true; # containers resolve each other by name (compose)
-  };
   environment.systemPackages = with pkgs; [
-    podman-compose
-    buildah
     # qemu-system-x86_64, qemu-img etc. for running an image by hand.
     qemu_kvm
   ];
