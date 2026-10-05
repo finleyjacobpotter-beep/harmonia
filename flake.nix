@@ -102,10 +102,9 @@
           ++ nixpkgs.lib.optional vms microvm.nixosModules.host;
         };
 
-      # Dionysus: harmonia's Sway desktop with the coding/creative toolset
-      # built in natively (Blender, Godot, opencode, Claude Code, the MCP
-      # servers and the Rust tools) and no microVMs, so the same config works
-      # on aarch64-linux and x86_64-linux.
+      # Dionysus: harmonia's Sway desktop with the coding toolset built in
+      # natively (opencode, Claude Code and the Rust tools) and no microVMs,
+      # so the same config works on aarch64-linux and x86_64-linux.
       mkDionysus =
         system:
         mkHost {
