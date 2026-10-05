@@ -8,9 +8,9 @@ belongs to exactly one layer ([`keys.nix`](../keys.nix)), so layers never fight:
 | `Super` + … | **sway** | nothing else binds Super |
 | `Ctrl+Space` … | **tmux** prefix | no prefix-less tmux keys, so every other key reaches the program inside. `Ctrl+Space Ctrl+Space` sends a literal Ctrl+Space |
 | `Ctrl+Shift` + … | **alacritty** | its Ctrl+= / Ctrl+- / Ctrl+0 defaults are passed through to programs instead |
-| everything else | focused app | Zen + Vimium, neovim, ranger, bash (vi mode), btop, pulsemixer, bluetuith… |
+| everything else | focused app | Firefox + Vimium, neovim, ranger, bash (vi mode), btop, pulsemixer, bluetuith… |
 
-Zen and tmux may share keys (only one has focus); CLI tools may never use
+Firefox and tmux may share keys (only one has focus); CLI tools may never use
 Super, Ctrl+Space or Ctrl+Shift. [`home/keymap.nix`](../home/keymap.nix) checks
 this at build time: a sway binding without Super, a tmux `bind -n`, or an
 alacritty binding outside Ctrl+Shift fails `nixos-rebuild`.
@@ -44,7 +44,7 @@ alacritty binding outside Ctrl+Shift fails `nixos-rebuild`.
 | Enter | Mode | Keys |
 | --- | --- | --- |
 | `Super+r` | resize | `h` `j` `k` `l` (`Shift` = bigger steps) |
-| `Super+o` | open | `b` Zen · `f` ranger · `e` nvim · `t` tmux · `s` btop · `a` pulsemixer · `u` bluetuith · `n` nmtui · `v` Nike (ssh) · `z` Zelus (ssh) · `g` Lutris · `Shift+g` Steam · `c` Element · `l` LM Studio · `Shift+b` Blender · `d` Godot |
+| `Super+o` | open | `b` Firefox · `f` ranger · `e` nvim · `t` tmux · `s` btop · `a` pulsemixer · `u` bluetuith · `n` nmtui · `v` Nike (ssh) · `z` Zelus (ssh) · `g` Lutris · `Shift+g` Steam · `c` Element · `l` LM Studio · `Shift+b` Blender · `d` Godot |
 | `Super+m` | media | `j`/`k` volume · `m` mute · `Shift+m` mic · `h`/`l` prev/next · `p` play/pause · `Shift+j`/`Shift+k` brightness |
 | `Super+Shift+e` | system | `l` lock · `e` exit sway · `s` suspend · `r` reboot · `Shift+p` power off |
 
@@ -73,8 +73,8 @@ Hardware keys (volume, media, brightness, Print) work as usual.
 
 ## Apps
 
-- **Zen**: [Vimium](https://github.com/philc/vimium), see
-  [Zen browser (Vimium)](#zen-browser-vimium) below.
+- **Firefox**: [Vimium](https://github.com/philc/vimium), see
+  [Firefox (Vimium)](#firefox-vimium) below.
 - **bash**: readline vi mode (`Esc` for normal mode; cursor is a bar in
   insert mode, a block in normal mode). `Ctrl+r` fzf history, `Ctrl+t` fzf files.
 - **neovim**: leader is `Space` (`which-key` shows the rest). `Space f f/g/b`
@@ -83,9 +83,9 @@ Hardware keys (volume, media, brightness, Print) work as usual.
   keys (`btop` has `vim_keys` turned on).
 - **nmtui** is keyboard-driven but doesn't use vim keys.
 
-## Zen browser (Vimium)
+## Firefox (Vimium)
 
-[Vimium](https://github.com/philc/vimium) is installed into each Zen profile
+[Vimium](https://github.com/philc/vimium) is installed into each Firefox profile
 with its default bindings (none are remapped). Keys are case-sensitive, and
 `?` shows the full list in the browser.
 
@@ -149,7 +149,7 @@ with its default bindings (none are remapped). Keys are case-sensitive, and
 | `v` / `V` | visual / visual line mode (`y` copies the selection) |
 | `Esc` | leave any mode, close the hint or find bar |
 
-Vimium can't run on `about:` pages (new tab, settings). Use Zen's own keys
+Vimium can't run on `about:` pages (new tab, settings). Use Firefox's own keys
 there: `Ctrl+L` address bar, `Ctrl+T` new tab, `Ctrl+W` close tab,
 `Ctrl+Tab` next tab.
 

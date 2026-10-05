@@ -7,7 +7,7 @@
 # *copied* into each app's own data and config dirs, which GTK in the sandbox
 # uses as XDG_DATA_HOME and XDG_CONFIG_HOME. Dark mode and the font name come
 # through the settings portal; the font itself is exposed to every flatpak by
-# home/zen.nix (~/.local/share/fonts).
+# home/firefox.nix (~/.local/share/fonts).
 {
   config,
   pkgs,
@@ -26,7 +26,7 @@ let
 
   theme = pkgs.adw-gtk3;
   cursor = pkgs.bibata-cursors;
-  # Generic build, like Zen's: no need to list host programs to a sandbox.
+  # Generic build, like Firefox's: no need to list host programs to a sandbox.
   tulasi = pkgs.tulasi-icon-theme;
 
   gtkSettings = pkgs.writeText "flatpak-gtk-settings.ini" ''

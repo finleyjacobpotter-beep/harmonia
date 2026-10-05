@@ -22,13 +22,13 @@ x86 one.
     into both agents;
   - the **Rust command-line tools** (ripgrep, fd, bat, eza, …) with the usual
     aliases in interactive shells only;
-  - `uv`, Node, Python, a C toolchain, and a native Firefox.
+  - `uv`, Node, Python and a C toolchain.
 - Flatpak apps (`modules/nixos/flatpak.nix` and `element.nix`, the same
   tightened sandboxes as harmonia):
   - **Element** (Matrix) — on both architectures (Flathub ships x86_64 and
     aarch64 builds);
-  - **Zen** (browser) — **x86_64 only**, because Zen has no ARM64 Linux build;
-    on aarch64 the native Firefox above is the browser.
+  - **Firefox** — on both architectures, with the same vertical tabs,
+    uBlock Origin, Vimium and theming as harmonia.
 - Login `d`, initial password `changeme` (change it after first boot).
 
 ## What harmonia has that Dionysus leaves out

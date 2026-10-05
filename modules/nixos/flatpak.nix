@@ -1,16 +1,15 @@
-# Zen browser from Flathub, run inside a tightened flatpak sandbox ("browser jail").
-# Zen has no aarch64 build (Flathub only carries x86_64), so on aarch64 this
-# sets up Flathub alone; aarch64 Dionysus uses the native Firefox instead.
-{ lib, pkgs, ... }:
+# Firefox from Flathub, run inside a tightened flatpak sandbox ("browser jail"),
+# on every host and both architectures (Flathub ships x86_64 and aarch64).
+# Its theme and add-ons are in home/firefox.nix.
+{ lib, ... }:
 let
-  zen = "app.zen_browser.zen";
-  onX86 = pkgs.stdenv.hostPlatform.isx86_64;
+  firefox = "org.mozilla.firefox";
 
-  # Flathub OSTree commit to pin Zen to; null follows the latest Flathub build.
-  # Read the current one on an installed machine with
-  #   flatpak remote-info flathub app.zen_browser.zen   (the "Commit:" line)
+  # Flathub OSTree commit to pin Firefox to; null follows the latest Flathub
+  # build. Read the current one on an installed machine with
+  #   flatpak remote-info flathub org.mozilla.firefox   (the "Commit:" line)
   # A pinned app is never auto-updated; bump this by hand.
-  zenCommit = null;
+  firefoxCommit = null;
 in
 {
   services.flatpak = {
@@ -21,13 +20,13 @@ in
         location = "https://dl.flathub.org/repo/flathub.flatpakrepo";
       }
     ];
-    packages = lib.optionals onX86 [
+    packages = [
       (
         {
-          appId = zen;
+          appId = firefox;
           origin = "flathub";
         }
-        // lib.optionalAttrs (zenCommit != null) { commit = zenCommit; }
+        // lib.optionalAttrs (firefoxCommit != null) { commit = firefoxCommit; }
       )
     ];
     update.auto = {
@@ -35,18 +34,18 @@ in
       onCalendar = "weekly";
     };
 
-    # Tighten Flathub's default permissions for Zen. Anything not listed keeps
-    # the manifest default; entries prefixed with "!" revoke a permission.
-    overrides = lib.optionalAttrs onX86 {
-      ${zen} = {
+    # Tighten Flathub's default permissions for Firefox. Anything not listed
+    # keeps the manifest default; entries prefixed with "!" revoke a permission.
+    overrides = {
+      ${firefox} = {
         Context = {
           # No host / home access at all. The only host directory the browser can
-          # touch is ~/Downloads/zen (created on demand).
+          # touch is ~/Downloads/firefox (created on demand).
           filesystems = [
             "!host"
             "!home"
             "!xdg-download"
-            "xdg-download/zen:create"
+            "xdg-download/firefox:create"
           ];
           # Wayland only — no X11 socket to snoop on other clients.
           sockets = [

@@ -4,8 +4,7 @@
 # (home/dionysus/dev.nix) so the whole thing builds on aarch64 and x86_64
 # alike. The architecture-specific and flatpak-only modules harmonia uses
 # (Steam, gaming, LM Studio, the studio flatpaks, the Nike microVM) are left
-# out for the same reason; Zen is installed on x86_64 only
-# (modules/nixos/flatpak.nix).
+# out for the same reason.
 { lib, ... }:
 {
   imports = [

@@ -5,7 +5,6 @@
   pkgs,
   lib,
   username,
-  system,
   ...
 }:
 {
@@ -22,11 +21,8 @@
     ./tui.nix
     ./keymap.nix
     ./secrets.nix
-  ]
-  # Zen has no aarch64 build, so its theming only applies where the flatpak is
-  # installed (x86_64, modules/nixos/flatpak.nix); aarch64 Dionysus uses a
-  # native Firefox.
-  ++ lib.optional (system == "x86_64-linux") ./zen.nix;
+    ./firefox.nix
+  ];
 
   home.username = username;
   home.homeDirectory = "/home/${username}";

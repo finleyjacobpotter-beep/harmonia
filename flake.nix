@@ -14,7 +14,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Declarative flatpak (used for the sandboxed Zen browser). Tag v0.7.0.
+    # Declarative flatpak (the sandboxed Firefox, Element and friends). Tag v0.7.0.
     nix-flatpak.url = "github:gmodena/nix-flatpak/440818969ac2cbd77bfe025e884d0aa528991374";
 
     # Hardware profiles; cadmus uses the ThinkPad E14 Gen 2 one. master, 2026-10-04

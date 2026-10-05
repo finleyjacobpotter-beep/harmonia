@@ -48,7 +48,7 @@ in
       ];
       # X11 stays: Wine and most games are X11-only and run under Xwayland.
       # Only other Xwayland windows are visible to them; native Wayland apps
-      # (alacritty, Zen, Element) are not.
+      # (alacritty, Firefox, Element) are not.
       # --device=all also stays: controllers and wheels need the raw
       # hidraw/input devices.
     };

@@ -220,7 +220,7 @@ in
             "Shift+l" = "resize grow width 100 px";
           };
           open = leave // {
-            b = run "flatpak run app.zen_browser.zen";
+            b = run "flatpak run org.mozilla.firefox";
             f = term "ranger";
             e = term "nvim";
             t = run "alacritty -e tmux new-session -A -s main";
@@ -263,7 +263,7 @@ in
       for_window [app_id="blueman-manager"] floating enable
       for_window [app_id="harmonia.display-settings"] floating enable, move position center
       for_window [app_id="^(btop|pulsemixer|bluetuith|nmtui|vpn-connect)$"] floating enable, resize set 60 ppt 60 ppt, move position center
-      for_window [app_id="app.zen_browser.zen" title="^Picture-in-Picture$"] floating enable, sticky enable
+      for_window [app_id="org.mozilla.firefox" title="^Picture-in-Picture$"] floating enable, sticky enable
       for_window [class=".*"] inhibit_idle fullscreen
     '';
   };
