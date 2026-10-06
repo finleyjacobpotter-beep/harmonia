@@ -11,7 +11,6 @@
 #   - Free models (docs/blender.md):
 #       Poly Haven Assets, Poly Haven's own add-on (GPL, built from source),
 #         in the Asset Browser's "Poly Haven" library, ~/Projects/Assets/Poly Haven;
-#       Sketchfab's official plugin, in the sidebar's Sketchfab tab;
 #       Poly Pizza (./blender/poly_pizza.py), in the sidebar's Poly Pizza tab.
 { pkgs, ... }:
 let
@@ -27,11 +26,6 @@ let
     hash = "sha256-hFwdQ1i1pMllb1oeRwS6dNztJ7PtS1lGJIuL7K78pBY=";
   };
 
-  sketchfab = pkgs.fetchzip {
-    url = "https://github.com/sketchfab/blender-plugin/releases/download/1.8.0/sketchfab-plugin-1-8-0.zip";
-    hash = "sha256-dyi8Af/1ohKBJH99CwtjxxVAzxWic78G7sFHaCqQ90k=";
-  };
-
   enable = pkgs.writeText "enable_harmonia_addons.py" ''
     # Enables harmonia's add-ons on every start (home/blender-addons.nix).
     import os
@@ -39,7 +33,7 @@ let
     import addon_utils
     import bpy
 
-    ADDONS = ("blender_mcp", "polyhavenassets", "sketchfab", "poly_pizza")
+    ADDONS = ("blender_mcp", "polyhavenassets", "poly_pizza")
     POLY_HAVEN = os.path.expanduser("~/Projects/Assets/Poly Haven")
 
 
@@ -79,7 +73,6 @@ let
     unzip -q ${mcpWheel} 'blender_mcp/bundled/addon.py'
     install -Dm644 blender_mcp/bundled/addon.py $out/addons/blender_mcp.py
     cp -r --no-preserve=mode ${polyHaven} $out/addons/polyhavenassets
-    cp -r --no-preserve=mode ${sketchfab} $out/addons/sketchfab
     install -Dm644 ${./blender/poly_pizza.py} $out/addons/poly_pizza.py
     install -Dm644 ${enable} $out/startup/enable_harmonia_addons.py
   '';

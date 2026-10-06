@@ -123,7 +123,6 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | xh / hyperfine / tokei / watchexec / just / ouch / zoxide | 0.26.2 / 1.20.0 / 15.0.0 / 2.5.1 / 1.58.0 / 0.8.3 / 0.10.0 |
 | MCP for Blender (`mcp-for-blender`) | 2.1.3 |
 | Poly Haven Assets (Blender add-on) | 1.2.3 |
-| Sketchfab Blender plugin | 1.8.0 |
 | Godot AI (`godot-ai`) | 4.3.0 |
 
 ## Secrets

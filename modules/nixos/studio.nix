@@ -27,7 +27,7 @@ in
       key = "Shift+b";
       sandbox = sandbox // {
         # Flathub already shares the network; said here because the free-model
-        # add-ons (Poly Haven, Sketchfab, Poly Pizza) and MCP for Blender need it.
+        # add-ons (Poly Haven, Poly Pizza) and MCP for Blender need it.
         Context = sandbox.Context // {
           shared = [ "network" ];
         };
