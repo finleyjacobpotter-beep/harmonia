@@ -10,6 +10,7 @@ A directory is copied whole, and only again when its store path changes; a
 file is reinstalled every time.
 """
 
+import configparser
 import json
 import os
 import shutil
@@ -22,6 +23,21 @@ FIREFOX = HOME / ".var/app/org.mozilla.firefox"
 # Profiles live in ~/.mozilla/firefox, or in the XDG location newer Firefox
 # uses for fresh installs (~/.config inside the sandbox).
 FIREFOX_ROOTS = [FIREFOX / ".mozilla/firefox", FIREFOX / "config/mozilla/firefox"]
+
+# The profile made before Firefox's first start, so the theme, vertical tabs
+# and add-ons are there from the first launch. MOZ_LEGACY_PROFILES (set in
+# modules/nixos/flatpak.nix) makes Firefox open it instead of making its own.
+PROFILES_INI = """\
+[General]
+StartWithLastProfile=1
+Version=2
+
+[Profile0]
+Name=harmonia
+IsRelative=1
+Path=harmonia
+Default=1
+"""
 
 
 def install(src: str, dest: Path) -> None:
@@ -67,15 +83,65 @@ def copy(src: str, dest: Path) -> None:
         install(src, dest)
 
 
-def firefox_profiles() -> list[Path]:
-    profiles = []
+def read_ini(path: Path) -> configparser.ConfigParser:
+    parser = configparser.ConfigParser(interpolation=None)
+    parser.optionxform = str  # keep Firefox's key case
+    parser.read(path)
+    return parser
+
+
+def ensure_firefox_profile() -> None:
+    """Make the harmonia profile if Firefox has none yet. If Firefox made its
+    own, mark the one it opens (installs.ini) as the default, so that with
+    MOZ_LEGACY_PROFILES it keeps opening that one."""
     for root in FIREFOX_ROOTS:
-        if not root.is_dir():
+        ini = root / "profiles.ini"
+        if not ini.is_file():
             continue
-        for profile in sorted(root.iterdir()):
-            if (profile / "prefs.js").is_file() or (profile / "times.json").is_file():
-                profiles.append(profile)
-    return profiles
+        installs = read_ini(root / "installs.ini")
+        used = [installs[s]["Default"] for s in installs.sections() if "Default" in installs[s]]
+        if not used:
+            return
+        profiles = read_ini(ini)
+        changed = False
+        for section in profiles.sections():
+            if not section.startswith("Profile"):
+                continue
+            want = profiles[section].get("Path") == used[0]
+            if (profiles[section].get("Default") == "1") != want:
+                changed = True
+                if want:
+                    profiles[section]["Default"] = "1"
+                else:
+                    profiles[section].pop("Default", None)
+        if changed:
+            with open(ini, "w") as f:
+                profiles.write(f, space_around_delimiters=False)
+            print(f"flatpak-miami-wind: made {used[0]} the default Firefox profile")
+        return
+    root = FIREFOX_ROOTS[0]
+    (root / "harmonia").mkdir(parents=True, exist_ok=True)
+    (root / "profiles.ini").write_text(PROFILES_INI)
+    print(f"flatpak-miami-wind: made the Firefox profile {root / 'harmonia'}/")
+
+
+def firefox_profiles() -> list[Path]:
+    """Every profile profiles.ini lists, and any other directory Firefox has used."""
+    profiles = set()
+    for root in FIREFOX_ROOTS:
+        ini = root / "profiles.ini"
+        if ini.is_file():
+            parser = read_ini(ini)
+            for section in parser.sections():
+                path = parser[section].get("Path")
+                if section.startswith("Profile") and path:
+                    relative = parser[section].get("IsRelative", "1") == "1"
+                    profiles.add(root / path if relative else Path(path))
+        if root.is_dir():
+            for profile in root.iterdir():
+                if (profile / "prefs.js").is_file() or (profile / "times.json").is_file():
+                    profiles.add(profile)
+    return sorted(p for p in profiles if p.is_dir())
 
 
 def main() -> None:
@@ -88,11 +154,8 @@ def main() -> None:
     profile_files = manifest.get("firefoxProfile", {})
     if not profile_files:
         return
-    profiles = firefox_profiles()
-    if not profiles:
-        print("flatpak-miami-wind: no Firefox profile yet — start Firefox once, then re-run.", file=sys.stderr)
-        return
-    for profile in profiles:
+    ensure_firefox_profile()
+    for profile in firefox_profiles():
         for dest, src in profile_files.items():
             install(src, profile / dest)
         print(f"flatpak-miami-wind: themed {profile}/")
