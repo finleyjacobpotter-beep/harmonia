@@ -30,7 +30,24 @@
     default = [ ];
   };
 
+  # Set by the checked-in placeholder hardware configs. Those don't know your
+  # disks (no LUKS device, made-up filesystem labels), so a system built from
+  # one can't unlock or mount root at boot. Refuse to switch to it.
+  options.harmonia.placeholderHardware = lib.mkOption {
+    type = lib.types.bool;
+    default = false;
+  };
+
   config = {
+    system.preSwitchChecks.placeholderHardware =
+      lib.optionalString config.harmonia.placeholderHardware ''
+        echo "harmonia: hosts/${hostname}/hardware-configuration.nix is still the placeholder." >&2
+        echo "It has no LUKS device or real filesystems, so this system would not boot." >&2
+        echo "Replace it first (docs/install.md, step 10):" >&2
+        echo "  sudo nixos-generate-config --show-hardware-config > hosts/${hostname}/hardware-configuration.nix" >&2
+        exit 1
+      '';
+
     # tulasi-icon-theme is CC BY-NC-SA 4.0 (non-commercial).
     harmonia.allowedUnfree = [ "tulasi-icon-theme" ];
     nixpkgs.config.allowUnfreePredicate =

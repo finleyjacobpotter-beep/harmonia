@@ -259,6 +259,20 @@ file you create later, which would otherwise be invisible to the build. Commit
 it if you like, but don't push your machine's hardware file to the public repo
 unless you mean to.
 
+Keep git from ever putting the placeholder back (a `git stash`, `git checkout`
+of another branch or `git reset --hard` would otherwise do it silently):
+
+```sh
+git update-index --skip-worktree hosts/harmonia/hardware-configuration.nix
+```
+
+The placeholder has no LUKS device and made-up filesystem labels, so a system
+built from it can't unlock or mount your disk. `nixos-rebuild switch` and
+`boot` refuse to activate it and print the command above. If you ever boot
+into one anyway (systemd waits for the root disk and never asks for the
+passphrase), pick the previous generation in the systemd-boot menu, put your
+hardware config back, and rebuild.
+
 (Copying the file generated during install is the same as running
 `sudo nixos-generate-config --show-hardware-config > hosts/harmonia/hardware-configuration.nix`
 as the README says; either works.)

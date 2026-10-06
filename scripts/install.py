@@ -243,6 +243,14 @@ def clone_harmonia(s: dict) -> bool:
 
     shutil.copy(MNT / "etc/nixos/hardware-configuration.nix",
                 dest / "hosts" / s["host"] / "hardware-configuration.nix")
+    # Keep a stash, branch switch or reset from restoring the placeholder,
+    # which can't unlock LUKS or mount root.
+    skip = ["git", "-C", str(dest), "update-index", "--skip-worktree",
+            f"hosts/{s['host']}/hardware-configuration.nix"]
+    if shutil.which("git"):
+        run(*skip, check=False)
+    else:
+        run("nix-shell", "-p", "git", "--run", shlex.join(skip), check=False)
     run("nixos-enter", "--root", str(MNT), "-c", f"chown -R {s['user']}:users /home/{s['user']}/harmonia")
     return True
 

@@ -106,7 +106,11 @@ the right one for the machine.
 2. Replace the placeholder hardware config:
    ```sh
    sudo nixos-generate-config --show-hardware-config > hosts/harmonia/hardware-configuration.nix
+   git update-index --skip-worktree hosts/harmonia/hardware-configuration.nix
    ```
+   The second line stops git putting the placeholder back on a stash, branch
+   switch or reset. A system built from the placeholder can't unlock LUKS or
+   find your disks, so `nixos-rebuild switch` refuses it.
 3. Build and switch (this also creates `flake.lock` from the pinned inputs; see
    [Pinned versions](docs/versions.md)):
    ```sh

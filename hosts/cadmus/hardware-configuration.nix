@@ -7,6 +7,10 @@
 {
   imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
 
+  # Your generated file won't have this line. Until it's replaced,
+  # `nixos-rebuild switch`/`boot` refuse to activate (hosts/base.nix).
+  harmonia.placeholderHardware = true;
+
   boot.initrd.availableKernelModules = [
     "xhci_pci"
     "ahci"
