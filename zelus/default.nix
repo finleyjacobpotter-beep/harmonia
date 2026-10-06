@@ -1,7 +1,7 @@
 # Zelus, the microVM guest. What every microVM shares (network, shares,
 # volumes, ssh, the status service, the host's shell configs) is
 # lib/microvm-guest.nix; the host side (its network, shared folders,
-# `ssh zelus` and the Blender/Godot forwards) is modules/nixos/zelus.nix.
+# `ssh zelus` and the Blender/Godot sockets) is modules/nixos/zelus.nix.
 #
 # Login: c, no password (ssh zelus from the host). The shell, neovim, tmux
 # and ranger are the host's own home-manager configs in cyan instead of pink
@@ -14,7 +14,7 @@
   ...
 }:
 let
-  mcp = import ../home/mcp-servers.nix { inherit pkgs; };
+  mcp = (import ../home/mcp-servers.nix { inherit pkgs; }).zelus vm;
 in
 {
   imports = [
@@ -66,9 +66,9 @@ in
   home-manager.users.c = {
     imports = [ ../home/opencode.nix ];
 
-    # `claude`, then /login the first time. The MCP servers connect to
-    # Blender and Godot on the host through `ssh zelus` (see
-    # modules/nixos/zelus.nix), so start Claude Code from an ssh session.
+    # `claude`, then /login the first time. The MCP servers reach Blender
+    # and Godot on the host through sockets on the host's end of the tap
+    # (modules/nixos/zelus.nix), from an ssh session or the console alike.
     programs.claude-code = {
       enable = true;
       # When to use the Rust tools (home/rust-tools.nix); opencode reads

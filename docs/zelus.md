@@ -47,22 +47,29 @@ neither the host (pink) nor Nike (orange).
 
 Blender and Godot run on the host, as usual (`Super+o Shift+b`, `Super+o d`),
 with the add-ons set up as in [opencode.md](opencode.md#mcp-servers). Claude
-Code or opencode on Zelus starts the two MCP servers itself, and `ssh zelus`
-connects them to the editors:
+Code and opencode on Zelus reach them through two sockets on the host's end of
+Zelus's tap ([`modules/nixos/zelus.nix`](../modules/nixos/zelus.nix)), so they
+work from `ssh zelus` and Zelus's console alike, with or without an ssh
+session open:
 
 | | Zelus | Host |
 | --- | --- | --- |
-| Blender | `blender-mcp` connects to `localhost:9876` | the add-on listens on `localhost:9876` |
-| Godot | `godot-ai` listens on `localhost:9500` | the editor plugin connects to `localhost:9500` |
+| Blender | `blender-mcp` connects to `10.20.1.1:19876` | passed on to the add-on on `localhost:9876` |
+| Godot | `godot-mcp` pipes MCP to `10.20.1.1:19500` | a `godot-ai attach` bridge per connection, to the `godot-ai` server on `localhost:8000`; the editor plugin connects to its WebSocket on `localhost:9500` |
 
-Both forwards are bound to localhost on each side, so nothing is opened to
-the network. They exist while an `ssh zelus` session is open (later sessions
-share the first one's connection), so start Claude Code from one.
+Godot's server runs on the host because godot-ai (since v4) authenticates the editor
+with a private file the server writes, which the editor has to be able to
+read. It's a user service, `systemctl --user status godot-ai`, started at
+login so it's up before the editor opens: the plugin adopts it rather than
+starting its own (which it can't, inside the Flatpak). Its first start
+downloads it, so give it a minute after the first login.
 
-Port 9500 can be held by only one Godot MCP server, so run Claude Code and
-opencode with Godot one at a time (the second one's Godot server fails to
-start). The Blender add-on accepts one client at a time too. The two forwards
-come with `ssh zelus`, not the network, so they work in every firewall mode.
+Several clients can share the Godot server, so Claude Code and opencode can
+both use Godot at once. The Blender add-on accepts one client at a time.
+
+The two sockets are open to Zelus in every firewall mode, Lockdown included:
+they reach only the editors on the host, never the internet. Port 8000 on the
+host is Godot's, which is why the Nike CyberChef tunnel uses 8001.
 
 ## Rust tools and agent skills
 

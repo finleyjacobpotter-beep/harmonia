@@ -34,7 +34,7 @@ modules/nixos/
   virtualisation.nix           plain QEMU (no libvirt)
   microvms.nix                 `harmonia.microvms`: each VM declared once; its network, NAT, folders, `ssh <vm>`, colours and firewall modes follow
   nike.nix                     the Nike microVM: its colours and VPN firewall modes
-  zelus.nix                    the Zelus microVM: its colours, ~/Projects, LM Studio socket and firewall mode, the Blender/Godot ssh forwards
+  zelus.nix                    the Zelus microVM: its colours, ~/Projects, firewall modes, the LM Studio and Blender sockets, the Godot MCP server
   vm-firewall.nix              per-VM firewall modes (nftables on the host) and the `vm-firewall` command
   laptop.nix                   cadmus only: Wi-Fi firmware + regulatory database, suspend on lid close, power profiles
   thinkpad.nix                 cadmus only: thinkfan fan curve, fwupd for BIOS updates
@@ -63,7 +63,7 @@ home/                          home-manager, one file per program
   element.nix                  Miami Wind theme for Element
   opencode.nix                 opencode on Zelus: LM Studio + Claude providers, oh-my-openagent, Blender and Godot MCP servers
   rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host, Nike and Zelus
-  mcp-servers.nix              the Blender and Godot MCP servers, for Claude Code and opencode on Zelus
+  mcp-servers.nix              the Blender and Godot MCP servers (Godot's runs on the host), for Claude Code and opencode on Zelus
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix firefox.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
 lib/python-app.nix             packages a folder of Python scripts that share modules as several commands (the bar)

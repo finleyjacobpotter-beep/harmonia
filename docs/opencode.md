@@ -56,23 +56,21 @@ Studio only.
 ## MCP servers
 
 opencode on Zelus has the same two servers as Claude Code there
-([`home/mcp-servers.nix`](../home/mcp-servers.nix)), pinned to a release and
-started on Zelus. They reach Blender and Godot on the host through
-`ssh zelus` ([zelus.md](zelus.md#blender-and-godot)), so open opencode from an
-ssh session.
+([`home/mcp-servers.nix`](../home/mcp-servers.nix)), pinned to a release.
+They reach Blender and Godot on the host through sockets on Zelus's tap
+([zelus.md](zelus.md#blender-and-godot)); Godot's server itself runs on the
+host.
 
 | Server | Version | One-time setup in the app (on the host) |
 | --- | --- | --- |
-| [MCP for Blender](https://github.com/ahujasid/mcp-for-blender) | `mcp-for-blender` 2.1.3 | install the add-on file from the repository (its README says which) with *Edit → Preferences → Add-ons → Install from Disk*, enable *Interface: MCP for Blender* and click *Connect* in its sidebar tab (port 9876) |
-| [Godot MCP](https://github.com/bebabinlarsson-blip/Godot-MCP) | v5.0.9 | copy `addons/godot_ai` and `addons/godot_omni` from the v5.0.9 release zip into your project (under `~/Projects`), then enable *Godot MCP Core* and *Godot MCP Omni* in *Project → Project Settings → Plugins* (the plugin connects to the server's WebSocket on port 9500) |
+| [MCP for Blender](https://github.com/ahujasid/mcp-for-blender) | `mcp-for-blender` 2.1.3 | none on harmonia and cadmus: the add-on is installed and enabled in the Flatpak Blender ([`home/blender-mcp.nix`](../home/blender-mcp.nix)) and starts its server on port 9876 whenever Blender opens |
+| [Godot AI](https://github.com/hi-godot/godot-ai) | `godot-ai` 4.3.0 | install the Godot AI 4.3.0 plugin into your project (under `~/Projects`) and enable it in *Project → Project Settings → Plugins* (the plugin adopts the host's `godot-ai` server and connects to its WebSocket on port 9500; the plugin's version has to match the server's) |
 
-`uvx mcp-for-blender install-addon` won't work here: it installs into a
-Blender config directory, and the Flatpak Blender reads
-`~/.var/app/org.blender.Blender/config/blender` instead.
+Blender's add-ons folder (`BLENDER_USER_SCRIPTS`) is the copied one, so an add-on installed with *Install from Disk* lands there and is replaced on the next rebuild; extensions from the Blender extensions platform aren't affected.
 
-uv downloads each server from PyPI or GitHub the first time it starts, so run
-it once in Zelus's permissive firewall mode; after that it starts from uv's
-cache. oh-my-openagent is downloaded the same way on opencode's first start.
+uv downloads each server from PyPI or GitHub the first time it starts: the
+Blender one on Zelus, so run it once in Zelus's permissive firewall mode
+(after that it starts from uv's cache), and the Godot one on the host. oh-my-openagent is downloaded the same way on opencode's first start.
 
 To update a server, bump its version in `home/mcp-servers.nix` and the
 add-on to match.

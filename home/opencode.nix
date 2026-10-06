@@ -3,9 +3,9 @@
 # of it is on the host. See docs/opencode.md.
 { pkgs, zelus, ... }:
 let
-  # The same pinned servers Claude Code uses (home/mcp-servers.nix), run
-  # right here on Zelus; ssh zelus connects them to the editors on the host.
-  mcp = import ./mcp-servers.nix { inherit pkgs; };
+  # The same pinned servers Claude Code uses (home/mcp-servers.nix),
+  # connected to the editors on the host.
+  mcp = (import ./mcp-servers.nix { inherit pkgs; }).zelus zelus;
 
   local = "lmstudio/qwopus3.5-9b-v3";
   opus = "anthropic/claude-opus-5-5";
