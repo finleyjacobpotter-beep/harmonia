@@ -25,7 +25,7 @@
 # `ssh zelus` is open, and in every firewall mode:
 #   - Blender: blender-mcp runs on Zelus and connects to 10.20.1.1:19876,
 #     which passes connections on to the add-on on the host's localhost:9876.
-#   - Godot: godot-ai v5's server has to run next to the editor, which
+#   - Godot: godot-ai's server (v4+) has to run next to the editor, which
 #     authenticates to it with a private record the server writes (a server
 #     on Zelus could never be adopted). So the host runs it as a user service
 #     (localhost:8000, plugin WebSocket localhost:9500), with the record in

@@ -64,7 +64,7 @@ host.
 | Server | Version | One-time setup in the app (on the host) |
 | --- | --- | --- |
 | [MCP for Blender](https://github.com/ahujasid/mcp-for-blender) | `mcp-for-blender` 2.1.3 | install the add-on file from the repository (its README says which) with *Edit → Preferences → Add-ons → Install from Disk*, enable *Interface: MCP for Blender* and click *Connect* in its sidebar tab (port 9876) |
-| [Godot MCP](https://github.com/bebabinlarsson-blip/Godot-MCP) | v5.0.9 | copy `addons/godot_ai` and `addons/godot_omni` from the v5.0.9 release zip into your project (under `~/Projects`), then enable *Godot MCP Core* and *Godot MCP Omni* in *Project → Project Settings → Plugins* (the plugin adopts the host's `godot-ai` server and connects to its WebSocket on port 9500; the plugin's version has to match the server's) |
+| [Godot AI](https://github.com/hi-godot/godot-ai) | `godot-ai` 4.3.0 | install the Godot AI 4.3.0 plugin into your project (under `~/Projects`) and enable it in *Project → Project Settings → Plugins* (the plugin adopts the host's `godot-ai` server and connects to its WebSocket on port 9500; the plugin's version has to match the server's) |
 
 `uvx mcp-for-blender install-addon` won't work here: it installs into a
 Blender config directory, and the Flatpak Blender reads

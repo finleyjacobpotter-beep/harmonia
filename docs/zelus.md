@@ -57,7 +57,7 @@ session open:
 | Blender | `blender-mcp` connects to `10.20.1.1:19876` | passed on to the add-on on `localhost:9876` |
 | Godot | `godot-mcp` pipes MCP to `10.20.1.1:19500` | a `godot-ai attach` bridge per connection, to the `godot-ai` server on `localhost:8000`; the editor plugin connects to its WebSocket on `localhost:9500` |
 
-Godot's server runs on the host because godot-ai v5 authenticates the editor
+Godot's server runs on the host because godot-ai (since v4) authenticates the editor
 with a private file the server writes, which the editor has to be able to
 read. It's a user service, `systemctl --user status godot-ai`, started at
 login so it's up before the editor opens: the plugin adopts it rather than
