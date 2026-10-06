@@ -188,7 +188,7 @@ let
       (button :class "module vm ${vm} ''${${vm}.running ? "running" : "stopped"}"
         :tooltip ${tooltip}
         :onclick "${bin}/eww-display menu ${vm}-menu"
-        (box :orientation "h" :space-evenly false :spacing 2
+        (box :orientation "h" :space-evenly false :spacing 6
           (label :class "icon" :text "󰒋")
           (label :class "vm-mode mode-''${${vm}.mode}" :xalign 0 :text "''${${shortText vm}}")))
     '';
