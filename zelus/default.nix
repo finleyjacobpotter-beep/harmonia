@@ -22,10 +22,14 @@ let
         command = "${mcp.blender}/bin/blender-mcp";
         args = [ ];
       };
+      # MCP over the host's Godot relay (modules/nixos/zelus.nix).
       godot = {
         type = "stdio";
-        command = "${mcp.godot}/bin/godot-mcp";
-        args = [ ];
+        command = "${pkgs.socat}/bin/socat";
+        args = [
+          "-"
+          "TCP:${vm.hostAddress}:${toString vm.godotPort}"
+        ];
       };
     }
   );
@@ -74,6 +78,7 @@ in
     python3
     uv
     nodejs
+    socat
   ];
 
   home-manager.extraSpecialArgs.zelus = vm;
