@@ -14,8 +14,8 @@
 #
 # A mode only filters what a VM starts: traffic it forwards out through the
 # host (the internet, through the host's NAT) and connections to the host
-# itself. `ssh nike` / `ssh zelus` are started by the host, so they (and the
-# Blender and Godot forwards they carry) work in every mode.
+# itself. `ssh nike` / `ssh zelus` are started by the host, so they work in
+# every mode; so do a VM's `firewall.hostPorts` (Zelus: Blender and Godot).
 {
   config,
   lib,

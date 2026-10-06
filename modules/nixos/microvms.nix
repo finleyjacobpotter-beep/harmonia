@@ -79,6 +79,17 @@ let
             type = types.listOf types.attrs;
             default = [ ];
           };
+          # TCP ports on the host's end of the tap that the VM may reach in
+          # every mode, Lockdown included, and what they are (for Lockdown's
+          # description).
+          hostPorts = mkOption {
+            type = types.listOf types.port;
+            default = [ ];
+          };
+          hostPortsLabel = mkOption {
+            type = types.str;
+            default = "";
+          };
         };
         # The bar's panel: whether to show the VM's VPN (nike/status.py
         # reports it), and the line saying how to reach the VM.
@@ -214,30 +225,45 @@ in
 
     # Every VM has Lockdown and Permissive; its own modes go between them.
     # Switched from the bar's panel or `sudo vm-firewall set NAME MODE`.
-    harmonia.vmFirewall = lib.mapAttrs (_: v: {
-      inherit (v.vm) tap;
-      inherit (v.firewall) default;
-      modes = [
-        {
-          name = "lockdown";
-          label = "Lockdown";
-          short = "lock";
-          description = "Nothing out; only ssh from the host";
-          forwardPolicy = "drop";
-          inputPolicy = "drop";
-        }
-      ]
-      ++ v.firewall.modes
-      ++ [
-        {
-          name = "permissive";
-          label = "Permissive";
-          short = "open";
-          description = "Anything out to the internet and the host";
-          forwardPolicy = "accept";
-          inputPolicy = "accept";
-        }
-      ];
-    }) cfg;
+    harmonia.vmFirewall = lib.mapAttrs (
+      _: v:
+      let
+        inherit (v.firewall) hostPorts hostPortsLabel;
+        hostRules =
+          lib.optional (hostPorts != [ ])
+            "tcp dport { ${lib.concatMapStringsSep ", " toString hostPorts} } accept";
+      in
+      {
+        inherit (v.vm) tap;
+        inherit (v.firewall) default;
+        modes = map (m: m // { input = hostRules ++ (m.input or [ ]); }) (
+          [
+            {
+              name = "lockdown";
+              label = "Lockdown";
+              short = "lock";
+              description =
+                if hostPorts == [ ] then
+                  "Nothing out; only ssh from the host"
+                else
+                  "Nothing out but ${hostPortsLabel}; ssh from the host";
+              forwardPolicy = "drop";
+              inputPolicy = "drop";
+            }
+          ]
+          ++ v.firewall.modes
+          ++ [
+            {
+              name = "permissive";
+              label = "Permissive";
+              short = "open";
+              description = "Anything out to the internet and the host";
+              forwardPolicy = "accept";
+              inputPolicy = "accept";
+            }
+          ]
+        );
+      }
+    ) cfg;
   };
 }

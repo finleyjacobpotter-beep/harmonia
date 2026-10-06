@@ -121,8 +121,8 @@ let
 
   # CyberChef — GCHQ's data-transformation web app ("the cyber swiss army
   # knife"), a static site in the official image. Bound to localhost; reach it
-  # over an SSH tunnel (ssh -L 8000:127.0.0.1:8000 nike), then
-  # http://localhost:8000. Replaces the encode/decode side of Burp.
+  # over an SSH tunnel (ssh -L 8001:127.0.0.1:8000 nike), then
+  # http://localhost:8001. Replaces the encode/decode side of Burp.
   cyberchefCompose = pkgs.writeText "cyberchef-compose.yml" ''
     services:
       cyberchef:

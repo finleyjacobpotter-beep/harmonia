@@ -256,7 +256,7 @@ sudo systemctl start mythic        # Mythic C2 (first run is slow)
   compression and data analysis (the official `ghcr.io/gchq/cyberchef` image,
   pulled on first start). Bound to localhost:
   ```sh
-  ssh -L 8000:127.0.0.1:8000 nike        # then open http://localhost:8000
+  ssh -L 8001:127.0.0.1:8000 nike        # then open http://localhost:8001
   ```
 - **zap** ([`/etc/nike/zap/compose.yml`](../nike/labs.nix)): **OWASP ZAP as a
   free Burp replacement** — the full ZAP desktop UI served in your browser via
