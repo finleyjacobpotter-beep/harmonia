@@ -250,9 +250,9 @@ in
 {
   programs.bash.shellAliases.firefox = "flatpak run org.mozilla.firefox";
 
-  # Copied by flatpak-miami-wind (home/flatpak-files.nix) on every rebuild;
-  # the profile files only once Firefox has made a profile, so run
-  # `flatpak-miami-wind` after starting Firefox the first time.
+  # Copied by flatpak-miami-wind (home/flatpak-files.nix) on every rebuild,
+  # into every Firefox profile; before Firefox's first start it makes the
+  # profile itself, so the first launch is already themed.
   harmonia.flatpakFiles = {
     ".var/app/org.mozilla.firefox/data/icons/Tulasi" = "${tulasi}/share/icons/Tulasi";
     ".var/app/org.mozilla.firefox/config/gtk-3.0/settings.ini" = gtkSettings;

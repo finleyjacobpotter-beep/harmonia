@@ -129,6 +129,10 @@ in
         Environment = {
           MOZ_ENABLE_WAYLAND = "1";
           GTK_THEME = "Adwaita:dark";
+          # Open profiles.ini's default profile, which flatpak-miami-wind
+          # makes and themes before the first start (home/flatpak-files.py),
+          # instead of a fresh per-install one it hasn't seen.
+          MOZ_LEGACY_PROFILES = "1";
         };
       };
     };

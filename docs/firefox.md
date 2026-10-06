@@ -27,7 +27,12 @@ Both add-ons are pinned (`docs/versions.md`) and side-loaded, so they are
 enabled without a prompt and update only when the pin is bumped.
 
 All of it is copied into each Firefox profile as `userChrome.css`,
-`userContent.css`, `user.js` and `extensions/*.xpi`. Profiles only exist after
-Firefox has been started once, so after the first launch run
-`flatpak-miami-wind` (it also runs on every rebuild; `firefox-miami-wind` is
-the same command) and restart Firefox.
+`userContent.css`, `user.js` and `extensions/*.xpi` by `flatpak-miami-wind`,
+which runs on every rebuild (`firefox-miami-wind` is the same command). Before
+Firefox's first start it makes a `harmonia` profile and marks it the default,
+and Firefox runs with `MOZ_LEGACY_PROFILES=1` so it opens that profile rather
+than making a fresh, unthemed one. If Firefox already made its own profile,
+that one is themed too and stays the one Firefox opens.
+
+If Firefox was running during the rebuild, restart it to pick the changes up.
+Run `flatpak-miami-wind` by hand to reapply without a rebuild.
