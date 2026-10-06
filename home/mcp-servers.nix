@@ -3,7 +3,7 @@
 #
 # Blender and Godot run on the host, the agents on Zelus
 # (modules/nixos/zelus.nix):
-#   - blender-mcp runs on Zelus and connects to the add-on through a socket
+#   - blender-mcp runs on Zelus and connects to the add-on (home/blender-addons.nix) through a socket
 #     on the host's end of the tap.
 #   - godot-ai's server (4.x) runs on the host, next to the editor that reads its
 #     private capability record; on Zelus, godot-mcp is a pipe to a

@@ -63,10 +63,10 @@ host.
 
 | Server | Version | One-time setup in the app (on the host) |
 | --- | --- | --- |
-| [MCP for Blender](https://github.com/ahujasid/mcp-for-blender) | `mcp-for-blender` 2.1.3 | none on harmonia and cadmus: the add-on is installed and enabled in the Flatpak Blender ([`home/blender-mcp.nix`](../home/blender-mcp.nix)) and starts its server on port 9876 whenever Blender opens |
+| [MCP for Blender](https://github.com/ahujasid/mcp-for-blender) | `mcp-for-blender` 2.1.3 | none on harmonia and cadmus: the add-on is installed and enabled in the Flatpak Blender ([`home/blender-addons.nix`](../home/blender-addons.nix)) and starts its server on port 9876 whenever Blender opens |
 | [Godot AI](https://github.com/hi-godot/godot-ai) | `godot-ai` 4.3.0 | install the Godot AI 4.3.0 plugin into your project (under `~/Projects`) and enable it in *Project → Project Settings → Plugins* (the plugin adopts the host's `godot-ai` server and connects to its WebSocket on port 9500; the plugin's version has to match the server's) |
 
-Blender's add-ons folder (`BLENDER_USER_SCRIPTS`) is the copied one, so an add-on installed with *Install from Disk* lands there and is replaced on the next rebuild; extensions from the Blender extensions platform aren't affected.
+Blender's add-ons folder (`BLENDER_USER_SCRIPTS`) is the copied one (it also holds the free-model add-ons, [blender.md](blender.md)), so an add-on installed with *Install from Disk* lands there and is replaced on the next rebuild; extensions from the Blender extensions platform aren't affected.
 
 uv downloads each server from PyPI or GitHub the first time it starts: the
 Blender one on Zelus, so run it once in Zelus's permissive firewall mode

@@ -26,8 +26,13 @@ in
       name = "blender";
       key = "Shift+b";
       sandbox = sandbox // {
-        # The MCP for Blender add-on and the script that enables it
-        # (home/blender-mcp.nix); the copy is pinned, so no self-update.
+        # Flathub already shares the network; said here because the free-model
+        # add-ons (Poly Haven, Sketchfab, Poly Pizza) and MCP for Blender need it.
+        Context = sandbox.Context // {
+          shared = [ "network" ];
+        };
+        # The add-ons and the script that enables them (home/blender-addons.nix);
+        # the copies are pinned, so no self-update.
         Environment = {
           BLENDER_USER_SCRIPTS = "/home/${username}/.var/app/${blender}/config/blender/harmonia-scripts";
           BLENDERMCP_NO_UPDATE_CHECK = "1";

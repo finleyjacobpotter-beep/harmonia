@@ -28,7 +28,7 @@ modules/nixos/
   steam.nix                    Steam from Flathub, locked down, sharing only ~/Games with Lutris
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
-  studio.nix                   Blender and Godot from Flathub, sharing only ~/Projects
+  studio.nix                   Blender and Godot from Flathub, sharing only ~/Projects (and the network)
   fans.nix                     harmonia only: LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
   podman.nix                   rootless podman, podman-compose, buildah (all hosts)
   virtualisation.nix           plain QEMU (no libvirt)
@@ -63,6 +63,7 @@ home/                          home-manager, one file per program
   element.nix                  Miami Wind theme for Element
   opencode.nix                 opencode on Zelus: LM Studio + Claude providers, oh-my-openagent, Blender and Godot MCP servers
   rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host, Nike and Zelus
+  blender-addons.nix           Blender add-ons in the Flatpak: MCP for Blender, Poly Haven, Sketchfab, Poly Pizza (blender/poly_pizza.py)
   mcp-servers.nix              the Blender and Godot MCP servers (Godot's runs on the host), for Claude Code and opencode on Zelus
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix firefox.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
@@ -126,6 +127,7 @@ the right one for the machine.
 - [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
+- [Blender](docs/blender.md): free models from Poly Haven, Sketchfab and Poly Pizza inside Blender
 - [opencode](docs/opencode.md): opencode on Zelus, providers, the Anthropic key, and the Blender and Godot MCP servers
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
 - [Nike and containers](docs/nike.md): the Nike microVM (VPN work, OSCP lab, firewall modes, shared folder, bar panel), podman
@@ -172,6 +174,9 @@ harmonia stands on other people's work:
   Godot.
 - **[microvm.nix](https://github.com/microvm-nix/microvm.nix)**: the Nike
   and Zelus microVMs.
+- **[Poly Haven](https://polyhaven.com/)** ([add-on](https://github.com/Poly-Haven/polyhavenassets), GPL-3.0),
+  **[Sketchfab](https://sketchfab.com/)** ([plugin](https://github.com/sketchfab/blender-plugin), Apache-2.0)
+  and **[Poly Pizza](https://poly.pizza/)**: free models inside Blender.
 
 ## License
 

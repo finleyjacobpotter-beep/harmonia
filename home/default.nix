@@ -6,7 +6,7 @@
     ./base.nix
     ./flatpak-theme.nix
     ./rust-tools.nix
-    ./blender-mcp.nix
+    ./blender-addons.nix
   ];
 
   # Python package manager; provides `uv` and `uvx` (run a tool from PyPI
