@@ -15,7 +15,9 @@ can't see other windows. Its only device is the GPU.
 
 It keeps network access, to download models from Hugging Face. The local API
 server (*Developer* tab) listens on `localhost:1234` by default; don't switch
-it to "serve on local network" unless you mean to.
+it to "serve on local network" unless you mean to. Zelus reaches it at
+`http://10.20.1.1:1234/v1` either way (in its Permissive and Local inference
+firewall modes), as long as the server is running.
 
 Check the effective permissions with
 `flatpak info --show-permissions ai.lmstudio.lm-studio`.
