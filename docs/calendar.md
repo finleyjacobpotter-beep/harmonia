@@ -76,9 +76,10 @@ want the changes pushed back.
 ### The password and the timer
 
 pass decrypts with your gpg key, and gpg-agent (home/secrets.nix) asks for
-the passphrase in a terminal. A timer has no terminal, so a timed sync only
-works while gpg-agent still has the key cached (10 minutes after you last
-used it, 2 hours at most). When it isn't, the sync fails quietly and the
+the passphrase. The timer never asks (its gpg runs with
+`--pinentry-mode=error`), so a timed sync only works while gpg-agent still
+has the key cached (10 minutes after you last used it, 2 hours at most).
+When it isn't, the sync fails quietly and the
 calendar keeps the events from the last good sync; run `vdirsyncer sync`
 in a terminal to sync straight away. A published `.ics` link needs no
 password, so it always syncs.

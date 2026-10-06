@@ -81,6 +81,9 @@ in
 
   programs.dconf.enable = true;
   services.gnome.gnome-keyring.enable = true;
+  # gnome-keyring turns on GCR's ssh-agent too; gpg-agent is the ssh agent
+  # here (home/secrets.nix), so keep just the one.
+  services.gnome.gcr-ssh-agent.enable = false;
 
   environment.sessionVariables = {
     NIXOS_OZONE_WL = "1";

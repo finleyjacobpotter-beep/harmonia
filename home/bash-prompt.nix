@@ -1,9 +1,9 @@
 # The Miami Wind bash prompt and less/man colours, for home/bash.nix (on the
-# host and on Nike). `gpg` is null where there is no gpg-agent (Nike).
+# host and on Nike). GPG_TTY and SSH_AUTH_SOCK come from home-manager's
+# gpg-agent module (home/secrets.nix).
 {
   palette,
   gitPrompt,
-  gpg,
 }:
 let
   p = palette;
@@ -40,17 +40,3 @@ in
   export LESS_TERMCAP_ue=$'\e[0m'
   export LESS_TERMCAP_se=$'\e[0m'
 ''
-+ (
-  if gpg == null then
-    ""
-  else
-    ''
-
-      # Setup GPG / SSH
-      export GPG_TTY="$(tty)"
-      ${gpg}/bin/gpg-connect-agent /bye
-      if [ -z "$SSH_AUTH_SOCK" ]; then
-        export SSH_AUTH_SOCK=$(${gpg}/bin/gpgconf --list-dirs agent-ssh-socket)
-      fi
-    ''
-)

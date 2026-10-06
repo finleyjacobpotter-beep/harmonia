@@ -5,10 +5,45 @@
   pkgs,
   lib,
   config,
+  palette,
   ...
 }:
 let
+  p = palette;
   pyScript = import ../lib/python-script.nix { inherit pkgs lib; };
+
+  # gpg-agent is one process for the whole session, so a curses prompt goes
+  # to whichever terminal last ran `gpg-connect-agent updatestartuptty`, not
+  # the one that asked, and fails outright when pass runs from a service or
+  # the bar. Under Sway the prompt is a bemenu bar instead (keyboard only,
+  # like fuzzel); on a plain console it stays curses.
+  bemenuOpts = lib.escapeShellArgs [
+    "--fn"
+    "${p.font.name} ${toString p.font.size}"
+    "--tb"
+    p.bg
+    "--tf"
+    p.primary
+    "--fb"
+    p.bg
+    "--ff"
+    p.fg
+    "--nb"
+    p.bg
+    "--nf"
+    p.fg
+    "--hb"
+    p.surface
+    "--hf"
+    p.secondary
+  ];
+  pinentry = pkgs.writeShellScriptBin "pinentry-harmonia" ''
+    if [ -n "''${WAYLAND_DISPLAY:-}" ]; then
+      export BEMENU_OPTS=${lib.escapeShellArg bemenuOpts}
+      exec ${pkgs.pinentry-bemenu}/bin/pinentry-bemenu "$@"
+    fi
+    exec ${pkgs.pinentry-curses}/bin/pinentry-curses "$@"
+  '';
 in
 {
   home.packages = with pkgs; [
@@ -37,8 +72,8 @@ in
     enable = true;
     enableSshSupport = true;
     enableBashIntegration = true;
-    # In-terminal passphrase prompt, keyboard only like the rest of the desktop.
-    pinentry.package = pkgs.pinentry-curses;
+    pinentry.package = pinentry;
+    pinentry.program = "pinentry-harmonia";
     defaultCacheTtl = 600;
     maxCacheTtl = 7200;
   };

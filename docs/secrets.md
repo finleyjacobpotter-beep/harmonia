@@ -5,7 +5,7 @@ Local secrets tooling lives in `home/secrets.nix` (user side) and
 
 | Tool | Command | Notes |
 | --- | --- | --- |
-| GnuPG + gpg-agent | `gpg` | curses pinentry in the terminal; passphrases cached 10 min (2 h max) |
+| GnuPG + gpg-agent | `gpg` | passphrase prompt is a Miami Wind bemenu bar under Sway (curses on a plain console); also the ssh agent; passphrases cached 10 min (2 h max) |
 | pass | `pass` | store in `~/.local/share/password-store`, clipboard cleared after 45 s |
 | YubiKey Manager | `ykman` | talks to the key through pcscd; gpg's scdaemon does too (`disable-ccid`) |
 | Bitwarden CLI | `bw` | |
@@ -20,6 +20,20 @@ bw login                         # once; later: export BW_SESSION=$(bw unlock --
 export BAO_ADDR=https://bao.example.com && bao login
 ykman info                       # with the key plugged in
 ```
+
+## Checking gpg-agent
+
+```sh
+systemctl --user status gpg-agent.socket gpg-agent-ssh.socket   # both active (listening)
+gpgconf --list-dirs agent-socket                                # /run/user/<uid>/gnupg/S.gpg-agent
+echo "$SSH_AUTH_SOCK"                                           # /run/user/<uid>/gnupg/S.gpg-agent.ssh
+echo test | gpg --clearsign >/dev/null && echo signed           # prompts once, then cached
+gpg-connect-agent reloadagent /bye                              # forget cached passphrases
+ssh-add -L                                                      # keys gpg-agent serves to ssh
+```
+
+The clearsign needs a secret key; `gpg -K` lists them. pass works when
+`pass show <entry>` prompts (or uses the cache) and prints the entry.
 
 ## Backup: `secrets-backup`
 

@@ -375,7 +375,12 @@ in
     Service = {
       Type = "oneshot";
       # pass (for password.fetch) looks for the store here, as in home/secrets.nix.
-      Environment = [ "PASSWORD_STORE_DIR=${config.xdg.dataHome}/password-store" ];
+      # A timer can't answer a passphrase prompt, so gpg only uses a passphrase
+      # gpg-agent already has cached and fails otherwise.
+      Environment = [
+        "PASSWORD_STORE_DIR=${config.xdg.dataHome}/password-store"
+        "PASSWORD_STORE_GPG_OPTS=--pinentry-mode=error"
+      ];
       ExecStart = [
         "-${pkgs.vdirsyncer}/bin/vdirsyncer metasync"
         "${pkgs.vdirsyncer}/bin/vdirsyncer sync"

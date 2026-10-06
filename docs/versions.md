@@ -130,6 +130,7 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | --- | --- |
 | GnuPG | 2.4.9 |
 | pinentry (curses) | 1.3.2 |
+| pinentry-bemenu | 0.14.0 |
 | pass | 1.7.4 |
 | yubikey-manager (`ykman`) | 5.9.2 |
 | pcsc-lite | 2.4.1 |
