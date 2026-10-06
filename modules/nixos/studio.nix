@@ -2,6 +2,7 @@
 # shares only ~/Projects with the host ("studio jail"). ~/Projects itself is
 # created by home/default.nix. opencode, which drives them over MCP, runs on
 # Zelus (modules/nixos/zelus.nix, home/opencode.nix).
+{ username, ... }:
 let
   blender = "org.blender.Blender";
   godot = "org.godotengine.Godot";
@@ -24,7 +25,14 @@ in
     ${blender} = {
       name = "blender";
       key = "Shift+b";
-      inherit sandbox;
+      sandbox = sandbox // {
+        # The MCP for Blender add-on and the script that enables it
+        # (home/blender-mcp.nix); the copy is pinned, so no self-update.
+        Environment = {
+          BLENDER_USER_SCRIPTS = "/home/${username}/.var/app/${blender}/config/blender/harmonia-scripts";
+          BLENDERMCP_NO_UPDATE_CHECK = "1";
+        };
+      };
     };
     ${godot} = {
       name = "godot";
