@@ -6,8 +6,12 @@ on every host (x86_64 and aarch64). On top of the Flathub manifest,
 
 - all host and home filesystem access — the only host path is `~/Downloads/firefox`
 - the X11 socket (Wayland only), CUPS and smartcard sockets
-- all devices except the GPU (`dri`). Remove `"!all"` if you need a webcam or
-  a FIDO/U2F key.
+
+Devices are left as Flathub ships them (`--device=all`), because Firefox needs
+`/dev/hidraw*` for a YubiKey or other FIDO2/U2F security key and flatpak has
+no narrower permission that covers it. The host's udev rules (systemd's FIDO
+rules and `yubikey-personalization`, `modules/nixos/secrets.nix`) give the
+logged-in user access to the key.
 
 Check the effective permissions with `flatpak info --show-permissions org.mozilla.firefox`.
 Open it with `Super+o b`, or `firefox` in a shell.

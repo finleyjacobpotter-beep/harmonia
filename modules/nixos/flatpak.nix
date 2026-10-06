@@ -119,12 +119,12 @@ in
             "!pcsc"
             "!cups"
           ];
-          # Flathub grants --device=all (webcams, FIDO keys, ...). Only allow the
-          # GPU. Remove "!all" here if you need a webcam or hardware security key.
-          devices = [
-            "!all"
-            "dri"
-          ];
+          # All devices, as Flathub ships it: Firefox reaches a YubiKey or
+          # other FIDO2/U2F security key through /dev/hidraw*, and flatpak has
+          # no narrower device class that includes it. Set explicitly so it
+          # replaces the "!all" earlier builds wrote. Webcams and microphones
+          # are still behind Firefox's own per-site permission prompts.
+          devices = [ "all" ];
         };
         Environment = {
           MOZ_ENABLE_WAYLAND = "1";
