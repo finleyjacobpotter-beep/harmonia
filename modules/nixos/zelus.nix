@@ -14,8 +14,10 @@
 # (home/eww/microvm.py).
 #
 # LM Studio (on the host, modules/nixos/lmstudio.nix) is reachable from Zelus
-# at 10.20.1.1:1234, for opencode's local model: a socket on the tap's
-# address passes connections on to LM Studio's localhost:1234.
+# at 10.20.1.1:1234, for opencode's local model: the host redirects that to a
+# socket on the tap's address (port 11234), which passes connections on to
+# LM Studio's localhost:1234. The socket can't sit on 1234 itself: LM Studio's
+# "serve on local network" binds 0.0.0.0:1234, which would then fail.
 #
 # Blender and Godot run on the host (Flatpak, modules/nixos/studio.nix) and
 # their MCP servers run on Zelus, started by Claude Code. `ssh zelus` carries
@@ -36,6 +38,8 @@
 }:
 let
   inherit (config.harmonia.microvms.zelus) vm;
+  # Where the proxy below listens; Zelus's 10.20.1.1:1234 is redirected here.
+  proxyPort = 11234;
 in
 {
   harmonia.microvms.zelus = {
@@ -75,7 +79,8 @@ in
         short = "local";
         description = "Only the host's LM Studio; no internet";
         forwardPolicy = "drop";
-        input = [ "tcp dport ${toString vm.lmstudioPort} accept" ];
+        # After the redirect (below), so the proxy's port.
+        input = [ "tcp dport ${toString proxyPort} accept" ];
         inputPolicy = "drop";
       }
     ];
@@ -85,12 +90,12 @@ in
 
   # LM Studio for Zelus: listens on the host's end of the tap (FreeBind, so
   # it can start before Zelus brings the tap up) and hands each connection to
-  # LM Studio's local server. The firewall modes decide whether Zelus may use
-  # it.
+  # LM Studio's local server, whether that serves on localhost only or on the
+  # local network. The firewall modes decide whether Zelus may use it.
   systemd.sockets.lmstudio-zelus = {
     description = "LM Studio for Zelus";
     wantedBy = [ "sockets.target" ];
-    listenStreams = [ "${vm.hostAddress}:${toString vm.lmstudioPort}" ];
+    listenStreams = [ "${vm.hostAddress}:${toString proxyPort}" ];
     socketConfig.FreeBind = true;
   };
   systemd.services.lmstudio-zelus = {
@@ -102,5 +107,12 @@ in
       PrivateTmp = true;
     };
   };
-  networking.firewall.interfaces.${vm.tap}.allowedTCPPorts = [ vm.lmstudioPort ];
+  # Zelus keeps using 10.20.1.1:1234. The redirect happens before the host's
+  # firewall (and the VM's firewall mode) sees the connection, so both filter
+  # on the proxy's port.
+  networking.nat.extraCommands = ''
+    iptables -w -t nat -A nixos-nat-pre -i ${vm.tap} -d ${vm.hostAddress} -p tcp \
+      --dport ${toString vm.lmstudioPort} -j REDIRECT --to-ports ${toString proxyPort}
+  '';
+  networking.firewall.interfaces.${vm.tap}.allowedTCPPorts = [ proxyPort ];
 }
