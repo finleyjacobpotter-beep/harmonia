@@ -64,6 +64,9 @@ login so it's up before the editor opens: the plugin adopts it rather than
 starting its own (which it can't, inside the Flatpak). Its first start
 downloads it, so give it a minute after the first login.
 
+In Claude Code, `/mcp` lists both as user servers; they're written into
+`~/.claude.json` each time Zelus boots.
+
 Several clients can share the Godot server, so Claude Code and opencode can
 both use Godot at once. The Blender add-on accepts one client at a time.
 

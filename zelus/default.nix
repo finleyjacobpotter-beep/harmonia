@@ -15,6 +15,20 @@
 }:
 let
   mcp = (import ../home/mcp-servers.nix { inherit pkgs; }).zelus vm;
+  claudeMcpServers = pkgs.writeText "claude-mcp-servers.json" (
+    builtins.toJSON {
+      blender = {
+        type = "stdio";
+        command = "${mcp.blender}/bin/blender-mcp";
+        args = [ ];
+      };
+      godot = {
+        type = "stdio";
+        command = "${mcp.godot}/bin/godot-mcp";
+        args = [ ];
+      };
+    }
+  );
 in
 {
   imports = [
@@ -63,25 +77,36 @@ in
   ];
 
   home-manager.extraSpecialArgs.zelus = vm;
-  home-manager.users.c = {
-    imports = [ ../home/opencode.nix ];
+  home-manager.users.c =
+    { lib, ... }:
+    {
+      imports = [ ../home/opencode.nix ];
 
-    # `claude`, then /login the first time. The MCP servers reach Blender
-    # and Godot on the host through sockets on the host's end of the tap
-    # (modules/nixos/zelus.nix), from an ssh session or the console alike.
-    programs.claude-code = {
-      enable = true;
-      # When to use the Rust tools (home/rust-tools.nix); opencode reads
-      # ~/.claude/skills too.
-      skills = {
-        rust-search = ./skills/rust-search/SKILL.md;
-        rust-edit = ./skills/rust-edit/SKILL.md;
-        rust-inspect = ./skills/rust-inspect/SKILL.md;
+      # `claude`, then /login the first time. The MCP servers reach Blender
+      # and Godot on the host through sockets on the host's end of the tap
+      # (modules/nixos/zelus.nix), from an ssh session or the console alike.
+      programs.claude-code = {
+        enable = true;
+        # When to use the Rust tools (home/rust-tools.nix); opencode reads
+        # ~/.claude/skills too.
+        skills = {
+          rust-search = ./skills/rust-search/SKILL.md;
+          rust-edit = ./skills/rust-edit/SKILL.md;
+          rust-inspect = ./skills/rust-inspect/SKILL.md;
+        };
       };
-      mcpServers = {
-        blender.command = "${mcp.blender}/bin/blender-mcp";
-        godot.command = "${mcp.godot}/bin/godot-mcp";
-      };
+
+      # The Blender and Godot MCP servers, as user-scope servers in
+      # ~/.claude.json (what `claude mcp add --scope user` writes), merged in on
+      # every activation. programs.claude-code.mcpServers ships them as a
+      # personal plugin instead, which Claude Code didn't show.
+      home.activation.claudeMcpServers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        f="$HOME/.claude.json"
+        [ -s "$f" ] || echo '{}' > "$f"
+        tmp=$(mktemp "$f.XXXXXX")
+        ${pkgs.jq}/bin/jq --slurpfile servers ${claudeMcpServers} \
+          '.mcpServers = ((.mcpServers // {}) + $servers[0])' "$f" > "$tmp"
+        run mv "$tmp" "$f"
+      '';
     };
-  };
 }
