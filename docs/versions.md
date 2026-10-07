@@ -125,6 +125,16 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | Poly Haven Assets (Blender add-on) | 1.2.3 |
 | Godot AI (`godot-ai`) | 4.3.0 |
 
+## Game dev (harmonia host)
+
+[gamedev.md](gamedev.md). Same opencode as Zelus; the plugin and the local model are fetched at runtime, pinned here.
+
+| Package | Version |
+| --- | --- |
+| opencode | 1.18.31 |
+| oh-my-openagent (opencode plugin) | 5.1.21 |
+| Ornith 1.5 9B (LM Studio, `bartowski/Ornith-1.5-9B-GGUF`) | Q6_K |
+
 ## Secrets
 
 | Package | Version |

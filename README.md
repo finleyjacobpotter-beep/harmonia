@@ -62,9 +62,11 @@ home/                          home-manager, one file per program
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
   opencode.nix                 opencode on Zelus: LM Studio + Claude providers, oh-my-openagent, Blender and Godot MCP servers
+  gamedev.nix                  opencode on the harmonia desktop for game dev: Claude plans, local Ornith 1.5 9B builds, Blender and Godot MCP
+  gamedev/                     its agent prompts, skills (Godot 4, Blender, planning), commands and design-doc templates
   rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host, Nike and Zelus
   blender-addons.nix           Blender add-ons in the Flatpak: MCP for Blender, Poly Haven, Poly Pizza (blender/poly_pizza.py)
-  mcp-servers.nix              the Blender and Godot MCP servers (Godot's runs on the host), for Claude Code and opencode on Zelus
+  mcp-servers.nix              the Blender and Godot MCP servers (Godot's runs on the host), for Claude Code and opencode on Zelus and the host
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix firefox.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
 lib/python-app.nix             packages a folder of Python scripts that share modules as several commands (the bar)
@@ -127,6 +129,7 @@ the right one for the machine.
 - [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
+- [Game dev](docs/gamedev.md): opencode + oh-my-openagent on harmonia, Claude for plans and the local Ornith model for the work
 - [Blender](docs/blender.md): free models from Poly Haven and Poly Pizza inside Blender
 - [opencode](docs/opencode.md): opencode on Zelus, providers, the Anthropic key, and the Blender and Godot MCP servers
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS

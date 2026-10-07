@@ -1,5 +1,5 @@
 # harmonia, the desktop.
-{ pkgs, ... }:
+{ pkgs, username, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -15,4 +15,8 @@
     UV_PYTHON = "${pkgs.python3}/bin/python3";
     UV_PYTHON_DOWNLOADS = "never";
   };
+
+  # opencode for game dev, on the desktop only: Claude plus the local model
+  # in LM Studio, with Blender and Godot over MCP (docs/gamedev.md).
+  home-manager.users.${username}.imports = [ ../../home/gamedev.nix ];
 }
