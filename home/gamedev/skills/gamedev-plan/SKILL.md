@@ -29,16 +29,18 @@ worker's head.
   palette as hex codes, scale (1 Blender unit = 1 m = 1 Godot unit),
   triangle and texture budgets per asset type, naming, and the Blender to
   Godot export rules from the `blender-mcp` skill.
-- **ASSETS.md**: one row per asset: id, `res://` path, made in Blender or
-  sourced (Poly Haven, Poly Pizza), license, status.
+- **ASSETS.md**: one row per asset: id, `res://` path, its reference (a
+  Poly Haven or Poly Pizza asset with URL, or a description with real
+  dimensions, parts and colours), made in Blender or sourced, license,
+  animations, status.
 - **DECISIONS.md**: `YYYY-MM-DD: decision. Why.` one per line.
 - **LESSONS.md**: `- pitfall: what to do instead` one per line.
 
 ## Plans (`.omo/plans/<milestone>.md`)
 
-A milestone is a short list of tasks that ends in something you can play.
+A milestone is a set of tasks that ends in something you can play.
 Start the file with the milestone goal, what is in and out of scope, and
-the docs every task relies on. Then the tasks, in dependency order, each as
+the docs every task relies on. Then the tasks, grouped into waves (below), each as
 a checkbox followed by its card:
 
 ```markdown
@@ -80,10 +82,22 @@ Rules for cards:
   `test_run` suite when the project has tests.
 - Blender tasks name the object, its dimensions in metres, triangle budget,
   material colours as hex, and the exact export path under the project.
-- Categories: `quick`, `unspecified-low`, `deep-low`, `deep-high`,
-  `visual-engineering`, `artistry` and `writing` run on the local model (free); `unspecified-high`
-  and `ultrabrain` use Claude credits: only for a task that can't be made
-  smaller, with the reason in the card.
+- Categories only steer the worker's prompt; every one runs on the local
+  model. `quick` or `unspecified-low` for routine work, `deep-low` for a
+  multi-file feature, `deep-high` for a hard one, `visual-engineering` for
+  UI and HUD, `artistry` for Blender models and materials, `writing` for
+  docs. There is no stronger model to fall back on: split hard tasks.
+
+## Waves
+
+`/ulw-execute` runs up to four workers at once. Group the tasks under
+`## Wave 1`, `## Wave 2`, ... headings: every task in a wave depends only
+on earlier waves, and no two tasks in a wave touch the same file, scene or
+.blend. Put shared foundations (project settings, input map, autoloads,
+data resources) in the first wave, one task each.
+
+The last wave is a single task for the finisher: list what the developer
+should playtest and anything you expect to need a human eye.
 
 ## Before handing over
 

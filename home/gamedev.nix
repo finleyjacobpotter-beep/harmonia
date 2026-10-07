@@ -1,18 +1,22 @@
-# Game dev with opencode on harmonia itself (not Cadmus, which doesn't
-# import this; hosts/harmonia/default.nix does): oh-my-openagent with Claude
-# for planning and review, the local Ornith 1.5 9B in LM Studio for the
-# doing, and the Blender and Godot MCP servers. Every Claude agent falls back
-# to Ornith, so work carries on when the credits run out. The planning
-# rules, skills and project templates in ./gamedev are what make the local
-# model good enough to finish the job. See docs/gamedev.md.
-{ pkgs, ... }:
+# Game dev on harmonia itself (not Cadmus, which doesn't import this;
+# hosts/harmonia/default.nix does): opencode with oh-my-openagent, where
+# Claude only writes the plans and finishes the work, and the local Ornith
+# 1.5 9B in LM Studio does everything in between, four agents at a time;
+# plus Claude Code, and the Blender and Godot MCP servers for both. Every
+# Claude agent falls back to Ornith, so work carries on when the credits run
+# out. The planning rules, skills and project templates in ./gamedev are
+# what make the local model good enough. See docs/gamedev.md.
+{ pkgs, lib, ... }:
 let
   mcp = (import ./mcp-servers.nix { inherit pkgs; }).host;
 
   # LM Studio's API identifier for the model (bartowski/Ornith-1.5-9B-GGUF,
-  # Q6_K), and the context length it's loaded with: change both together.
+  # Q6_K); the context length it's loaded with (Ornith's native maximum);
+  # and how many requests LM Studio serves at once (its "Max concurrent
+  # predictions"). Change them here and in LM Studio together.
   ornithId = "ornith-1.5-9b";
-  contextLength = 131072;
+  contextLength = 262144;
+  parallel = 4;
 
   local = "lmstudio/${ornithId}";
   opus = "anthropic/claude-opus-5-5";
@@ -49,9 +53,17 @@ let
     };
   };
 
-  # Appended to oh-my-openagent's own prompts: where the design docs live and
-  # how to write and work through tasks Ornith can finish alone.
+  # Appended to oh-my-openagent's own prompts (and the finisher's whole
+  # prompt): where the design docs live and how to write and work through
+  # tasks Ornith can finish alone.
   prompt = name: builtins.readFile ./gamedev/prompts/${name}.md;
+
+  skills = [
+    "gamedev-plan"
+    "godot-4"
+    "godot-mcp"
+    "blender-mcp"
+  ];
 
   # oh-my-openagent's settings for opencode, in the format of
   # assets/oh-my-opencode.schema.json. The version is pinned in
@@ -59,39 +71,45 @@ let
   opencodeSettings = {
     auto_update = false;
 
-    # Claude thinks (plans, reviews, orchestrates, gets you unstuck);
-    # Ornith does (writes the code, builds the scenes, searches).
+    # Claude plans; Ornith does everything else.
     agents = {
-      # Plans: the one place Opus is worth it.
+      # The plan: the one place Claude is used, besides the finisher.
       prometheus = claude opus { prompt_append = prompt "prometheus"; };
-      oracle = claude opus { };
       metis = claude sonnet { };
       momus = claude sonnet { prompt_append = prompt "momus"; };
-      # The default agent and the plan runner: mostly delegation, so Sonnet.
-      sisyphus = claude sonnet { prompt_append = prompt "orchestrator"; };
-      atlas = claude sonnet { prompt_append = prompt "orchestrator"; };
+      # The finisher (opencode.json), so it falls back to Ornith too.
+      finisher = claude opus { };
+      # Running the plan (/ulw-execute) and everything else: local.
+      sisyphus = ornith // {
+        prompt_append = prompt "orchestrator";
+      };
+      atlas = ornith // {
+        prompt_append = prompt "orchestrator";
+      };
       sisyphus-junior = ornith // {
         prompt_append = prompt "worker";
       };
+      oracle = ornith;
       explore = ornith;
       librarian = ornith;
       # Ornith reads images (its mmproj): editor and viewport screenshots.
       multimodal-looker = ornith;
     };
-    # Hephaestus only runs on GPT models; the free primary agent is `ornith`
-    # in opencode.json below.
+    # Hephaestus only runs on GPT models.
     disabled_agents = [ "hephaestus" ];
-    categories = {
-      ultrabrain = claude opus { };
-      unspecified-high = claude sonnet { };
-      deep-low = ornith;
-      deep-high = ornith;
-      visual-engineering = ornith;
-      artistry = ornith;
-      quick = ornith;
-      writing = ornith;
-      unspecified-low = ornith;
-    };
+    # Every category is local; oh-my-openagent's defaults would put several
+    # on Claude.
+    categories = lib.genAttrs [
+      "ultrabrain"
+      "unspecified-high"
+      "unspecified-low"
+      "deep-low"
+      "deep-high"
+      "visual-engineering"
+      "artistry"
+      "quick"
+      "writing"
+    ] (_: ornith);
 
     # Off by default: retry on the next model in fallback_models when a
     # call fails. Quota errors ("credit balance is too low") and a missing
@@ -114,11 +132,10 @@ let
       restore_primary_after_cooldown = false;
     };
 
-    # One GPU: one request to LM Studio at a time, so parallel background
-    # agents queue instead of thrashing VRAM.
+    # As many local agents at once as LM Studio serves in parallel.
     background_task.providerConcurrency = {
-      lmstudio = 1;
-      anthropic = 3;
+      lmstudio = parallel;
+      anthropic = 2;
     };
   };
 
@@ -148,7 +165,7 @@ let
     builtins.toJSON {
       "$schema" = "https://opencode.ai/config.json";
       # oh-my-openagent picks each agent's model; this is for anything else,
-      # and small_model (titles, summaries) never costs credits.
+      # and small_model (titles, summaries) is local too.
       model = local;
       small_model = local;
       # opencode installs plugins itself on first run (so it needs the
@@ -156,13 +173,23 @@ let
       plugin = [ "oh-my-openagent@5.1.21" ];
       # Updates come with the pinned nixpkgs, not from opencode itself.
       autoupdate = false;
-      # Tab to it for a session that spends no credits.
-      agent.ornith = {
-        description = "Free: works through one task at a time on the local Ornith model";
-        mode = "primary";
-        model = local;
-        temperature = 0.6;
-        top_p = 0.95;
+      agent = {
+        # Tab to it for a plain session on the local model.
+        ornith = {
+          description = "Local: works through one task at a time on Ornith";
+          mode = "primary";
+          model = local;
+          temperature = 0.6;
+          top_p = 0.95;
+        };
+        # /gd-finish: reviews what /ulw-execute built, simplifies it, checks
+        # the plan was followed and finishes it before you see it.
+        finisher = {
+          description = "Claude: checks, simplifies and finishes a milestone's work";
+          mode = "primary";
+          model = opus;
+          prompt = prompt "finisher";
+        };
       };
       provider = {
         # Claude, with the key from /connect. The two models are also listed
@@ -200,7 +227,10 @@ let
               output = [ "text" ];
             };
             limit = {
-              context = contextLength;
+              # LM Studio's one KV cache is shared by the parallel requests,
+              # so each agent gets its share of it and compacts before
+              # four together could overflow it.
+              context = contextLength / parallel;
               output = 32768;
             };
           };
@@ -220,6 +250,34 @@ let
       };
     }
   );
+
+  # The same two servers for Claude Code, as user-scope servers in
+  # ~/.claude.json (as on Zelus: programs.claude-code.mcpServers ships them
+  # as a plugin, which Claude Code didn't show).
+  claudeMcpServers = pkgs.writeText "claude-mcp-servers.json" (
+    builtins.toJSON {
+      blender = {
+        type = "stdio";
+        command = "${mcp.blender}/bin/blender-mcp";
+        args = [ ];
+      };
+      godot = {
+        type = "stdio";
+        command = "${mcp.godot}/bin/godot-mcp-attach";
+        args = [ ];
+      };
+    }
+  );
+
+  # Claude Code's versions of /gd-plan and /gd-finish: the same
+  # instructions, for when you'd rather plan or finish there.
+  claudeCommand = description: body: ''
+    ---
+    description: ${description}
+    ---
+
+    ${body}
+  '';
 
   # `gamedev-init` in a project folder: copies the design-doc templates into
   # .omo/design (where Prometheus may write) and an AGENTS.md, never
@@ -245,9 +303,46 @@ in
 
   xdg.configFile = {
     "opencode/opencode.json".source = config;
-    # Global rules for every agent, and the game dev skills and commands.
+    # Global rules for every agent, and the game dev commands. The skills
+    # are Claude Code's (below), which opencode reads too.
     "opencode/AGENTS.md".source = ./gamedev/AGENTS.md;
-    "opencode/skills".source = ./gamedev/skills;
     "opencode/commands".source = ./gamedev/commands;
   };
+
+  # Claude Code (`claude`, then /login or an API key): same rules, skills
+  # and MCP servers, for planning and finishing outside opencode.
+  programs.claude-code = {
+    enable = true;
+    context = ./gamedev/AGENTS.md;
+    skills = lib.genAttrs skills (name: ./gamedev/skills/${name}/SKILL.md);
+    commands = {
+      gd-plan = claudeCommand "Interview me and write an ultrawork plan for the next milestone" (
+        prompt "prometheus"
+        + ''
+
+          Here in Claude Code there is no Metis or Momus: before writing the
+          plan, list what the interview missed and ask about it; after writing
+          it, critique every task card as Momus would and fix it.
+
+          The milestone: $ARGUMENTS
+        ''
+      );
+      gd-finish = claudeCommand "Check, simplify and finish the milestone ultrawork built" (
+        prompt "finisher"
+        + ''
+
+          The milestone: $ARGUMENTS
+        ''
+      );
+    };
+  };
+
+  home.activation.claudeMcpServers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    f="$HOME/.claude.json"
+    [ -s "$f" ] || echo '{}' > "$f"
+    tmp=$(mktemp "$f.XXXXXX")
+    ${pkgs.jq}/bin/jq --slurpfile servers ${claudeMcpServers} \
+      '.mcpServers = ((.mcpServers // {}) + $servers[0])' "$f" > "$tmp"
+    run mv "$tmp" "$f"
+  '';
 }

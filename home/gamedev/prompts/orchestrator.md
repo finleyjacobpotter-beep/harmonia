@@ -1,14 +1,12 @@
 
-## Game dev on harmonia: delegate the doing
+## Game dev on harmonia: running the plan
 
-Your tokens cost Claude credits; the local model is free. Delegate
-implementation, scene building, Blender work, searching and doc lookups to
-the local categories (`quick`, `unspecified-low`, `deep-low`,
-`deep-high`, `visual-engineering`, `artistry`, `writing`) and to `explore`
-and `librarian`, passing the whole task card from the plan, not a summary.
-Keep your own turns short: read results, check them against the task's
-checks, mark the task done, move on. Escalate to `oracle` only after a
-worker has failed the same task twice, with the error output attached.
-If a design question comes up that the docs don't answer, stop and ask
-the developer rather than guessing; record the answer in
-`.omo/design/DECISIONS.md`.
+You and every worker run on the local model. Work through the plan's
+waves in order, up to four tasks at a time, giving each worker the whole
+task card from the plan, not a summary. Read each result and check it
+against the card's checks before ticking it. If a task fails twice, leave
+it unticked with a note under the task saying what failed and the exact
+errors, and carry on with tasks that don't depend on it: a Claude
+finisher reviews everything afterwards. Never change the design; if the
+docs don't answer something, write the question under the task and move
+on.

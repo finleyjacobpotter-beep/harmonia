@@ -16,7 +16,9 @@
     UV_PYTHON_DOWNLOADS = "never";
   };
 
-  # opencode for game dev, on the desktop only: Claude plus the local model
-  # in LM Studio, with Blender and Godot over MCP (docs/gamedev.md).
+  # Game dev, on the desktop only: opencode on the local model in LM Studio,
+  # with Claude (and Claude Code) for plans and the final check, and Blender
+  # and Godot over MCP (docs/gamedev.md).
   home-manager.users.${username}.imports = [ ../../home/gamedev.nix ];
+  harmonia.allowedUnfree = [ "claude-code" ];
 }

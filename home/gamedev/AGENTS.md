@@ -5,12 +5,14 @@ and Blender, both open on this machine and reachable through the `godot` and
 `blender` MCP servers. The editors run in Flatpak sandboxes that can only see
 `~/Projects`, so every file they open or write must live under it.
 
-## Budget
+## Who does what
 
-Claude credits are limited; the local model (Ornith 1.5 9B in LM Studio) is
-free. Claude plans, reviews and unblocks; the local model implements. Spend
-Claude tokens on decisions that save many local-model turns later, and
-never on work a written task already spells out.
+Claude is used for two things only: the planner (Prometheus, with Metis and
+Momus checking) writes the design docs and an ultrawork plan, and the
+finisher reviews, simplifies and completes the work before the developer
+sees it. Everything in between runs on the local model (Ornith 1.5 9B in
+LM Studio), up to four agents at once. If you're the local model, the plan
+is all the guidance you get: follow it exactly.
 
 ## The design docs are the source of truth
 
@@ -26,6 +28,7 @@ Each game keeps its design in `.omo/design/` and its work plans in
 | `ASSETS.md` | every asset: path, source, license, status |
 | `DECISIONS.md` | decisions with their reasons, newest last |
 | `LESSONS.md` | mistakes found and how to avoid them |
+| `../reviews/` | the finisher's report for each milestone |
 
 Read the docs that touch your task before you change anything. When the
 code and the docs disagree, the docs win unless the developer says

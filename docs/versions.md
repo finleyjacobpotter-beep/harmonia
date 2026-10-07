@@ -127,13 +127,14 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 
 ## Game dev (harmonia host)
 
-[gamedev.md](gamedev.md). Same opencode as Zelus; the plugin and the local model are fetched at runtime, pinned here.
+[gamedev.md](gamedev.md). Same opencode and Claude Code as Zelus; the plugin and the local model are fetched at runtime, pinned here.
 
 | Package | Version |
 | --- | --- |
 | opencode | 1.18.31 |
 | oh-my-openagent (opencode plugin) | 5.1.21 |
 | Ornith 1.5 9B (LM Studio, `bartowski/Ornith-1.5-9B-GGUF`) | Q6_K |
+| Claude Code | 2.1.283 |
 
 ## Secrets
 

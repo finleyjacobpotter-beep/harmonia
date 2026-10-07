@@ -2,7 +2,7 @@
 
 [opencode](https://opencode.ai/) runs on the [Zelus](zelus.md) microVM,
 from nixpkgs, configured by [`home/opencode.nix`](../home/opencode.nix). The
-harmonia desktop also has its own, for game dev ([gamedev.md](gamedev.md));
+harmonia desktop also has its own (and Claude Code), for game dev ([gamedev.md](gamedev.md));
 Cadmus has none. Start Zelus, then run it there:
 
 ```sh
