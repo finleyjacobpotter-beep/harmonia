@@ -15,4 +15,14 @@ in
   # Both architectures are called dionysus, so a bare `--flake ~/harmonia`
   # always picks the x86_64 output; name this machine's output instead.
   programs.bash.shellAliases.rebuild = "sudo nixos-rebuild switch --flake ~/harmonia#${output}";
+
+  # This machine's git identity (git itself is enabled system-wide by
+  # modules/nixos/git-lfs.nix).
+  programs.git = {
+    enable = true;
+    settings.user = {
+      name = "Dionysus";
+      email = "dionysus@localhost.local";
+    };
+  };
 }
