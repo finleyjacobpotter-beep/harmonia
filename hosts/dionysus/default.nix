@@ -1,9 +1,9 @@
-# Dionysus: harmonia's Sway desktop with Claude Code built in, the Nike
-# OSCP toolset native on the host, and no microVMs. Where harmonia keeps the
-# pentesting toolset in a microVM (Nike), Dionysus runs the same packages and
-# podman lab stacks natively, and Claude Code natively (home/dionysus/dev.nix),
-# so the whole thing builds on aarch64 and x86_64 alike. Steam, Blender and
-# Godot are not on Dionysus, and the other architecture-specific and
+# Dionysus: harmonia's Sway desktop with the Nike OSCP toolset native on the
+# host and no microVMs. Where harmonia keeps the pentesting toolset in a
+# microVM (Nike), Dionysus runs the same packages and podman lab stacks
+# natively, so the whole thing builds on aarch64 and x86_64 alike. Steam,
+# Blender and Godot are not on Dionysus, the AI coding agents (Claude Code,
+# opencode) have been removed, and the other architecture-specific and
 # flatpak-only modules harmonia uses (gaming, LM Studio, the Nike microVM
 # itself) are left out too.
 {
@@ -23,9 +23,6 @@
     ../../nike/tools.nix
     ../../nike/labs.nix
   ];
-
-  # Anthropic's CLI (home/dionysus/dev.nix).
-  harmonia.allowedUnfree = [ "claude-code" ];
 
   # Round out Nike's toolset with the extras nike/default.nix adds on top of
   # tools.nix/labs.nix: OpenVPN for lab connection packs, and the tun module

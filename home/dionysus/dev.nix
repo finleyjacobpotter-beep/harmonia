@@ -1,16 +1,16 @@
-# Dionysus's dev toolset, on the host itself (not in a VM): Claude Code plus
-# the language toolchains it leans on and the Rust command-line tools. On
-# harmonia these live in a microVM (Zelus); Dionysus has no microVMs, so they
-# run natively here and are built from nixpkgs, which keeps them buildable on
-# both aarch64 and x86_64.
+# Dionysus's native command-line tooling: the language toolchains and the
+# Rust command-line tools. On harmonia the Rust tools live in a microVM
+# (Zelus); Dionysus has no microVMs, so they run natively here and are built
+# from nixpkgs, which keeps them buildable on both aarch64 and x86_64.
 #
-# opencode and its oh-my-openagent config used to live here too; they were
-# dropped at the user's request.
+# The AI coding agents (Claude Code and opencode) used to live here too; both
+# were dropped at the user's request.
 { pkgs, lib, ... }:
 let
-  # The classic command → its Rust replacement, only in your own interactive
-  # shells: Claude Code (CLAUDECODE) runs commands through bash too and
-  # expects the classic tools' flags.
+  # The classic command → its Rust replacement. Set as raw aliases (not
+  # programs.bash.shellAliases) so they override home/bash.nix's own aliases
+  # for the same names instead of conflicting with them; initExtra only runs
+  # in interactive shells, so scripts still get the classic tools.
   rustAliases = {
     grep = "rg";
     find = "fd";
@@ -28,7 +28,7 @@ let
 in
 {
   home.packages = with pkgs; [
-    # Toolchains Claude Code leans on.
+    # Language toolchains.
     uv
     nodejs
     python3
@@ -57,9 +57,6 @@ in
     tealdeer # tldr pages
   ];
 
-  # Claude Code.
-  programs.claude-code.enable = true;
-
   # cd learns your directories; bat and delta follow the terminal's colours.
   programs.zoxide = {
     enable = true;
@@ -78,12 +75,7 @@ in
     options.syntax-theme = "ansi";
   };
 
-  programs.bash.initExtra = ''
-    if [[ -z ''${CLAUDECODE-} ]]; then
-    ${
-      lib.concatStrings (
-        lib.mapAttrsToList (name: cmd: "  alias ${name}=${lib.escapeShellArg cmd}\n") rustAliases
-      )
-    }fi
-  '';
+  programs.bash.initExtra = "${lib.concatStrings (
+    lib.mapAttrsToList (name: cmd: "alias ${name}=${lib.escapeShellArg cmd}\n") rustAliases
+  )}";
 }
