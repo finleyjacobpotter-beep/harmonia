@@ -2,7 +2,7 @@
 # upstream commit doesn't run unreviewed.
 #
 # Blender and Godot run on the host, the agents on Zelus
-# (modules/nixos/zelus.nix):
+# (modules/nixos/zelus.nix) and, on harmonia, on the host too (home/gamedev.nix):
 #   - blender-mcp runs on Zelus and connects to the add-on (home/blender-addons.nix) through a socket
 #     on the host's end of the tap.
 #   - godot-ai's server (4.x) runs on the host, next to the editor that reads its
@@ -53,6 +53,21 @@ rec {
       runtimeInputs = [ pkgs.socat ];
       text = ''
         exec socat - TCP:${vm.hostAddress}:${toString vm.godotPort}
+      '';
+    };
+  };
+
+  # The two as opencode on the host runs them (home/gamedev.nix): Blender's
+  # add-on on localhost:9876, and a `godot-ai attach` stdio bridge to the
+  # host's godot-ai service (modules/nixos/zelus.nix, same ports), which
+  # reads the capability record the service writes for the Flatpak editor.
+  host = {
+    inherit blender;
+    godot = pkgs.writeShellApplication {
+      name = "godot-mcp-attach";
+      text = ''
+        export GODOT_AI_CAPABILITY_DIR="$HOME/.var/app/org.godotengine.Godot/config/godot-ai/capabilities"
+        exec ${godot}/bin/godot-mcp attach --port 8000 --ws-port 9500 "$@"
       '';
     };
   };

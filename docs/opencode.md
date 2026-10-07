@@ -1,8 +1,9 @@
 # opencode
 
-[opencode](https://opencode.ai/) runs only on the [Zelus](zelus.md) microVM,
-from nixpkgs, configured by [`home/opencode.nix`](../home/opencode.nix); the
-host has no opencode at all. Start Zelus, then run it there:
+[opencode](https://opencode.ai/) runs on the [Zelus](zelus.md) microVM,
+from nixpkgs, configured by [`home/opencode.nix`](../home/opencode.nix). The
+harmonia desktop also has its own (and Claude Code), for game dev ([gamedev.md](gamedev.md));
+Cadmus has none. Start Zelus, then run it there:
 
 ```sh
 sudo systemctl start microvm@zelus
