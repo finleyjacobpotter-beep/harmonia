@@ -12,14 +12,19 @@ colour scheme, **DepartureMono Nerd Font** and the pixel-art
 ## Layout
 
 ```
-flake.nix                      inputs, defaultUsername, mkHost and the hosts (harmonia, cadmus, dionysus, dionysus-aarch64)
+flake.nix                      inputs, defaultUsername, mkHost, mkServer and the hosts (harmonia, cadmus, dionysus, dionysus-aarch64, proteus, atlas)
 theme/miami-wind.nix           the palette — every app reads its colours from here
 keys.nix                       the keyboard contract (which layer owns which modifier)
-hosts/base.nix                 what every host shares: desktop modules, user, locale, nix settings
+hosts/core.nix                 what every machine shares: user, locale, nix settings, base CLI tools
+hosts/base.nix                 core.nix plus the desktop modules every desktop host shares
 hosts/common.nix               base.nix plus the apps and microVMs harmonia and cadmus share
 hosts/harmonia/                the desktop: hardware-configuration.nix (placeholder!) + fans.nix
 hosts/cadmus/                  the laptop (ThinkPad E14 Gen 2): hardware-configuration.nix (placeholder!), laptop.nix, thinkpad.nix,
                                nixos-hardware's E14 Gen 2 profile (set `cpu` to intel or amd)
+hosts/server.nix               core.nix plus SSH (keys only), DHCP and the terminal tools for headless servers
+hosts/server-keys.nix          the SSH public keys the servers accept (add yours)
+hosts/proteus/                 a DigitalOcean droplet: GRUB for BIOS, disk.nix (disko)
+hosts/atlas/                   a Minisforum MS-01 SE home server: systemd-boot, disk.nix (disko), generated hardware config
 modules/nixos/
   desktop.nix                  sway, greetd/tuigreet, pipewire, portals, console colours
   fonts.nix                    DepartureMono Nerd Font as system default
@@ -40,6 +45,7 @@ modules/nixos/
   thinkpad.nix                 cadmus only: thinkfan fan curve, fwupd for BIOS updates
   secrets.nix                  pcscd + YubiKey udev rules
   vpn.nix                      WireGuard and OpenVPN via NetworkManager, openfortivpn services, rules for the bar
+  deploy.nix                   harmonia and cadmus: nixos-anywhere and disko, for installing the servers over SSH
 nike/                          the Nike microVM guest (microvm.nix)
   default.nix                  packages, user k and its password, volume sizes, the TUN module
   tools.nix                    the OSCP toolset and Penelope
@@ -102,7 +108,7 @@ own user `d`. Its flake output is `.#dionysus` on x86_64 and
 the right one for the machine.
 
 1. Clone this repo and edit `defaultUsername` in `flake.nix`, and the
-   timezone/locale/keymap in `hosts/base.nix`:
+   timezone/locale/keymap in `hosts/core.nix`:
    ```sh
    git clone https://github.com/finleyjacobpotter-beep/harmonia ~/harmonia && cd ~/harmonia
    ```
@@ -142,10 +148,11 @@ the right one for the machine.
 - [Secrets](docs/secrets.md): gpg, pass, YubiKey, Bitwarden, OpenBao and `secrets-backup`
 - [Theme](docs/theme.md): Miami Wind colours, Tulasi icons, the wallpaper
 - [Editing](docs/editing.md): the system-wide EditorConfig and Neovim's JSON/YAML commands
+- [Deploying servers](docs/deploy.md): nixos-anywhere onto a DigitalOcean droplet (proteus) or a Minisforum MS-01 SE (atlas), and updating them
 
 ## Unfree packages
 
-Only one non-free package is allowed (`harmonia.allowedUnfree` in `hosts/base.nix`):
+Only one non-free package is allowed (`harmonia.allowedUnfree` in `hosts/core.nix`, set in `hosts/base.nix`):
 the Tulasi icon theme (CC BY-NC-SA 4.0, free for non-commercial use with
 attribution).
 

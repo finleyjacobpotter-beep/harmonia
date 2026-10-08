@@ -1,6 +1,6 @@
 # Plain QEMU for one-off VMs. The managed VMs are the Nike and Zelus microVMs
 # (modules/nixos/nike.nix, zelus.nix); there is no libvirt or virt-manager.
-# Podman comes from modules/nixos/podman.nix via hosts/base.nix.
+# Podman comes from modules/nixos/podman.nix via hosts/core.nix.
 { pkgs, username, ... }:
 {
   environment.systemPackages = with pkgs; [

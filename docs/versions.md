@@ -12,7 +12,8 @@ only change when an input's commit is bumped; update this table when you do.
 | home-manager | [`7b4c5ec`](https://github.com/nix-community/home-manager/commit/7b4c5ec4bedaf1e062bbc1bcaeddbc6bd242aa1b) (master, 2026-09-27) |
 | nix-flatpak | v0.7.0 ([`4408189`](https://github.com/gmodena/nix-flatpak/commit/440818969ac2cbd77bfe025e884d0aa528991374)) |
 | microvm.nix | [`3f1540f`](https://github.com/microvm-nix/microvm.nix/commit/3f1540f254fe73ac907281b7de7d396bb3d54850) (main, 2026-10-01) |
-| nixos-hardware | [`31cc5f4`](https://github.com/NixOS/nixos-hardware/commit/31cc5f4d9b9ba601071e8b8504601b9b176e2756) (master, 2026-10-04; cadmus only) |
+| nixos-hardware | [`31cc5f4`](https://github.com/NixOS/nixos-hardware/commit/31cc5f4d9b9ba601071e8b8504601b9b176e2756) (master, 2026-10-04; cadmus and atlas) |
+| disko | v1.13.0 ([`de57087`](https://github.com/nix-community/disko/commit/de5708739256238fb912c62f03988815db89ec9a); proteus and atlas) |
 
 ## System
 
@@ -38,6 +39,7 @@ only change when an input's commit is bumped; update this table when you do.
 | xdg-desktop-portal / -gtk / -wlr | 1.22.1 / 1.15.3 / 0.8.4 |
 | Flatpak | 1.18.1 |
 | git, curl, wget | 2.55.0, 8.22.0, 1.25.0 |
+| nixos-anywhere / disko (harmonia, cadmus) | 1.13.0 / 1.13.0 |
 | jq, ripgrep, fd | 1.8.2, 15.2.0, 10.5.0 |
 | unzip, htop | 6.0, 3.5.3 |
 

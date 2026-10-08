@@ -28,6 +28,13 @@
       url = "github:microvm-nix/microvm.nix/3f1540f254fe73ac907281b7de7d396bb3d54850";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Declarative disk layouts for the servers nixos-anywhere installs
+    # (hosts/*/disk.nix). Tag v1.13.0, the version nixpkgs packages.
+    disko = {
+      url = "github:nix-community/disko/de5708739256238fb912c62f03988815db89ec9a";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -102,6 +109,33 @@
           ++ nixpkgs.lib.optional vms microvm.nixosModules.host;
         };
 
+      # A headless server from hosts/<hostname>/default.nix, which imports
+      # hosts/server.nix (SSH, disko, the terminal tools; no desktop).
+      # Installed with nixos-anywhere, updated with nixos-rebuild
+      # --target-host (docs/deploy.md).
+      mkServer =
+        {
+          hostname,
+          system ? "x86_64-linux",
+          username ? defaultUsername,
+        }:
+        nixpkgs.lib.nixosSystem {
+          specialArgs = {
+            inherit
+              inputs
+              hostname
+              username
+              palette
+              keys
+              system
+              ;
+          };
+          modules = [
+            { nixpkgs.hostPlatform = system; }
+            ./hosts/${hostname}
+          ];
+        };
+
       # Dionysus: harmonia's Sway desktop with the coding toolset built in
       # natively (opencode, Claude Code and the Rust tools) and no microVMs,
       # so the same config works on aarch64-linux and x86_64-linux.
@@ -128,6 +162,12 @@
         # works on an x86_64 host and `.#dionysus-aarch64` on an aarch64 one.
         dionysus = mkDionysus "x86_64-linux";
         dionysus-aarch64 = mkDionysus "aarch64-linux";
+
+        # Servers, deployed over SSH with nixos-anywhere (docs/deploy.md).
+        # A DigitalOcean droplet.
+        proteus = mkServer { hostname = "proteus"; };
+        # A Minisforum MS-01 SE home server.
+        atlas = mkServer { hostname = "atlas"; };
       };
 
       formatter = {

@@ -1,5 +1,6 @@
 # Everything harmonia (desktop) and cadmus (laptop) share on top of
-# hosts/base.nix: the gaming and studio apps, LM Studio and the microVMs.
+# hosts/base.nix: the gaming and studio apps, LM Studio, the microVMs and
+# nixos-anywhere for deploying the servers.
 # Each host's default.nix adds its hardware-configuration.nix and what only
 # that kind of machine needs.
 { hostname, ... }:
@@ -16,5 +17,6 @@
     ../modules/nixos/microvms.nix
     ../modules/nixos/nike.nix
     ../modules/nixos/zelus.nix
+    ../modules/nixos/deploy.nix
   ];
 }
