@@ -3,8 +3,7 @@
 # (no agent setup of its own), ykman and the OpenBao CLI, plus the
 # `secrets-backup` command (home/secrets-backup.py), which bundles the
 # KeePassXC database(s), a Bitwarden export, ~/.ssh, gpg keys and any old pass
-# store into one
-# passphrase-encrypted tarball. See docs/secrets.md.
+# store into one passphrase-encrypted tarball. See docs/secrets.md.
 {
   pkgs,
   lib,
