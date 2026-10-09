@@ -140,6 +140,15 @@ the right one for the machine.
 - [Theme](docs/theme.md): Miami Wind colours, Tulasi icons, the wallpaper
 - [Editing](docs/editing.md): the system-wide EditorConfig and Neovim's JSON/YAML commands
 
+The same pages are also an mkdocs site (`mkdocs.yml`). To read it in a
+browser, from the repository:
+
+```sh
+nix develop .#docs        # a shell with mkdocs-material
+mkdocs serve              # live preview on http://127.0.0.1:8999
+nix build .#docs          # or the static site, in ./result
+```
+
 ## Unfree packages
 
 Only one non-free package is allowed (`harmonia.allowedUnfree` in `hosts/base.nix`):
