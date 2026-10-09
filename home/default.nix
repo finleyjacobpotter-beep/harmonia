@@ -12,4 +12,10 @@
   # Python package manager; provides `uv` and `uvx` (run a tool from PyPI
   # without installing it).
   home.packages = [ pkgs.uv ];
+
+  # Your git identity (home/dionysus/default.nix sets Dionysus's).
+  programs.git.settings.user = {
+    name = "u";
+    email = "u@harmonia.local";
+  };
 }
