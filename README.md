@@ -4,7 +4,7 @@
 icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, two **microVMs** (Nike and Zelus), **podman**, and **Firefox** (vertical tabs, uBlock Origin, Vimium), **Lutris**, **Steam**, **Element**, **LM Studio**, **Blender** and **Godot** jailed in Flatpak —
+**neovim**, two **microVMs** (Nike and Zelus), **podman**, and **Firefox** (vertical tabs, uBlock Origin, Vimium), **Lutris**, **Steam**, **Element**, **Blender** and **Godot** jailed in Flatpak —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -27,15 +27,14 @@ modules/nixos/
   gaming.nix                   Lutris from Flathub with a tightened sandbox, controller udev rules, GameMode
   steam.nix                    Steam from Flathub, locked down, sharing only ~/Games with Lutris
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
-  lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
   studio.nix                   Blender and Godot from Flathub, sharing only ~/Projects (and the network)
   fans.nix                     harmonia only: LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
-  llama-server.nix             harmonia only: Ornith 1.5 9B (Q4_K_M) on llama.cpp's server in a podman container, Vulkan on the GPU, port 1235
+  llama-server.nix             harmonia only: Ornith 1.5 9B (Q4_K_M, MTP) as `ai` on llama.cpp's server in a podman container, Vulkan on the GPU, port 1235
   podman.nix                   rootless podman, podman-compose, buildah (all hosts)
   virtualisation.nix           plain QEMU (no libvirt)
   microvms.nix                 `harmonia.microvms`: each VM declared once; its network, NAT, folders, `ssh <vm>`, colours and firewall modes follow
   nike.nix                     the Nike microVM: its colours and VPN firewall modes
-  zelus.nix                    the Zelus microVM: its colours, ~/Projects, firewall modes, the LM Studio and Blender sockets, the Godot MCP server
+  zelus.nix                    the Zelus microVM: its colours, ~/Projects, firewall modes, the local model and Blender sockets, the Godot MCP server
   vm-firewall.nix              per-VM firewall modes (nftables on the host) and the `vm-firewall` command
   laptop.nix                   cadmus only: Wi-Fi firmware + regulatory database, suspend on lid close, power profiles
   thinkpad.nix                 cadmus only: thinkfan fan curve, fwupd for BIOS updates
@@ -52,7 +51,7 @@ zelus/                         the Zelus microVM guest (microvm.nix): Claude Cod
 home/                          home-manager, one file per program
   base.nix                     the home every host shares; default.nix (harmonia, cadmus) and dionysus/ add to it
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/lm studio, nike/zelus with firewall modes, display settings, cpu, mem, gpu, network with VPN asterisks, caffeine, volume, battery, clock + calendar)
+  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/local model, nike/zelus with firewall modes, display settings, cpu, mem, gpu, network with VPN asterisks, caffeine, volume, battery, clock + calendar)
   eww/                         the bar's layout (eww.yuck), styles (eww.scss) and scripts, in Python (displays, network, gpu, volume, clock, calendar, …, sharing common.py), and the display settings window
   open-mode.nix                Super+o's keys, for sway and the bar's hint
   keymap.nix                   build-time checks for the keyboard contract
@@ -62,8 +61,8 @@ home/                          home-manager, one file per program
   flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
-  opencode.nix                 opencode on Zelus: LM Studio + Claude providers, oh-my-openagent, Blender and Godot MCP servers
-  gamedev.nix                  game dev on the harmonia desktop: opencode on local Ornith 1.5 9B (4 agents), Claude plans and finishes, Claude Code, Blender and Godot MCP
+  opencode.nix                 opencode on Zelus: the host's local model + Claude providers, oh-my-openagent, Blender and Godot MCP servers
+  gamedev.nix                  game dev on the harmonia desktop: opencode with every agent on the local model (4 at once, no other provider), Claude Code, Blender, Godot and radare2 MCP
   gamedev/                     its agent prompts, skills (Godot 4, Blender, planning), commands and design-doc templates
   rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host, Nike and Zelus
   blender-addons.nix           Blender add-ons in the Flatpak: MCP for Blender, Poly Haven, Poly Pizza (blender/poly_pizza.py)
@@ -129,9 +128,8 @@ the right one for the machine.
 - [Firefox jail](docs/firefox.md): the Flatpak sandbox, add-ons and theming
 - [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
-- [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
-- [llama.cpp server](docs/llama-server.md): Ornith 1.5 9B in a podman container on harmonia, an OpenAI-compatible API beside LM Studio
-- [Game dev](docs/gamedev.md): opencode + oh-my-openagent on harmonia: Claude writes the plans and finishes the work, the local Ornith model does the rest
+- [The local model](docs/llama-server.md): Ornith 1.5 9B as `ai` on llama.cpp's server in podman on harmonia, with MTP, started from the bar
+- [Game dev](docs/gamedev.md): opencode + oh-my-openagent on harmonia, every agent on the local model, with Blender, Godot and radare2 over MCP
 - [Blender](docs/blender.md): free models from Poly Haven and Poly Pizza inside Blender
 - [opencode](docs/opencode.md): opencode on Zelus, providers, the Anthropic key, and the Blender and Godot MCP servers
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
@@ -151,8 +149,8 @@ Only one non-free package is allowed (`harmonia.allowedUnfree` in `hosts/base.ni
 the Tulasi icon theme (CC BY-NC-SA 4.0, free for non-commercial use with
 attribution).
 
-Steam and LM Studio are proprietary too, but they come from Flathub rather
-than nixpkgs, so they need no entry there.
+Steam is proprietary too, but it comes from Flathub rather
+than nixpkgs, so it needs no entry there.
 
 ## Acknowledgements
 
@@ -175,12 +173,18 @@ harmonia stands on other people's work:
 - **[Departure Mono](https://departuremono.com/)** via
   [Nerd Fonts](https://www.nerdfonts.com/): the font.
 - **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
-  Flatpak setup for Firefox, Lutris, Steam, Element, LM Studio, Blender and
-  Godot.
+  Flatpak setup for Firefox, Lutris, Steam, Element, Blender and Godot.
 - **[microvm.nix](https://github.com/microvm-nix/microvm.nix)**: the Nike
   and Zelus microVMs.
 - **[Poly Haven](https://polyhaven.com/)** ([add-on](https://github.com/Poly-Haven/polyhavenassets), GPL-3.0)
   and **[Poly Pizza](https://poly.pizza/)**: free models inside Blender.
+- **[llama.cpp](https://github.com/ggml-org/llama.cpp)** (MIT): the local
+  model server, running
+  **[Ornith 1.5 9B](https://huggingface.co/ornith-ai/Ornith-1.5-9B)** in
+  [protoLabsAI's MTP GGUF](https://huggingface.co/protoLabsAI/Ornith-1.5-9B-MTP-GGUF).
+- **[radare2](https://github.com/radareorg/radare2)** and
+  **[r2mcp](https://github.com/radareorg/radare2-mcp)** (MIT): binary
+  analysis for the agents.
 
 ## License
 

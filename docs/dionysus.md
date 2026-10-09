@@ -49,7 +49,7 @@ Everything architecture-specific or flatpak-only, so both arches build:
 
 - the **Nike** and **Zelus** microVMs and all the host-side microVM wiring;
 - **Steam** and the **gaming** stack (32-bit, x86-only);
-- the **LM Studio** and **studio** (Blender/Godot/opencode) flatpaks — those
+- the **studio** (Blender/Godot/opencode) flatpaks — those
   tools are native here — and the Lutris/LACT flatpak theme sync;
 - 32-bit graphics (`hardware.graphics.enable32Bit`), which has no aarch64 Mesa.
 

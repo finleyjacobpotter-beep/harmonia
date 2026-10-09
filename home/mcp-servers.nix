@@ -1,5 +1,5 @@
-# The Blender and Godot MCP servers. Each is pinned to a release so a new
-# upstream commit doesn't run unreviewed.
+# The Blender and Godot MCP servers, and radare2's on the host. Each is
+# pinned to a release so a new upstream commit doesn't run unreviewed.
 #
 # Blender and Godot run on the host, the agents on Zelus
 # (modules/nixos/zelus.nix) and, on harmonia, on the host too (home/gamedev.nix):
@@ -63,6 +63,9 @@ rec {
   # reads the capability record the service writes for the Flatpak editor.
   host = {
     inherit blender;
+    # radare2's own MCP server (pkgs/r2mcp.nix): analyses binaries on this
+    # machine with radare2; its run_* tools (raw r2 commands) stay off.
+    radare2 = pkgs.callPackage ../pkgs/r2mcp.nix { };
     godot = pkgs.writeShellApplication {
       name = "godot-mcp-attach";
       text = ''

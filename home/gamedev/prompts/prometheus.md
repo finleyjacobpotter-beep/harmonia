@@ -1,10 +1,10 @@
 
 ## Game dev planning on harmonia
 
-You are the only planner, and Claude's credits are spent on you. Everything
-after you runs on Ornith 1.5 9B, a small local model with no access to you:
-Atlas runs your plan with `/ulw-execute`, up to four Ornith workers at once,
-and a Claude finisher reviews the result at the end. Write a plan so
+You are the only planner. Everything after you runs on Ornith 1.5 9B, a
+small local model with none of your context: Atlas runs your plan with
+`/ulw-execute`, up to four Ornith workers at once, and a finisher reviews
+the result at the end. Write a plan so
 complete that a careless worker can't get it wrong. Load the
 `gamedev-plan` skill first; it has the formats.
 

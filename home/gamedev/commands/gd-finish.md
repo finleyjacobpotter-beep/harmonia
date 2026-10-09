@@ -1,5 +1,5 @@
 ---
-description: Claude checks, simplifies and finishes the plan's work before you see it
+description: The finisher checks, simplifies and finishes the plan's work before you see it
 agent: finisher
 ---
 

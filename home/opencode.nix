@@ -7,7 +7,7 @@ let
   # connected to the editors on the host.
   mcp = (import ./mcp-servers.nix { inherit pkgs; }).zelus zelus;
 
-  local = "lmstudio/qwopus3.5-9b-v3";
+  local = "local/ai";
   opus = "anthropic/claude-opus-5-5";
   sonnet = "anthropic/claude-sonnet-5-5";
 
@@ -61,14 +61,14 @@ let
       # Updates come with the pinned nixpkgs, not from opencode itself.
       autoupdate = false;
       provider = {
-        # The host's LM Studio server (Developer tab), reached through the
-        # host's end of Zelus's tap (modules/nixos/zelus.nix). The model key is
-        # LM Studio's API identifier for Jackrong/Qwopus3.5-9B-v3-GGUF (Q4_K_M).
-        lmstudio = {
+        # The host's local model server (Ornith 1.5 9B as "ai",
+        # modules/nixos/llama-server.nix), reached through the host's end of
+        # Zelus's tap (modules/nixos/zelus.nix). Start it from the host's bar.
+        local = {
           npm = "@ai-sdk/openai-compatible";
-          name = "LM Studio (host)";
-          options.baseURL = "http://${zelus.hostAddress}:${toString zelus.lmstudioPort}/v1";
-          models."qwopus3.5-9b-v3".name = "Qwopus 3.5 9B v3 (Q4_K_M)";
+          name = "Local (host)";
+          options.baseURL = "http://${zelus.hostAddress}:${toString zelus.aiPort}/v1";
+          models.ai.name = "Ornith 1.5 9B (Q4_K_M, MTP)";
         };
       };
       mcp = {

@@ -1,56 +1,29 @@
 # Game dev on harmonia itself (not Cadmus, which doesn't import this;
-# hosts/harmonia/default.nix does): opencode with oh-my-openagent, where
-# Claude only writes the plans and finishes the work, and the local Ornith
-# 1.5 9B in LM Studio does everything in between, four agents at a time;
-# plus Claude Code, and the Blender and Godot MCP servers for both. Every
-# Claude agent falls back to Ornith, so work carries on when the credits run
-# out. The planning rules, skills and project templates in ./gamedev are
-# what make the local model good enough. See docs/gamedev.md.
+# hosts/harmonia/default.nix does): opencode with oh-my-openagent, where every
+# agent runs on the local model, Ornith 1.5 9B served as "ai" by the
+# llama.cpp server (modules/nixos/llama-server.nix), four agents at a time,
+# and opencode offers no other provider; plus Claude Code, and the Blender,
+# Godot and radare2 MCP servers for both. The planning rules, skills and
+# project templates in ./gamedev are what make the local model good enough.
+# See docs/gamedev.md.
 { pkgs, lib, ... }:
 let
   mcp = (import ./mcp-servers.nix { inherit pkgs; }).host;
 
-  # LM Studio's API identifier for the model (bartowski/Ornith-1.5-9B-GGUF,
-  # Q6_K); the context length it's loaded with (Ornith's native maximum);
-  # and how many requests LM Studio serves at once (its "Max concurrent
-  # predictions"). Change them here and in LM Studio together.
-  ornithId = "ornith-1.5-9b";
+  # The server's context length (Ornith's native maximum) and how many
+  # requests it serves at once; change them here and in llama-server.nix
+  # together.
   contextLength = 262144;
   parallel = 4;
 
-  local = "lmstudio/${ornithId}";
-  opus = "anthropic/claude-opus-5-5";
-  sonnet = "anthropic/claude-sonnet-5-5";
+  local = "local/ai";
 
-  # Ornith's recommended sampling for coding (its model card); LM Studio's
-  # per-model defaults carry the rest (top_k 20, min_p 0).
+  # Ornith's recommended sampling for coding (its model card); the server
+  # sets the same, plus top_k 20 and min_p 0.
   ornith = {
     model = local;
     temperature = 0.6;
     top_p = 0.95;
-  };
-
-  # A Claude agent: falls back down the chain to Ornith when Anthropic
-  # refuses (no key, credits gone, rate limited, overloaded).
-  claude =
-    model: extra:
-    {
-      inherit model;
-      fallback_models = (if model == opus then [ sonnet ] else [ ]) ++ [ local ];
-    }
-    // extra;
-
-  # A Claude model for opencode's provider list: price in $ per million
-  # tokens (models.dev, 2026-10).
-  claudeModel = name: cost: {
-    inherit name cost;
-    tool_call = true;
-    reasoning = true;
-    attachment = true;
-    limit = {
-      context = 1000000;
-      output = 128000;
-    };
   };
 
   # Appended to oh-my-openagent's own prompts (and the finisher's whole
@@ -71,15 +44,15 @@ let
   opencodeSettings = {
     auto_update = false;
 
-    # Claude plans; Ornith does everything else.
+    # Every agent is local.
     agents = {
-      # The plan: the one place Claude is used, besides the finisher.
-      prometheus = claude opus { prompt_append = prompt "prometheus"; };
-      metis = claude sonnet { };
-      momus = claude sonnet { prompt_append = prompt "momus"; };
-      # The finisher (opencode.json), so it falls back to Ornith too.
-      finisher = claude opus { };
-      # Running the plan (/ulw-execute) and everything else: local.
+      prometheus = ornith // {
+        prompt_append = prompt "prometheus";
+      };
+      metis = ornith;
+      momus = ornith // {
+        prompt_append = prompt "momus";
+      };
       sisyphus = ornith // {
         prompt_append = prompt "orchestrator";
       };
@@ -97,8 +70,8 @@ let
     };
     # Hephaestus only runs on GPT models.
     disabled_agents = [ "hephaestus" ];
-    # Every category is local; oh-my-openagent's defaults would put several
-    # on Claude.
+    # Every category too; oh-my-openagent's defaults would put several on
+    # other providers.
     categories = lib.genAttrs [
       "ultrabrain"
       "unspecified-high"
@@ -111,32 +84,8 @@ let
       "writing"
     ] (_: ornith);
 
-    # Off by default: retry on the next model in fallback_models when a
-    # call fails. Quota errors ("credit balance is too low") and a missing
-    # key always count; these status codes do too. Once it falls back it
-    # stays there for the session.
-    runtime_fallback = {
-      enabled = true;
-      retry_on_errors = [
-        401
-        402
-        429
-        500
-        502
-        503
-        504
-        529
-      ];
-      max_fallback_attempts = 3;
-      notify_on_fallback = true;
-      restore_primary_after_cooldown = false;
-    };
-
-    # As many local agents at once as LM Studio serves in parallel.
-    background_task.providerConcurrency = {
-      lmstudio = parallel;
-      anthropic = 2;
-    };
+    # As many agents at once as the server serves in parallel.
+    background_task.providerConcurrency.local = parallel;
   };
 
   # Since 5.0 oh-my-openagent reads ~/.omo/omo.jsonc (or omo.json), with the
@@ -184,38 +133,24 @@ let
         };
         # /gd-finish: reviews what /ulw-execute built, simplifies it, checks
         # the plan was followed and finishes it before you see it.
-        finisher = {
-          description = "Claude: checks, simplifies and finishes a milestone's work";
+        finisher = ornith // {
+          description = "Checks, simplifies and finishes a milestone's work";
           mode = "primary";
-          model = opus;
           prompt = prompt "finisher";
         };
       };
+      # The local server is the only provider opencode offers: no Anthropic,
+      # OpenAI, opencode Zen or any other built-in one, even with a key set.
+      enabled_providers = [ "local" ];
       provider = {
-        # Claude, with the key from /connect. The two models are also listed
-        # here, with their prices, so opencode knows them (and shows what a
-        # session cost) even when its model list is older than they are.
-        anthropic.models = {
-          claude-opus-5-5 = claudeModel "Claude Opus 5.5" {
-            input = 4;
-            output = 20;
-            cache_read = 0.2;
-            cache_write = 5;
-          };
-          claude-sonnet-5-5 = claudeModel "Claude Sonnet 5.5" {
-            input = 2;
-            output = 10;
-            cache_read = 0.2;
-            cache_write = 2.5;
-          };
-        };
-        # LM Studio's local server (Developer tab) on this machine.
-        lmstudio = {
+        # The llama.cpp server on this machine (modules/nixos/llama-server.nix),
+        # started from the bar.
+        local = {
           npm = "@ai-sdk/openai-compatible";
-          name = "LM Studio";
-          options.baseURL = "http://127.0.0.1:1234/v1";
-          models.${ornithId} = {
-            name = "Ornith 1.5 9B (Q6_K)";
+          name = "Local (llama.cpp)";
+          options.baseURL = "http://127.0.0.1:1235/v1";
+          models.ai = {
+            name = "Ornith 1.5 9B (Q4_K_M, MTP)";
             tool_call = true;
             reasoning = true;
             attachment = true;
@@ -227,9 +162,9 @@ let
               output = [ "text" ];
             };
             limit = {
-              # LM Studio's one KV cache is shared by the parallel requests,
-              # so each agent gets its share of it and compacts before
-              # four together could overflow it.
+              # The server splits its context between the parallel
+              # requests, so each agent gets its share and compacts before
+              # it runs out.
               context = contextLength / parallel;
               output = 32768;
             };
@@ -247,11 +182,16 @@ let
           command = [ "${mcp.godot}/bin/godot-mcp-attach" ];
           enabled = true;
         };
+        radare2 = {
+          type = "local";
+          command = [ "${mcp.radare2}/bin/r2mcp" ];
+          enabled = true;
+        };
       };
     }
   );
 
-  # The same two servers for Claude Code, as user-scope servers in
+  # The same servers for Claude Code, as user-scope servers in
   # ~/.claude.json (as on Zelus: programs.claude-code.mcpServers ships them
   # as a plugin, which Claude Code didn't show).
   claudeMcpServers = pkgs.writeText "claude-mcp-servers.json" (
@@ -264,6 +204,11 @@ let
       godot = {
         type = "stdio";
         command = "${mcp.godot}/bin/godot-mcp-attach";
+        args = [ ];
+      };
+      radare2 = {
+        type = "stdio";
+        command = "${mcp.radare2}/bin/r2mcp";
         args = [ ];
       };
     }
@@ -296,6 +241,7 @@ in
 {
   home.packages = [
     pkgs.opencode
+    pkgs.radare2
     gamedev-init
   ];
 

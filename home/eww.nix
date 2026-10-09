@@ -398,7 +398,9 @@ in
     swaymsg = "${pkgs.sway}/bin/swaymsg";
     swaylock = "${pkgs.swaylock}/bin/swaylock";
     systemctl = "${pkgs.systemd}/bin/systemctl";
-    flatpak = "${pkgs.flatpak}/bin/flatpak";
+    # The local model button, on hosts with the server
+    # (modules/nixos/llama-server.nix).
+    aiServer = lib.boolToString (osConfig.virtualisation.oci-containers.containers ? llama-server);
     vmPolls = lib.concatMapStrings vmPoll vmNames;
     vmBadges = lib.concatMapStrings vmBadge vmNames;
     vmPanels = lib.concatMapStrings vmPanel vmNames;

@@ -3,7 +3,7 @@
 # Dionysus runs them natively (home/dionysus/dev.nix) so the whole thing
 # builds on aarch64 and x86_64 alike. Steam, Blender and Godot are not on
 # Dionysus, and the other architecture-specific and flatpak-only modules
-# harmonia uses (gaming, LM Studio, the Nike microVM) are left out too.
+# harmonia uses (gaming, the Nike microVM) are left out too.
 { lib, username, ... }:
 {
   imports = [
