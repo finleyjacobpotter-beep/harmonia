@@ -4,6 +4,7 @@ Where everything lives. Every module starts with a comment saying what it
 does and how to use it, so the source is the next stop after these pages.
 
 ```
+.agents/AGENTS.md              instructions for coding agents working on this repo (CLAUDE.md imports it)
 flake.nix                      inputs, defaultUsername, mkHost and the hosts (harmonia, cadmus, dionysus, dionysus-aarch64)
 theme/miami-wind.nix           the palette — every app reads its colours from here
 keys.nix                       the keyboard contract (which layer owns which modifier)
@@ -51,6 +52,7 @@ home/                          home-manager, one file per program
   element.nix                  Miami Wind theme for Element
   gamedev.nix                  AI agents and game dev on the harmonia desktop: omo (oh-my-openagent, native) on the local model and Claude Code, no global prompts, Blender, Godot and radare2 MCP, the godot-ai service, the skills
   gamedev/                     its skills (Godot 4, Godot and Blender MCP) and the design-doc templates gamedev-init copies
+  omo/agents-dir.ts            omo extension: a project's instructions from .agents/ only, nothing from its .omo/
   skills/                      Rust tool skills for Claude Code and omo on harmonia (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
   rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host and Nike
   blender-addons.nix           Blender add-ons: MCP for Blender, Poly Haven, Poly Pizza (blender/poly_pizza.py)

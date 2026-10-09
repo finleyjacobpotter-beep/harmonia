@@ -5,9 +5,9 @@
 harmonia, configured by [`home/gamedev.nix`](../home/gamedev.nix). They're
 harmonia only: cadmus, Dionysus and Nike have no AI agents. omo runs
 everything on the local model; otherwise both are on their own defaults,
-with no global rules or system prompts from this repo:
-put a project's context in its own `AGENTS.md` or `CLAUDE.md`
-([gamedev.md](gamedev.md) has templates for games).
+with no global rules or system prompts from this repo: a project's
+instructions live in its own `.agents/AGENTS.md` ([below](#instructions-come-from-agents);
+[gamedev.md](gamedev.md) has templates for games).
 
 ```sh
 omo         # start the local model from the bar first
@@ -53,6 +53,34 @@ session and every agent are back on `local/ai`.
 
 Computer use is off: its desktop engine is a separate binary omo unpacks
 unpatched, so it can't start on NixOS.
+
+## Instructions come from .agents/
+
+omo reads a project's instructions from `.agents/` only and uses nothing
+in a project's `.omo/`. A global extension,
+[`home/omo/agents-dir.ts`](../home/omo/agents-dir.ts) (installed into
+`~/.omo/agent/extensions/`), and the settings around it do this:
+
+| omo by default | Here |
+| --- | --- |
+| `AGENTS.md` / `CLAUDE.md` in the working directory and every parent go into the system prompt | replaced by `.agents/AGENTS.md` and any other `.md` directly in `.agents/`, from the working directory up to the repository root (the root's first, deeper ones win) |
+| a subfolder's `AGENTS.md` is appended to every file read there | dropped |
+| the rules engine adds `.omo/rules`, `.claude/rules`, `.cursor/rules`, `AGENTS.md`, `CLAUDE.md`, `~/.claude/CLAUDE.md` … | off (`PI_RULES_DISABLED=1` in the wrapper) |
+| a trusted project's `.omo/settings.json`, `mcp.json`, extensions, skills, prompts and `SYSTEM.md` load | projects are never trusted (the extension, and `defaultProjectTrust: "never"`) |
+| `.agents/skills` loads for trusted projects | the extension adds it for every project |
+| ultrawork, ulw-plan, ulw-execute, ulw-loop, ulw-research, mass-ulw, hyperplan, dag-library, init-deep, frontend, visual-qa, refactor, debugging and lsp-setup write plans, drafts, evidence, ledgers, loops, DAGs, teams and LSP config into `.omo/` | disabled (`disabled_skills` in `omo.jsonc`) |
+
+What can't be stopped:
+
+- A project's `.omo/omo.jsonc` is read before any extension runs and
+  overrides `~/.omo/omo.jsonc`, models included. A session in such a
+  project starts with a warning naming the file; delete or rename it.
+- omo still writes some state there on its own: worktrees for isolated
+  tasks (`.omo/wt`), goals and the odd task record. Add `.omo/` to the
+  project's `.gitignore`.
+
+Claude Code doesn't read `.agents/` by itself, so a project's `CLAUDE.md`
+holds just `@.agents/AGENTS.md`, which imports it.
 
 ## MCP servers
 

@@ -1,3 +1,5 @@
 __pycache__/
 result
 result-*
+# omo writes its state here; instructions live in .agents/.
+.omo/

@@ -12,6 +12,8 @@
   fetchurl,
   autoPatchelfHook,
   makeWrapper,
+  # More environment variables for the wrapper to set (by default).
+  env ? { },
 }:
 let
   version = "5.1.29";
@@ -52,7 +54,10 @@ stdenv.mkDerivation {
     install -Dm755 $src $out/libexec/omo
     makeWrapper $out/libexec/omo $out/bin/omo \
       --set-default OMO_SEND_ANONYMOUS_TELEMETRY 0 \
-      --set-default PI_SKIP_VERSION_CHECK 1
+      --set-default PI_SKIP_VERSION_CHECK 1 \
+      ${lib.concatStringsSep " " (
+        lib.mapAttrsToList (name: value: "--set-default ${name} ${lib.escapeShellArg value}") env
+      )}
     runHook postInstall
   '';
 

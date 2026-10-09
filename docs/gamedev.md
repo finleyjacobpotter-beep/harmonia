@@ -31,12 +31,13 @@ omo and Claude Code both get:
 
 ## A game's context
 
-`cd ~/Projects/<game> && gamedev-init` creates `.omo/design/` (PITCH, GDD,
-TECH, ART, ASSETS, DECISIONS, LESSONS) from
-[`home/gamedev/templates/`](../home/gamedev/templates) and a project
-`AGENTS.md` pointing at them, never overwriting. Edit both however you like:
-they're the project's, and both agents read `AGENTS.md` (Claude Code reads
-`CLAUDE.md`; link one to the other if you want them to share it).
+`cd ~/Projects/<game> && gamedev-init` creates `.agents/design/` (PITCH,
+GDD, TECH, ART, ASSETS, DECISIONS, LESSONS) from
+[`home/gamedev/templates/`](../home/gamedev/templates), the instructions in
+`.agents/AGENTS.md` pointing at them, and a `CLAUDE.md` that imports them
+for Claude Code (`@.agents/AGENTS.md`), never overwriting. Edit them however
+you like: they're the project's. omo reads only `.agents/`
+([omo.md](omo.md#instructions-come-from-agents)).
 
 ## What the agents are told
 

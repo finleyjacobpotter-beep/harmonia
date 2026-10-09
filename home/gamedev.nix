@@ -3,8 +3,10 @@
 # native agent (`omo`), and Claude Code, both with the Blender, Godot and
 # radare2 MCP servers and the skills, with Godot's server running as a user
 # service next to the editor. Every omo model, the main session's and every
-# agent's and category's, is the local model (modules/nixos/llama-server.nix);
-# otherwise omo is on its defaults. See docs/omo.md and docs/gamedev.md.
+# agent's and category's, is the local model (modules/nixos/llama-server.nix),
+# and a project's instructions come from its .agents/ only, never its .omo/
+# (./omo/agents-dir.ts); otherwise omo is on its defaults. See docs/omo.md
+# and docs/gamedev.md.
 { pkgs, lib, ... }:
 let
   # The local model as omo names it (provider "local", model "ai", below).
@@ -12,7 +14,11 @@ let
 
   mcpServers = import ./mcp-servers.nix { inherit pkgs; };
   mcp = mcpServers.host;
-  omo = pkgs.callPackage ../pkgs/omo.nix { };
+  omo = pkgs.callPackage ../pkgs/omo.nix {
+    # The rules engine reads .omo/rules, .claude/rules, AGENTS.md, CLAUDE.md
+    # and others; instructions come from .agents/ only (./omo/agents-dir.ts).
+    env.PI_RULES_DISABLED = "1";
+  };
 
   skills = [
     "godot-4"
@@ -124,20 +130,40 @@ let
             # Its desktop engine is a binary omo unpacks unpatched, so it
             # can't start on NixOS.
             computer.enabled = false;
+            # The bundled skills that write into a project's .omo/ (plans,
+            # drafts, evidence, ledgers, loops, DAGs, teams, LSP config).
+            disabled_skills = [
+              "ultrawork"
+              "ulw-plan"
+              "ulw-execute"
+              "ulw-loop"
+              "ulw-research"
+              "mass-ulw"
+              "hyperplan"
+              "dag-library"
+              "init-deep"
+              "frontend"
+              "visual-qa"
+              "refactor"
+              "debugging"
+              "lsp-setup"
+            ];
           };
         };
     }
   );
   # `gamedev-init` in a project folder: copies the design-doc templates into
-  # .omo/design and an AGENTS.md, never overwriting.
+  # .agents/design, the instructions into .agents/AGENTS.md and a CLAUDE.md
+  # that points Claude Code at them, never overwriting.
   gamedev-init = pkgs.writeShellApplication {
     name = "gamedev-init";
     text = ''
-      mkdir -p .omo/design
-      cp -r --update=none --no-preserve=mode ${./gamedev/templates/design}/. .omo/design/
-      [ -e AGENTS.md ] || install -m 644 ${./gamedev/templates/AGENTS.md} AGENTS.md
-      echo "Design docs in $PWD/.omo/design:"
-      ls .omo/design
+      mkdir -p .agents/design
+      cp -r --update=none --no-preserve=mode ${./gamedev/templates/design}/. .agents/design/
+      [ -e .agents/AGENTS.md ] || install -m 644 ${./gamedev/templates/AGENTS.md} .agents/AGENTS.md
+      [ -e CLAUDE.md ] || echo "@.agents/AGENTS.md" > CLAUDE.md
+      echo "Instructions in $PWD/.agents/AGENTS.md, design docs in $PWD/.agents/design:"
+      ls .agents/design
     '';
   };
 in
@@ -147,6 +173,9 @@ in
     pkgs.radare2
     gamedev-init
   ];
+
+  # Instructions from .agents/ only, nothing from a project's .omo/.
+  home.file.".omo/agent/extensions/agents-dir.ts".source = ./omo/agents-dir.ts;
 
   # Claude Code (`claude`, then /login or an API key) with the skills (which
   # omo reads too) and the MCP servers. Neither agent gets global rules: each
@@ -225,7 +254,8 @@ in
     merge agent/mcp.json '.mcpServers = ((.mcpServers // {}) + $nix[0].mcp.mcpServers)'
     merge agent/settings.json '
       .skills = ((.skills // []) - ["~/.claude/skills"] + ["~/.claude/skills"])
-      | .defaultProvider = "local" | .defaultModel = "ai"'
+      | .defaultProvider = "local" | .defaultModel = "ai"
+      | .defaultProjectTrust = "never"'
     merge omo.jsonc '. * $nix[0].omo'
   '';
 }
