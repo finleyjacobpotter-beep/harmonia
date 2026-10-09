@@ -1,7 +1,8 @@
 # pi and Claude Code
 
 [pi](https://pi.dev) and [Claude Code](https://github.com/anthropics/claude-code)
-run natively on harmonia, configured by [`home/gamedev.nix`](../home/gamedev.nix).
+run natively on harmonia, configured by [`home/ai.nix`](../home/ai.nix) (pi)
+and [`home/gamedev.nix`](../home/gamedev.nix) (Claude Code).
 They're harmonia only: cadmus, Dionysus and Nike have no AI agents. pi runs
 on the local model; otherwise both are on their own defaults, with no global
 rules or system prompts from this repo: a project's instructions live in its

@@ -9,7 +9,7 @@
 # the MTP head (--spec-type draft-mtp) and needs only /dev/dri.
 { ... }:
 let
-  # Also in home/eww/activity.py (the bar) and home/gamedev.nix.
+  # Also in home/eww/activity.py (the bar) and home/ai.nix.
   port = 1235;
   # The quants with the MTP head built in; Q4_K_M is one file of them.
   model = "protoLabsAI/Ornith-1.5-9B-MTP-GGUF:Q4_K_M";
@@ -73,7 +73,7 @@ in
         "3"
         # 4 requests at once, each with half of Ornith's native 262144
         # context: 131072 apiece, 524288 in all (the context pi is told
-        # about, home/gamedev.nix).
+        # about, home/ai.nix).
         "--ctx-size"
         "524288"
         "--parallel"

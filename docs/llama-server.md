@@ -55,7 +55,7 @@ set `autoStart = true;` in the module and rebuild.
   all). With room to spare (check `rocm-smi` or the bar's VRAM), try
   `--cache-type-k q8_0` (~15 GiB). Without images, `--no-mmproj` saves
   ~1 GiB. If you change `--ctx-size` or `--parallel`, change the local
-  model's `contextWindow` in `home/gamedev.nix` to one request's share.
+  model's `contextWindow` in `home/ai.nix` to one request's share.
 - **MTP**: `--spec-draft-n-max` is how many tokens the head drafts; the
   model card measured Q4_K_M's gain as small on prose and larger on code.
   Drop the two `--spec-*` arguments to turn it off.

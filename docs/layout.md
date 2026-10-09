@@ -50,13 +50,14 @@ home/                          home-manager, one file per program
   flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
-  gamedev.nix                  AI agents and game dev on the harmonia desktop: pi on the local model and Claude Code, no global prompts, Blender, Godot and radare2 MCP, the godot-ai service, the skills
+  ai.nix                       pi on the harmonia desktop: the release build, on the local model, with the MCP servers, the skills and the .agents/ extension
+  gamedev.nix                  game dev on the harmonia desktop: Claude Code (no global prompts), Blender, Godot and radare2 MCP, the godot-ai service, the skills, gamedev-init
   gamedev/                     its skills (Godot 4, Godot and Blender MCP) and the design-doc templates gamedev-init copies
-  pi/agents-dir.ts             pi extension: a project's instructions from .agents/ only, nothing from its .pi/
+  pi/agents-dir.ts             pi extension (home/ai.nix): a project's instructions from .agents/ only, nothing from its .pi/
   skills/                      Rust tool skills for Claude Code and pi on harmonia (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
   rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host and Nike
   blender-addons.nix           Blender add-ons: MCP for Blender, Poly Haven, Poly Pizza (blender/poly_pizza.py)
-  mcp-servers.nix              the Blender, Godot and radare2 MCP servers for Claude Code and pi on harmonia (home/gamedev.nix)
+  mcp-servers.nix              the Blender, Godot and radare2 MCP servers for Claude Code and pi on harmonia (home/gamedev.nix, home/ai.nix)
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix firefox.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
 lib/python-app.nix             packages a folder of Python scripts that share modules as several commands (the bar)

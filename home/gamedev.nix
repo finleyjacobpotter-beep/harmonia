@@ -1,15 +1,11 @@
-# AI agents and game dev tooling on harmonia itself (not Cadmus, which
-# doesn't import this; hosts/harmonia/default.nix does): pi and Claude Code,
-# both with the Blender, Godot and radare2 MCP servers and the skills, with
-# Godot's server running as a user service next to the editor. pi runs on
-# the local model (modules/nixos/llama-server.nix) and takes a project's
-# instructions from its .agents/ only (./pi/agents-dir.ts); otherwise it's
-# on its defaults. See docs/pi.md and docs/gamedev.md.
+# Game dev tooling on harmonia itself (not Cadmus, which doesn't import
+# this; hosts/harmonia/default.nix does): Claude Code with the Blender, Godot
+# and radare2 MCP servers and the skills (pi, which reads them too, is in
+# ./ai.nix), Godot's server running as a user service next to the editor,
+# and `gamedev-init`. See docs/gamedev.md and docs/pi.md.
 { pkgs, lib, ... }:
 let
   mcpServers = import ./mcp-servers.nix { inherit pkgs; };
-  mcp = mcpServers.host;
-  pi = pkgs.callPackage ../pkgs/pi.nix { };
 
   skills = [
     "godot-4"
@@ -27,58 +23,8 @@ let
   # godot-ai's defaults, which the editor plugin expects.
   godotPorts = "--port 8000 --ws-port 9500";
 
-  # The MCP servers, in the shape both ~/.claude.json and pi's mcp.json
-  # take.
-  mcpServerConfig = {
-    blender = {
-      type = "stdio";
-      command = "${mcp.blender}/bin/blender-mcp";
-      args = [ ];
-    };
-    godot = {
-      type = "stdio";
-      command = "${mcp.godot}/bin/godot-mcp-attach";
-      args = [ ];
-    };
-    radare2 = {
-      type = "stdio";
-      command = "${mcp.radare2}/bin/r2mcp";
-      args = [ ];
-    };
-  };
-  claudeMcpServers = pkgs.writeText "claude-mcp-servers.json" (builtins.toJSON mcpServerConfig);
-
-  # What pi gets in ~/.pi/agent, merged into the files it keeps there (it
-  # writes them too: /mcp, /model, /settings), so only these entries are
-  # reset on a switch and everything you add stays.
-  piConfig = pkgs.writeText "pi-agent.json" (
-    builtins.toJSON {
-      # The llama.cpp server on this machine (modules/nixos/llama-server.nix),
-      # started from the bar. It takes no key, but pi lists a provider's
-      # models only once it has one.
-      models.providers.local = {
-        name = "Local (llama.cpp)";
-        baseUrl = "http://127.0.0.1:1235/v1";
-        api = "openai-completions";
-        apiKey = "none";
-        models = [
-          {
-            id = "ai";
-            name = "Ornith 1.5 9B (Q4_K_M, MTP)";
-            reasoning = true;
-            input = [
-              "text"
-              "image"
-            ];
-            # The server splits its context between its parallel requests
-            # (llama-server.nix); this is one request's share.
-            contextWindow = 131072;
-            maxTokens = 32768;
-          }
-        ];
-      };
-      mcp.mcpServers = mcpServerConfig;
-    }
+  claudeMcpServers = pkgs.writeText "claude-mcp-servers.json" (
+    builtins.toJSON mcpServers.clientConfig
   );
 
   # `gamedev-init` in a project folder: copies the design-doc templates into
@@ -98,13 +44,9 @@ let
 in
 {
   home.packages = [
-    pi
     pkgs.radare2
     gamedev-init
   ];
-
-  # Instructions from .agents/ only, nothing from a project's .pi/.
-  home.file.".pi/agent/extensions/agents-dir.ts".source = ./pi/agents-dir.ts;
 
   # Claude Code (`claude`, then /login or an API key) with the skills (which
   # pi reads too) and the MCP servers. Neither agent gets global rules: each
@@ -152,28 +94,5 @@ in
     ${pkgs.jq}/bin/jq --slurpfile servers ${claudeMcpServers} \
       '.mcpServers = ((.mcpServers // {}) + $servers[0])' "$f" > "$tmp"
     run mv "$tmp" "$f"
-  '';
-
-  # pi's own files, merged in on every switch. What's set here wins (the
-  # provider and MCP servers by name, the settings key by key); everything
-  # else you add with /mcp, /settings or by hand stays. A session starts on
-  # the local model, and projects are never trusted (./pi/agents-dir.ts says
-  # so too).
-  home.activation.piConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run mkdir -p "$HOME/.pi/agent"
-    merge() {
-      f="$HOME/.pi/agent/$1"
-      [ -s "$f" ] || echo '{}' > "$f"
-      tmp=$(mktemp "$f.XXXXXX")
-      ${pkgs.jq}/bin/jq --slurpfile nix ${piConfig} "$2" "$f" > "$tmp"
-      run mv "$tmp" "$f"
-    }
-    merge models.json '.providers = ((.providers // {}) + $nix[0].models.providers)'
-    merge mcp.json '.mcpServers = ((.mcpServers // {}) + $nix[0].mcp.mcpServers)'
-    merge settings.json '
-      .skills = ((.skills // []) - ["~/.claude/skills"] + ["~/.claude/skills"])
-      | .defaultProvider = "local" | .defaultModel = "ai"
-      | .defaultProjectTrust = "never"
-      | .enableInstallTelemetry = false'
   '';
 }

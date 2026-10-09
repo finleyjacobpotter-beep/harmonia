@@ -23,9 +23,12 @@
     UV_PYTHON_DOWNLOADS = "never";
   };
 
-  # AI agents and game dev, on the desktop only: pi and
-  # Claude Code, with Blender, Godot and radare2 over MCP and the local model
-  # (llama-server.nix above) for pi (docs/pi.md).
-  home-manager.users.${username}.imports = [ ../../home/gamedev.nix ];
+  # AI agents and game dev, on the desktop only: pi on the local model
+  # (llama-server.nix above; home/ai.nix) and Claude Code, with Blender,
+  # Godot and radare2 over MCP (home/gamedev.nix; docs/pi.md, docs/gamedev.md).
+  home-manager.users.${username}.imports = [
+    ../../home/ai.nix
+    ../../home/gamedev.nix
+  ];
   harmonia.allowedUnfree = [ "claude-code" ];
 }

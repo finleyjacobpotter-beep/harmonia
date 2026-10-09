@@ -1,5 +1,5 @@
 # The Blender, Godot and radare2 MCP servers, for Claude Code and pi
-# on harmonia (home/gamedev.nix), next to the editors. Each is pinned to a
+# on harmonia (home/gamedev.nix, home/ai.nix), next to the editors. Each is pinned to a
 # release so a new upstream commit doesn't run unreviewed.
 #
 # uv runs them with nixpkgs' Python: a Python uv downloads itself can't run
@@ -31,7 +31,7 @@ rec {
     '';
   };
 
-  # The servers as Claude Code and pi run them (home/gamedev.nix):
+  # The servers as Claude Code and pi run them (home/gamedev.nix, home/ai.nix):
   # Blender's add-on on localhost:9876, and a `godot-ai attach` stdio bridge
   # to the godot-ai user service (home/gamedev.nix, same ports), which reads
   # the capability record the service writes for the editor.
@@ -46,6 +46,25 @@ rec {
         export GODOT_AI_CAPABILITY_DIR="$HOME/.config/godot-ai/capabilities"
         exec ${godot}/bin/godot-mcp attach --port 8000 --ws-port 9500 "$@"
       '';
+    };
+  };
+
+  # The same, in the shape both ~/.claude.json and pi's mcp.json take.
+  clientConfig = {
+    blender = {
+      type = "stdio";
+      command = "${host.blender}/bin/blender-mcp";
+      args = [ ];
+    };
+    godot = {
+      type = "stdio";
+      command = "${host.godot}/bin/godot-mcp-attach";
+      args = [ ];
+    };
+    radare2 = {
+      type = "stdio";
+      command = "${host.radare2}/bin/r2mcp";
+      args = [ ];
     };
   };
 }

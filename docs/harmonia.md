@@ -26,7 +26,7 @@ its multi-token prediction head) as `ai` on the AMD GPU through Vulkan, at
 start at boot. See
 [The local model](llama-server.md).
 
-**AI agents** ([`home/gamedev.nix`](../home/gamedev.nix)). pi and
+**AI agents** ([`home/ai.nix`](../home/ai.nix), [`home/gamedev.nix`](../home/gamedev.nix)). pi and
 Claude Code run natively on the host on
 no global prompts, with the Blender, Godot and radare2 MCP servers for both;
 pi runs on the local model. Claude Code's license is why harmonia adds
