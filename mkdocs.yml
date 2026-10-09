@@ -6,6 +6,8 @@ repo_url: https://github.com/finleyjacobpotter-beep/harmonia
 repo_name: finleyjacobpotter-beep/harmonia
 edit_uri: edit/main/docs/
 copyright: Configuration MIT licensed. Tulasi icons CC BY-NC-SA 4.0; wallpaper art by Park Junkyu.
+# `mkdocs serve`'s address: off 8000, which is Godot's MCP server (godot-ai).
+dev_addr: 127.0.0.1:8999
 
 theme:
   name: material

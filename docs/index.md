@@ -73,7 +73,7 @@ suit you. After the first switch, `rebuild` does the same.
 
 ```sh
 nix develop .#docs        # a shell with mkdocs-material
-mkdocs serve              # live preview on http://127.0.0.1:8000
+mkdocs serve              # live preview on http://127.0.0.1:8999
 nix build .#docs          # the static site in ./result
 ```
 
