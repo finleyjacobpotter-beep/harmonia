@@ -23,7 +23,7 @@ Apple-silicon machine as much as on an x86 one.
   - the **Rust command-line tools** (ripgrep, fd, bat, eza, …) with the usual
     aliases in interactive shells only;
   - `uv`, Node, Python and a C toolchain.
-- No AI coding agents: Claude Code and opencode are not on Dionysus, so it
+- No AI coding agents: Claude Code and omo are not on Dionysus, so it
   allows no unfree packages beyond the Tulasi icons.
 - A git identity of its own: `Dionysus <dionysus@localhost.local>`.
 - Flatpak apps (`modules/nixos/flatpak.nix` and `element.nix`, the same

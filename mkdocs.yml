@@ -73,7 +73,7 @@ nav:
       - The local model: llama-server.md
       - Blender: blender.md
       - Game dev: gamedev.md
-      - opencode and Claude Code: opencode.md
+      - omo and Claude Code: omo.md
   - System:
       - VPNs: vpn.md
       - Secrets: secrets.md

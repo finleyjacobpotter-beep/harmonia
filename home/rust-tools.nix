@@ -1,7 +1,7 @@
 # Rust command-line tools, on the host and Nike alike (imported by
 # home/default.nix and lib/microvm-guest.nix). Your interactive
 # bash gets aliases from the classic commands to them. On harmonia, Claude
-# Code and opencode also get skills for them (home/skills/, installed by
+# Code and omo also get skills for them (home/skills/, installed by
 # home/gamedev.nix).
 { pkgs, lib, ... }:
 let
@@ -66,10 +66,11 @@ in
     options.syntax-theme = "ansi";
   };
 
-  # Only in your own shells: Claude Code (CLAUDECODE) and opencode (OPENCODE)
-  # run commands through bash too, and expect the classic tools' flags.
+  # Only in your own shells: Claude Code (CLAUDECODE) and omo
+  # (PI_CODING_AGENT) run commands through bash too, and expect the classic
+  # tools' flags.
   programs.bash.initExtra = ''
-    if [[ -z ''${CLAUDECODE-} && -z ''${OPENCODE-} ]]; then
+    if [[ -z ''${CLAUDECODE-} && -z ''${PI_CODING_AGENT-} ]]; then
     ${
       lib.concatStrings (
         lib.mapAttrsToList (name: cmd: "  alias ${name}=${lib.escapeShellArg cmd}\n") aliases

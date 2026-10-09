@@ -54,8 +54,8 @@ set `autoStart = true;` in the module and rebuild.
   At f16 the cache alone would be ~18 GiB, at q8_0 ~9.6 GiB (~17 GiB in
   all). With room to spare (check `rocm-smi` or the bar's VRAM), try
   `--cache-type-k q8_0` (~15 GiB). Without images, `--no-mmproj` saves
-  ~1 GiB. If you change `--ctx-size` or `--parallel`, change `slotContext`
-  and `parallel` in `home/gamedev.nix` to match.
+  ~1 GiB. If you change `--ctx-size` or `--parallel`, change the local
+  model's `contextWindow` in `home/gamedev.nix` to one request's share.
 - **MTP**: `--spec-draft-n-max` is how many tokens the head drafts; the
   model card measured Q4_K_M's gain as small on prose and larger on code.
   Drop the two `--spec-*` arguments to turn it off.
@@ -70,5 +70,5 @@ head baked into it and needs only `/dev/dri`.
 
 ## Who uses it
 
-- opencode on harmonia ([game dev](gamedev.md)): every agent, and it's the
-  only provider opencode offers.
+- omo on harmonia ([omo.md](omo.md)): every model it uses, the main
+  session and every agent and category, is `local/ai`.

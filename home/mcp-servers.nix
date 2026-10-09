@@ -1,4 +1,4 @@
-# The Blender, Godot and radare2 MCP servers, for Claude Code and opencode
+# The Blender, Godot and radare2 MCP servers, for Claude Code and omo
 # on harmonia (home/gamedev.nix), next to the editors. Each is pinned to a
 # release so a new upstream commit doesn't run unreviewed.
 #
@@ -31,7 +31,7 @@ rec {
     '';
   };
 
-  # The servers as Claude Code and opencode run them (home/gamedev.nix):
+  # The servers as Claude Code and omo run them (home/gamedev.nix):
   # Blender's add-on on localhost:9876, and a `godot-ai attach` stdio bridge
   # to the godot-ai user service (home/gamedev.nix, same ports), which reads
   # the capability record the service writes for the editor.

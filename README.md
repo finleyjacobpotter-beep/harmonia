@@ -57,12 +57,12 @@ home/                          home-manager, one file per program
   flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
-  gamedev.nix                  game dev on the harmonia desktop: opencode with every agent on the local model (4 at once, no other provider), Claude Code, Blender, Godot and radare2 MCP, the godot-ai service, the Rust tool skills
-  gamedev/                     its agent prompts, skills (Godot 4, Blender, planning), commands and design-doc templates
-  skills/                      Rust tool skills for Claude Code and opencode on harmonia (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
+  gamedev.nix                  AI agents and game dev on the harmonia desktop: omo (oh-my-openagent, native) on the local model and Claude Code, no global prompts, Blender, Godot and radare2 MCP, the godot-ai service, the skills
+  gamedev/                     its skills (Godot 4, Godot and Blender MCP) and the design-doc templates gamedev-init copies
+  skills/                      Rust tool skills for Claude Code and omo on harmonia (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
   rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host and Nike
   blender-addons.nix           Blender add-ons: MCP for Blender, Poly Haven, Poly Pizza (blender/poly_pizza.py)
-  mcp-servers.nix              the Blender, Godot and radare2 MCP servers for Claude Code and opencode on harmonia (home/gamedev.nix)
+  mcp-servers.nix              the Blender, Godot and radare2 MCP servers for Claude Code and omo on harmonia (home/gamedev.nix)
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix firefox.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
 lib/python-app.nix             packages a folder of Python scripts that share modules as several commands (the bar)
@@ -70,6 +70,7 @@ lib/root-cas.nix               trusts the root CAs in certs/ on the host and Nik
 lib/microvm-guest.nix          what every microVM guest shares: network, shares, volumes, user, openssh, status service, shell configs
 certs/                         your own root CAs: all/ for every machine, harmonia/ or nike/ for one (empty by default, see certs/README.md)
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
+pkgs/omo.nix                   omo, oh-my-openagent's native agent: the pinned release binary, patched for NixOS
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          the rest of the documentation (linked below), also built as a site by mkdocs.yml
 mkdocs.yml                     the documentation site: theme, navigation (`nix build .#docs`)
@@ -127,9 +128,9 @@ the right one for the machine.
 - [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
 - [The local model](docs/llama-server.md): Ornith 1.5 9B as `ai` on llama.cpp's server in podman on harmonia, with MTP, started from the bar
-- [Game dev](docs/gamedev.md): opencode + oh-my-openagent on harmonia, every agent on the local model, with Blender, Godot and radare2 over MCP
+- [Game dev](docs/gamedev.md): Blender, Godot and radare2 over MCP for the agents on harmonia, and per-game context
 - [Blender](docs/blender.md): free models from Poly Haven and Poly Pizza inside Blender
-- [opencode](docs/opencode.md): opencode and Claude Code on harmonia, the Blender and Godot MCP servers and their setup, the godot-ai service
+- [omo](docs/omo.md): omo (oh-my-openagent, native) and Claude Code on harmonia, what the repo configures for them, the MCP servers, the godot-ai service
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
 - [Nike and containers](docs/nike.md): the Nike microVM (VPN work, OSCP lab, firewall modes, shared folder, bar panel), podman
 - [Rust tools](docs/rust-tools.md): ripgrep, fd, bat, eza and friends, and the aliases from grep, find, cat, ls … on every machine

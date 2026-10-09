@@ -15,7 +15,7 @@ flatpaks.
 
 Two add-ons are installed and enabled on every start, pinned and copied into
 `~/.config/blender/harmonia-scripts` by [`home/blender-addons.nix`](../home/blender-addons.nix) (with MCP
-for Blender, [opencode.md](opencode.md#mcp-servers)). None of them updates
+for Blender, [omo.md](omo.md#mcp-servers)). None of them updates
 itself; bump the pin to update.
 
 | Source | Add-on | Where | One-time setup |

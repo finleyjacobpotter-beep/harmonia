@@ -23,9 +23,13 @@
     UV_PYTHON_DOWNLOADS = "never";
   };
 
-  # Game dev, on the desktop only: opencode with every agent on the local
-  # model (llama-server.nix above), Claude Code, and Blender, Godot and
-  # radare2 over MCP (docs/gamedev.md).
+  # AI agents and game dev, on the desktop only: omo (oh-my-openagent) and
+  # Claude Code, with Blender, Godot and radare2 over MCP and the local model
+  # (llama-server.nix above) as one of omo's providers (docs/omo.md).
   home-manager.users.${username}.imports = [ ../../home/gamedev.nix ];
-  harmonia.allowedUnfree = [ "claude-code" ];
+  harmonia.allowedUnfree = [
+    "claude-code"
+    # Sustainable Use License (pkgs/omo.nix).
+    "omo"
+  ];
 }
