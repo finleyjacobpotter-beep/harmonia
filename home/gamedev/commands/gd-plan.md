@@ -1,5 +1,5 @@
 ---
-description: Interview me and write an ultrawork plan for the next milestone (Prometheus, Claude)
+description: Interview me and write an ultrawork plan for the next milestone (Prometheus)
 agent: Prometheus - Plan Builder
 ---
 

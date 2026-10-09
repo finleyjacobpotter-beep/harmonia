@@ -19,7 +19,7 @@
   :initial "{\"up\":{\"wireguard\":false,\"openvpn\":false,\"forti\":false,\"other\":false},\"active\":0,\"connections\":[]}"
   "@bin@/eww-vpn")
 (defpoll activity :interval "5s"
-  :initial "{\"gamemode\":false,\"steam\":false,\"lmstudio\":{\"running\":false,\"serving\":false,\"first\":\"\",\"list\":\"\"}}"
+  :initial "{\"gamemode\":false,\"steam\":false,\"ai\":{\"on\":false,\"ready\":false,\"text\":\"stopped\"}}"
   "@bin@/eww-activity")
 @vmPolls@
 (deflisten usb :initial "{\"count\":0,\"devices\":[]}" "@bin@/eww-usb watch")
@@ -75,15 +75,14 @@
       :tooltip "Steam is running: click for options"
       :onclick "@bin@/eww-display menu steam-menu"
       (label :class "icon" :text "󰓓"))
-    (button :class "module lmstudio ${activity.lmstudio.serving ? "serving" : ""}"
-      :visible {activity.lmstudio.running}
-      :tooltip {activity.lmstudio.serving
-        ? "LM Studio is serving: ${activity.lmstudio.list} (click for options)"
-        : "LM Studio is running, no model loaded (click for options)"}
-      :onclick "@bin@/eww-display menu lms-menu"
-      (box :orientation "h" :space-evenly false :spacing 6
-        (label :class "icon" :text "󰚩")
-        (label :visible {activity.lmstudio.serving} :limit-width 24 :text "${activity.lmstudio.first}")))
+    ; The local model server (modules/nixos/llama-server.nix), on hosts
+    ; that have it: grey while stopped, yellow while it starts or loads the
+    ; model, pink while it serves.
+    (button :class "module ai ${activity.ai.ready ? "ready" : (activity.ai.on ? "loading" : "")}"
+      :visible @aiServer@
+      :tooltip "Local model (ai): ${activity.ai.text}. Click to start or stop it"
+      :onclick "@bin@/eww-display menu ai-menu"
+      (label :class "icon" :text "󰚩"))
     ; The microVMs (generated in home/eww.nix): grey while stopped, in the
     ; VM's own colour while running, with the firewall mode.
     @vmBadges@
@@ -164,29 +163,28 @@
     (power-action :icon "󰍃" :name "Log out" :onclick "@swaymsg@ exit")
     (power-action :icon "󰐥" :name "Power off" :onclick "@systemctl@ poweroff")))
 
-; Panels opened by the Steam and LM Studio buttons, laid out like the
-; network panel.
-(defwidget app-panel [title name status action onclose onaction]
+; Panels opened by the Steam and local model buttons, laid out like the
+; network panel; with :down true, the app shows as stopped.
+(defwidget app-panel [title name status action onclose onaction ?down]
   (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
     (box :orientation "h" :space-evenly false
       (label :class "wg-title" :hexpand true :halign "start" :text title)
       (button :class "wg-close" :onclick onclose "✕"))
-    (box :class "wg-tunnel up" :orientation "h" :space-evenly false :spacing 16
+    (box :class "wg-tunnel ${down == "true" ? "" : "up"}" :orientation "h" :space-evenly false :spacing 16
       (box :orientation "v" :space-evenly false :hexpand true :spacing 2
-        (label :class "wg-name" :halign "start" :text "● ${name}")
+        (label :class "wg-name" :halign "start" :text "${down == "true" ? "○" : "●"} ${name}")
         (label :class "wg-detail" :halign "start" :wrap true :text status))
       (button :class "wg-toggle" :valign "center" :onclick onaction action))))
 
-(defwidget lms-menu []
+(defwidget ai-menu []
   (app-panel
-    :title "LM Studio"
-    :name "LM Studio"
-    :status {activity.lmstudio.serving
-      ? "Serving: ${activity.lmstudio.list}"
-      : "Running, no model loaded"}
-    :action "Close"
-    :onclose "@eww@ close lms-menu"
-    :onaction "@eww@ close lms-menu; @flatpak@ kill ai.lmstudio.lm-studio"))
+    :title "Local model"
+    :name "Ornith 1.5 9B as ai"
+    :status "${activity.ai.text}"
+    :down {!activity.ai.ready}
+    :action {activity.ai.on ? "Stop" : "Start"}
+    :onclose "@eww@ close ai-menu"
+    :onaction "@bin@/eww-activity ai ${activity.ai.on ? "stop" : "start"}"))
 
 (defwidget steam-menu []
   (app-panel
@@ -379,12 +377,12 @@
   :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
   (steam-menu))
 
-(defwindow lms-menu
+(defwindow ai-menu
   :monitor 0
   :stacking "overlay"
   :namespace "eww-menu"
   :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-  (lms-menu))
+  (ai-menu))
 
 (defwindow bar
   :monitor 0

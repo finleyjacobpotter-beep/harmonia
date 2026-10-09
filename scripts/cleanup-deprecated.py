@@ -20,6 +20,9 @@ removes it. Everything it knows about:
   Proton VPN app     its ~/.config, ~/.cache and ~/.local/share dirs
                      (replaced by openfortivpn, PR #32)
   Vagrant            ~/.vagrant.d (removed in PR #5)
+  LM Studio          ai.lmstudio.lm-studio and its ~/.var/app data: models
+                     and chats, so only with --user-files (replaced by the
+                     llama.cpp server)
   cadmus: LACT       the LACT flatpak, its data and /etc/lact (cadmus uses
                      thinkfan, PR #29)
   dionysus: Blender, Godot and native Firefox settings (PR #36, PR #37)
@@ -40,7 +43,7 @@ Every host has it on its PATH (hosts/base.nix); before the first rebuild
 that adds it, run this file directly: sudo ./scripts/cleanup-deprecated.py
 
 Things that hold your own files (a non-empty ~/Downloads/zen or
-~/vms/kali-shared, Dionysus's old ~/.mozilla profile, home-manager's
+~/vms/kali-shared, LM Studio's models and chats, Dionysus's old ~/.mozilla profile, home-manager's
 *.hm-backup copies of your pre-harmonia dotfiles) are only removed with
 --user-files. Run it with sudo: system state (/var/lib/libvirt, system
 flatpaks) needs root; without it those steps are listed as skipped. The
@@ -64,6 +67,7 @@ DEFAULT_USERS = {"harmonia": "u", "cadmus": "u", "dionysus": "d"}
 
 ZEN = "app.zen_browser.zen"
 OPENCODE = "ai.opencode.opencode"
+LMSTUDIO = "ai.lmstudio.lm-studio"
 LACT = "io.github.ilya_zlobintsev.LACT"
 BLENDER = "org.blender.Blender"
 GODOT = "org.godotengine.Godot"
@@ -200,9 +204,10 @@ class Cleanup:
 
     # -- flatpak ---------------------------------------------------------
 
-    def flatpak(self, app: str, why: str) -> None:
+    def flatpak(self, app: str, why: str, *, mine: bool = False) -> None:
         """Uninstall an app from the system and the user installation, and
-        drop its overrides and ~/.var/app data."""
+        drop its overrides and ~/.var/app data (with mine, that data is your
+        own files)."""
         if shutil.which("flatpak"):
             for scope in ("--system", "--user"):
                 as_user = scope == "--user"
@@ -212,7 +217,7 @@ class Cleanup:
                     self.run("flatpak", "uninstall", scope, "-y", "--noninteractive", app, as_user=as_user)
         self.remove(Path("/var/lib/flatpak/overrides", app), "flatpak override")
         self.remove(self.home / ".local/share/flatpak/overrides" / app, "flatpak override")
-        self.remove(self.home / ".var/app" / app, f"{why}: app data")
+        self.remove(self.home / ".var/app" / app, f"{why}: app data", mine=mine)
 
     def unused_runtimes(self) -> None:
         """Runtimes nothing uses any more (the removed apps' ones). flatpak
@@ -262,6 +267,11 @@ class Cleanup:
         store = Path(os.environ.get("PASSWORD_STORE_DIR", self.home / ".local/share/password-store"))
         if (store / "opencode/anthropic-api-key.gpg").exists():
             self.note("pass entry opencode/anthropic-api-key is no longer used; remove it yourself with `pass rm` if you like")
+
+    def lmstudio(self) -> None:
+        self.section("LM Studio (replaced by the llama.cpp server)")
+        self.flatpak(LMSTUDIO, "LM Studio: downloaded models and chats", mine=True)
+        self.mimeapps([f"{LMSTUDIO}.desktop"])
 
     def libvirt_active(self) -> bool:
         """Whether this machine still runs libvirt (not from harmonia)."""
@@ -355,6 +365,7 @@ class Cleanup:
     def run_all(self) -> None:
         self.zen()
         self.opencode()
+        self.lmstudio()
         self.libvirt()
         self.proton()
         self.vagrant()

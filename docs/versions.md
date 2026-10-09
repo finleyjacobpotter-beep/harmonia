@@ -135,7 +135,9 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | --- | --- |
 | opencode | 1.18.31 |
 | oh-my-openagent (opencode plugin) | 5.1.21 |
-| Ornith 1.5 9B (LM Studio, `bartowski/Ornith-1.5-9B-GGUF`) | Q6_K |
+| Ornith 1.5 9B (`protoLabsAI/Ornith-1.5-9B-MTP-GGUF`, served as `ai`) | Q4_K_M with the MTP head |
+| llama.cpp server image (`ghcr.io/ggml-org/llama.cpp`) | `server-vulkan-b11515` |
+| r2mcp (radare2 MCP server) | 1.8.8 |
 | Claude Code | 2.1.283 |
 
 ## Secrets
@@ -157,14 +159,13 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | uBlock Origin add-on | 1.75.0 |
 | Vimium add-on | 2.4.2 |
 
-## Lutris, Element and LM Studio
+## Lutris and Element
 
 | Package | Version |
 | --- | --- |
 | Lutris (Flathub `net.lutris.Lutris`) | follows Flathub |
 | Steam (Flathub `com.valvesoftware.Steam`) | follows Flathub; the client also updates itself |
 | Element (Flathub `im.riot.Riot`) | follows Flathub |
-| LM Studio (Flathub `ai.lmstudio.lm-studio`) | follows Flathub |
 | Flatpak Mesa, 32-bit (`org.freedesktop.Platform.GL32.default`) | branch 25.08, follows Flathub |
 | GameMode | from the pinned nixpkgs |
 | steam-devices-udev-rules | from the pinned nixpkgs |
