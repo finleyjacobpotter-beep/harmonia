@@ -78,6 +78,9 @@ in
         "524288"
         "--parallel"
         "4"
+        # Fixed limits: each slot has its own 131072 tokens of cache and can
+        # never take another's (a unified cache would let one grow).
+        "--no-kv-unified"
         # What makes that fit in the 9070's 16 GiB: only 8 of Ornith's 32
         # layers (plus the MTP head's one) keep a KV cache, 4 KV heads of
         # 256, and the cache is quantised to 4 bits (flash attention needs
