@@ -1,0 +1,79 @@
+# The documentation site: `nix develop .#docs` then `mkdocs serve`, or
+# `nix build .#docs` for the static site. Pages live in docs/.
+site_name: harmonia
+site_description: NixOS on Sway, themed Miami Wind
+repo_url: https://github.com/finleyjacobpotter-beep/harmonia
+repo_name: finleyjacobpotter-beep/harmonia
+edit_uri: edit/main/docs/
+copyright: Configuration MIT licensed. Tulasi icons CC BY-NC-SA 4.0; wallpaper art by Park Junkyu.
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: custom
+    accent: custom
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - content.code.copy
+
+extra_css:
+  - stylesheets/miami-wind.css
+
+# Fail the strict build on links to headings that do not exist, too.
+validation:
+  anchors: warn
+
+# Links from a page to a repository file outside docs/ (../modules/nixos/...)
+# go to that file on GitHub.
+hooks:
+  - scripts/mkdocs-hooks.py
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+
+nav:
+  - Home: index.md
+  - Environments:
+      - What every environment shares: common.md
+      - Comparing environments: compare.md
+      - harmonia (desktop): harmonia.md
+      - cadmus (laptop): cadmus.md
+      - Dionysus (VM): dionysus.md
+      - Nike (OSCP microVM): nike.md
+      - Zelus (dev microVM): zelus.md
+  - Getting started:
+      - Installing base NixOS: install.md
+      - Repository layout: layout.md
+      - Pinned versions: versions.md
+  - Desktop:
+      - Keyboard: keyboard.md
+      - The bar: bar.md
+      - Theme: theme.md
+      - Calendar: calendar.md
+      - Editing: editing.md
+      - Rust tools: rust-tools.md
+  - Apps:
+      - Firefox: firefox.md
+      - Element: element.md
+      - Gaming: gaming.md
+      - The local model: llama-server.md
+      - Blender: blender.md
+      - Game dev: gamedev.md
+      - opencode: opencode.md
+  - System:
+      - VPNs: vpn.md
+      - Secrets: secrets.md
+      - Fans: fans.md

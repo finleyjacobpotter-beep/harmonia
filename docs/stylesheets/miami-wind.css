@@ -1,0 +1,29 @@
+/* Miami Wind (theme/miami-wind.nix) for the docs site's dark scheme. */
+[data-md-color-scheme="slate"] {
+  --md-hue: 240;
+  --md-default-bg-color: #1e1e2e;
+  --md-default-fg-color: #cdd6f4;
+  --md-default-fg-color--light: #a6adc8;
+  --md-default-fg-color--lighter: #6c7086;
+  --md-default-fg-color--lightest: #45475a;
+  --md-code-bg-color: #181825;
+  --md-code-fg-color: #cdd6f4;
+  --md-typeset-a-color: #22d3ee;
+  --md-footer-bg-color: #11111b;
+  --md-footer-bg-color--dark: #0d0d14;
+}
+
+:root {
+  --md-primary-fg-color: #11111b;
+  --md-primary-fg-color--light: #181825;
+  --md-primary-fg-color--dark: #09090b;
+  --md-primary-bg-color: #f472b6;
+  --md-primary-bg-color--light: #f472b6;
+  --md-accent-fg-color: #f472b6;
+  --md-accent-fg-color--transparent: #f472b61a;
+}
+
+.md-typeset h1,
+.md-typeset h2 {
+  color: #f472b6;
+}
