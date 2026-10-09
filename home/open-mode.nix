@@ -1,7 +1,8 @@
 # Sway's open mode (Super+o, then a key): what each key opens, in key order
 # (as the bar's hint lists them). home/sway.nix binds them and home/eww.nix shows
-# the hint. The Flathub apps and the microVMs come from the host's config
-# (harmonia.apps, modules/nixos/flatpak.nix; harmonia.microvms,
+# the hint. The Flathub apps, native programs and the microVMs come from the
+# host's config (harmonia.apps and harmonia.launchers,
+# modules/nixos/flatpak.nix; harmonia.microvms,
 # modules/nixos/microvms.nix), so a host only gets keys for what it has.
 #
 #   [ { key = "b"; name = "firefox"; exec = "flatpak run org.mozilla.firefox"; } ... ]
@@ -15,6 +16,10 @@ let
     inherit (app) key name;
     exec = "flatpak run ${appId}";
   }) (lib.filterAttrs (_: app: app.key != null) (osConfig.harmonia.apps or { }));
+  launcherKeys = lib.mapAttrsToList (name: l: {
+    inherit name;
+    inherit (l) key exec;
+  }) (osConfig.harmonia.launchers or { });
   vmKeys = lib.mapAttrsToList (name: vm: {
     inherit (vm) key;
     inherit name;
@@ -27,6 +32,7 @@ in
 map (k: k // { hint = hint k.key; }) (
   sorted (
     appKeys
+    ++ launcherKeys
     ++ [
       {
         key = "f";

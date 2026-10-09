@@ -23,6 +23,9 @@ removes it. Everything it knows about:
   cadmus: LACT       the LACT flatpak, its data and /etc/lact (cadmus uses
                      thinkfan, PR #29)
   dionysus: Blender, Godot and native Firefox settings (PR #36, PR #37)
+  harmonia, cadmus: the Blender and Godot flatpaks; their settings, recent
+                     projects and export templates move to the native apps'
+                     ~/.config and ~/.local/share first (native from nixpkgs)
   unused flatpak runtimes left behind by the apps above
 
 It only reports, never deletes, the pass entry opencode/anthropic-api-key.
@@ -62,6 +65,8 @@ DEFAULT_USERS = {"harmonia": "u", "cadmus": "u", "dionysus": "d"}
 ZEN = "app.zen_browser.zen"
 OPENCODE = "ai.opencode.opencode"
 LACT = "io.github.ilya_zlobintsev.LACT"
+BLENDER = "org.blender.Blender"
+GODOT = "org.godotengine.Godot"
 
 LIBVIRT_DOMAINS = ("harmonia-kali", "harmonia-ubuntu")
 LIBVIRT_FILTERS = (
@@ -170,6 +175,28 @@ class Cleanup:
             self.remove(path, "not empty", mine=True)
         else:
             self.remove(path, "empty")
+
+    def move_into(self, src: Path, dest: Path, why: str) -> None:
+        """Move each entry of src into dest, unless dest already has one by
+        that name. A rename, so ownership stays the user's."""
+        if not src.is_dir() or not dest.parent.is_dir():
+            return
+        for path in sorted(src.iterdir()):
+            target = dest / path.name
+            if os.path.lexists(target):
+                continue
+            self.found += 1
+            self.say(f"  {'move  ' if self.apply else 'would '}  {'' if self.apply else 'move '}{path} -> {target}  ({why})")
+            if not self.apply:
+                continue
+            try:
+                if not dest.is_dir():
+                    dest.mkdir()
+                    os.chown(dest, self.user.pw_uid, self.user.pw_gid)
+                shutil.move(path, target)
+            except OSError as e:
+                self.failed += 1
+                print(f"  failed  {path}: {e}", file=sys.stderr)
 
     # -- flatpak ---------------------------------------------------------
 
@@ -297,6 +324,20 @@ class Cleanup:
         self.remove(self.home / ".mozilla", "native Firefox profile: bookmarks, history, logins", mine=True)
         self.remove(self.home / ".cache/mozilla", "native Firefox cache")
 
+    def studio_flatpaks(self) -> None:
+        self.section("Blender and Godot flatpaks (native from nixpkgs now)")
+        blender = self.home / ".var/app" / BLENDER
+        godot = self.home / ".var/app" / GODOT
+        # Blender's version folders (prefs, startup file); the add-on copies
+        # are in ~/.config/blender/harmonia-scripts now.
+        self.move_into(blender / "config/blender", self.home / ".config/blender", "Blender settings")
+        # Editor settings, the project list, export templates.
+        self.move_into(godot / "config/godot", self.home / ".config/godot", "Godot settings")
+        self.move_into(godot / "data/godot", self.home / ".local/share/godot", "Godot projects list, templates")
+        self.flatpak(BLENDER, "Blender")
+        self.flatpak(GODOT, "Godot")
+        self.mimeapps([f"{BLENDER}.desktop", f"{GODOT}.desktop"])
+
     def hm_backups(self) -> None:
         """home-manager moves a file it would overwrite to *.hm-backup
         (flake.nix). These are copies of your dotfiles from before harmonia."""
@@ -319,6 +360,8 @@ class Cleanup:
         self.vagrant()
         if self.host == "cadmus":
             self.lact()
+        if self.host in ("harmonia", "cadmus"):
+            self.studio_flatpaks()
         if self.host == "dionysus":
             self.dionysus_apps()
         self.hm_backups()

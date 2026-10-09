@@ -74,6 +74,8 @@ only change when an input's commit is bumped; update this table when you do.
 | pulsemixer / bluetuith | 1.5.1 / 0.2.7 |
 | fzf | 0.74.4 |
 | Calibre | 9.14.0 |
+| Blender (harmonia, cadmus) | 5.2.2 |
+| Godot (harmonia, cadmus) | 4.7.2 |
 
 Neovim plugins:
 

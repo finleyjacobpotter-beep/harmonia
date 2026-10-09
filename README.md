@@ -4,7 +4,7 @@
 icon theme, shared by every program on the desktop.*
 
 NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, two **microVMs** (Nike and Zelus), **podman**, and **Firefox** (vertical tabs, uBlock Origin, Vimium), **Lutris**, **Steam**, **Element**, **LM Studio**, **Blender** and **Godot** jailed in Flatpak —
+**neovim**, two **microVMs** (Nike and Zelus), **podman**, and **Firefox** (vertical tabs, uBlock Origin, Vimium), **Lutris**, **Steam**, **Element**, **LM Studio** jailed in Flatpak, native **Blender** and **Godot** —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -23,12 +23,12 @@ hosts/cadmus/                  the laptop (ThinkPad E14 Gen 2): hardware-configu
 modules/nixos/
   desktop.nix                  sway, greetd/tuigreet, pipewire, portals, console colours
   fonts.nix                    DepartureMono Nerd Font as system default
-  flatpak.nix                  Flathub, `harmonia.apps` (each app's sandbox and Super+o key), Firefox with a tightened sandbox
+  flatpak.nix                  Flathub, `harmonia.apps` (each app's sandbox and Super+o key), `harmonia.launchers` (native apps' keys), Firefox with a tightened sandbox
   gaming.nix                   Lutris from Flathub with a tightened sandbox, controller udev rules, GameMode
   steam.nix                    Steam from Flathub, locked down, sharing only ~/Games with Lutris
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
-  studio.nix                   Blender and Godot from Flathub, sharing only ~/Projects (and the network)
+  studio.nix                   Blender and Godot from nixpkgs, with their Super+o keys
   fans.nix                     harmonia only: LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
   podman.nix                   rootless podman, podman-compose, buildah (all hosts)
   virtualisation.nix           plain QEMU (no libvirt)
@@ -65,7 +65,7 @@ home/                          home-manager, one file per program
   gamedev.nix                  game dev on the harmonia desktop: opencode on local Ornith 1.5 9B (4 agents), Claude plans and finishes, Claude Code, Blender and Godot MCP
   gamedev/                     its agent prompts, skills (Godot 4, Blender, planning), commands and design-doc templates
   rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host, Nike and Zelus
-  blender-addons.nix           Blender add-ons in the Flatpak: MCP for Blender, Poly Haven, Poly Pizza (blender/poly_pizza.py)
+  blender-addons.nix           Blender add-ons: MCP for Blender, Poly Haven, Poly Pizza (blender/poly_pizza.py)
   mcp-servers.nix              the Blender and Godot MCP servers (Godot's runs on the host), for Claude Code and opencode on Zelus and the host
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix firefox.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
@@ -173,8 +173,7 @@ harmonia stands on other people's work:
 - **[Departure Mono](https://departuremono.com/)** via
   [Nerd Fonts](https://www.nerdfonts.com/): the font.
 - **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
-  Flatpak setup for Firefox, Lutris, Steam, Element, LM Studio, Blender and
-  Godot.
+  Flatpak setup for Firefox, Lutris, Steam, Element and LM Studio.
 - **[microvm.nix](https://github.com/microvm-nix/microvm.nix)**: the Nike
   and Zelus microVMs.
 - **[Poly Haven](https://polyhaven.com/)** ([add-on](https://github.com/Poly-Haven/polyhavenassets), GPL-3.0)

@@ -19,7 +19,7 @@
 # LM Studio's localhost:1234. The socket can't sit on 1234 itself: LM Studio's
 # "serve on local network" binds 0.0.0.0:1234, which would then fail.
 #
-# Blender and Godot run on the host (Flatpak, modules/nixos/studio.nix);
+# Blender and Godot run on the host (modules/nixos/studio.nix);
 # Claude Code and opencode on Zelus reach them through two sockets on the
 # host's end of the tap (home/mcp-servers.nix), whether or not an
 # `ssh zelus` is open, and in every firewall mode:
@@ -29,7 +29,7 @@
 #     authenticates to it with a private record the server writes (a server
 #     on Zelus could never be adopted). So the host runs it as a user service
 #     (localhost:8000, plugin WebSocket localhost:9500), with the record in
-#     Godot's Flatpak config folder where the plugin looks. Each connection
+#     ~/.config/godot-ai where the plugin looks. Each connection
 #     to 10.20.1.1:19500 gets its own `godot-ai attach` stdio bridge to it,
 #     and godot-mcp on Zelus is a pipe to that.
 # Both sockets sit off the apps' own ports, so setting the add-on or plugin
@@ -48,9 +48,8 @@ let
   mcp = import ../../home/mcp-servers.nix { inherit pkgs; };
   # godot-ai's defaults, which the editor plugin expects.
   godotPorts = "--port 8000 --ws-port 9500";
-  # The plugin reads the record from $XDG_CONFIG_HOME/godot-ai/capabilities,
-  # and Flatpak sets XDG_CONFIG_HOME to the app's own folder.
-  godotEnv.GODOT_AI_CAPABILITY_DIR = "%h/.var/app/org.godotengine.Godot/config/godot-ai/capabilities";
+  # The plugin reads the record from $XDG_CONFIG_HOME/godot-ai/capabilities.
+  godotEnv.GODOT_AI_CAPABILITY_DIR = "%h/.config/godot-ai/capabilities";
 in
 {
   harmonia.microvms.zelus = {
@@ -150,9 +149,9 @@ in
   };
 
   # The Godot MCP server, in your session: running before the editor opens,
-  # so the plugin adopts it instead of trying to start one (it can't, inside
-  # the Flatpak). The record is removed first and waited for after, so a
-  # bridge never reads a stale one.
+  # so the plugin adopts it instead of starting its own, and the editor, the
+  # host's agents and Zelus all share one server. The record is removed first
+  # and waited for after, so a bridge never reads a stale one.
   systemd.user.services.godot-ai = {
     description = "Godot MCP server (godot-ai) for the editor and Zelus";
     wantedBy = [ "default.target" ];
