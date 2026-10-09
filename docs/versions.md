@@ -141,8 +141,7 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | Package | Version |
 | --- | --- |
 | GnuPG | 2.4.9 |
-| pinentry (curses) | 1.3.2 |
-| pass | 1.7.4 |
+| KeePassXC (`keepassxc-cli`) | 2.7.12 |
 | yubikey-manager (`ykman`) | 5.9.2 |
 | pcsc-lite | 2.4.1 |
 | Bitwarden CLI (`bw`) | 2026.9.0 |

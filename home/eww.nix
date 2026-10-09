@@ -374,8 +374,9 @@ in
     };
     Service = {
       Type = "oneshot";
-      # pass (for password.fetch) looks for the store here, as in home/secrets.nix.
-      Environment = [ "PASSWORD_STORE_DIR=${config.xdg.dataHome}/password-store" ];
+      # The Bitwarden session from `bw-unlock` (home/secrets.nix), for
+      # password.fetch; without it the fetch fails and the sync is skipped.
+      EnvironmentFile = "-%t/bw-session";
       ExecStart = [
         "-${pkgs.vdirsyncer}/bin/vdirsyncer metasync"
         "${pkgs.vdirsyncer}/bin/vdirsyncer sync"

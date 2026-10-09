@@ -56,7 +56,7 @@ home/                          home-manager, one file per program
   open-mode.nix                Super+o's keys, for sway and the bar's hint
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
-  secrets.nix                  gpg, gpg-agent, pass, ykman, bw, bao
+  secrets.nix                  keepassxc-cli, bw, ssh-agent, gpg, ykman, bao
   secrets-backup.py            the `secrets-backup` command
   flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
@@ -139,7 +139,7 @@ the right one for the machine.
 - [The bar](docs/bar.md): what each part of the eww bar shows, its panels, and the display settings window
 - [Calendar](docs/calendar.md): the clock's calendar, time zones and CalDAV sync with vdirsyncer
 - [VPNs](docs/vpn.md): WireGuard, OpenVPN and openfortivpn, and their asterisks on the bar
-- [Secrets](docs/secrets.md): gpg, pass, YubiKey, Bitwarden, OpenBao and `secrets-backup`
+- [Secrets](docs/secrets.md): KeePassXC, Bitwarden, ssh-agent, gpg, YubiKey, OpenBao and `secrets-backup`
 - [Theme](docs/theme.md): Miami Wind colours, Tulasi icons, the wallpaper
 - [Editing](docs/editing.md): the system-wide EditorConfig and Neovim's JSON/YAML commands
 

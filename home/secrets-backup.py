@@ -1,16 +1,19 @@
 """secrets-backup [DIR]  (packaged as a command by home/secrets.nix)
 
-Bundle the pass store, a Bitwarden export and your gpg keys (secret keys
-included) into DIR/secrets-backup-<UTC timestamp>.tar.gz.gpg (DIR defaults
+Bundle the KeePassXC database, a Bitwarden export and your gpg keys (secret
+keys included) into DIR/secrets-backup-<UTC timestamp>.tar.gz.gpg (DIR defaults
 to $HOME), encrypted with a passphrase (AES-256) rather than a gpg key, so
 the backup can still be opened after the keys themselves are lost.
 
 Anything locked, logged out or not set up yet is skipped with a warning.
 Plaintext only ever exists inside a private temporary directory, which is
-removed on exit, and the tarball is streamed straight into gpg.
+removed on exit, and the tarball is streamed straight into gpg. gpg asks
+for passphrases in the terminal (loopback pinentry), as there is no
+gpg-agent setup with a pinentry of its own.
 """
 
 import datetime as dt
+import getpass
 import json
 import os
 import shutil
@@ -50,7 +53,7 @@ def export_gpg(tmp: Path) -> bool:
     d.mkdir()
     exports = [
         (["--armor", "--export"], "public-keys.asc"),
-        (["--armor", "--export-secret-keys"], "secret-keys.asc"),
+        (["--pinentry-mode", "loopback", "--armor", "--export-secret-keys"], "secret-keys.asc"),
         (["--export-ownertrust"], "ownertrust.txt"),
     ]
     if all(ok("gpg", *flags, stdout=d / name) for flags, name in exports):
@@ -60,18 +63,19 @@ def export_gpg(tmp: Path) -> bool:
     return False
 
 
-def copy_pass(tmp: Path) -> bool:
-    """The store is already gpg-encrypted: copy it as is (with its git history)."""
-    store = Path(os.environ.get("PASSWORD_STORE_DIR", Path.home() / ".password-store"))
-    if not (store / ".gpg-id").is_file():
-        warn(f"pass: no store at {store} (run 'pass init'), skipping")
+def copy_keepassxc(tmp: Path) -> bool:
+    """The database is already encrypted: copy it as is."""
+    default = Path.home() / ".local/share/keepassxc/passwords.kdbx"
+    db = Path(os.environ.get("KEEPASSXC_DB") or default)
+    if not db.is_file():
+        warn(f"keepassxc: no database at {db} (keepassxc-cli db-create -p \"$KEEPASSXC_DB\"), skipping")
         return False
     try:
-        shutil.copytree(store, tmp / "pass", symlinks=True)
+        shutil.copy2(db, tmp / "keepassxc.kdbx")
         return True
     except OSError:
-        warn("pass: copy failed, skipping")
-        shutil.rmtree(tmp / "pass", ignore_errors=True)
+        warn("keepassxc: copy failed, skipping")
+        (tmp / "keepassxc.kdbx").unlink(missing_ok=True)
         return False
 
 
@@ -95,18 +99,37 @@ def export_bitwarden(tmp: Path) -> bool:
     return False
 
 
-def encrypt(tmp: Path, out: Path) -> bool:
-    """Stream a gzipped tarball of tmp into gpg. gpg asks for the backup
-    passphrase twice through pinentry."""
+def ask_passphrase() -> str | None:
+    """The backup passphrase, typed twice so a typo can't lock you out."""
+    while True:
+        try:
+            first = getpass.getpass("secrets-backup: backup passphrase: ")
+            second = getpass.getpass("secrets-backup: repeat it: ")
+        except EOFError:
+            return None
+        if first and first == second:
+            return first
+        warn("empty or not the same, try again")
+
+
+def encrypt(tmp: Path, out: Path, passphrase: str) -> bool:
+    """Stream a gzipped tarball of tmp into gpg, handing it the passphrase
+    through a pipe."""
     partial = out.with_name(out.name + ".partial")
+    r, w = os.pipe()
+    os.write(w, passphrase.encode() + b"\n")
+    os.close(w)
     gpg = subprocess.Popen(
         [
-            "gpg", "--yes", "--no-symkey-cache", "--symmetric", "--cipher-algo", "AES256",
+            "gpg", "--batch", "--yes", "--no-symkey-cache", "--pinentry-mode", "loopback",
+            "--passphrase-fd", str(r), "--symmetric", "--cipher-algo", "AES256",
             "--s2k-mode", "3", "--s2k-digest-algo", "SHA512", "--s2k-count", "65011712",
             "--output", str(partial),
         ],
         stdin=subprocess.PIPE,
+        pass_fds=(r,),
     )
+    os.close(r)
     assert gpg.stdin is not None
     try:
         with tarfile.open(fileobj=gpg.stdin, mode="w|gz") as tar:
@@ -132,7 +155,7 @@ def main(args: list[str]) -> int:
     try:
         included = [
             name
-            for name, step in (("gpg", export_gpg), ("pass", copy_pass), ("bitwarden", export_bitwarden))
+            for name, step in (("gpg", export_gpg), ("keepassxc", copy_keepassxc), ("bitwarden", export_bitwarden))
             if step(tmp)
         ]
         if not included:
@@ -140,7 +163,8 @@ def main(args: list[str]) -> int:
             return 1
         stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         out = out_dir / f"secrets-backup-{stamp}.tar.gz.gpg"
-        if not encrypt(tmp, out):
+        passphrase = ask_passphrase()
+        if passphrase is None or not encrypt(tmp, out, passphrase):
             warn("encryption failed")
             return 1
         print(f"secrets-backup: wrote {out} ({' '.join(included)})")
