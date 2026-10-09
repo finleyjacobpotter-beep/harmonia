@@ -7,6 +7,13 @@ paths, the palette and the widgets for the host's microVMs. Buttons that open a
 panel do so on a left click; each panel has a ✕ to close it, and clicking
 the button again closes it too. Panels open on the primary display.
 
+Nothing covers the bar: it sits on the layer-shell overlay layer, above
+fullscreen windows (games, video, a fullscreen browser) and X11 popups, and
+its exclusive zone keeps every other window below it. A fullscreen window
+keeps the full screen, so its top 28 pixels are under the bar. Only menus
+an app opens, the launcher and the lock screen can sit above it while
+they're open.
+
 | On the bar | Click |
 |---|---|
 |  logo (top left) | opens the session panel: **Lock** (swaylock), **Log out** (exits sway) and **Power off**. `Super+Shift+e` has the same actions from the keyboard, plus suspend and reboot |

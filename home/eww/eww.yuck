@@ -384,10 +384,13 @@
   :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
   (ai-menu))
 
+;; The overlay layer, the highest one: sway draws fullscreen windows (games,
+;; video) and X11 popups over the "fg" (top) layer but under this one, so
+;; nothing hides the bar. :exclusive keeps tiled and floating windows below it.
 (defwindow bar
   :monitor 0
   :exclusive true
-  :stacking "fg"
+  :stacking "overlay"
   :namespace "eww-bar"
   :geometry (geometry :x "0%" :y "0px" :width "100%" :height "28px" :anchor "top center")
   (bar))
