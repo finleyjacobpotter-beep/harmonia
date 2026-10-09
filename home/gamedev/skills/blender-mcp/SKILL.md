@@ -6,9 +6,9 @@ description: How to model, texture and export game assets through the blender MC
 # The `blender` MCP server
 
 The server talks to the MCP for Blender add-on in the open Blender on this
-machine (it's installed and enabled; Blender must just be open). Blender
-runs in a Flatpak sandbox that only sees `~/Projects`: read and write files
-only under it.
+machine (it's installed and enabled; Blender must just be open). Keep
+every file Blender reads or writes under `~/Projects`, the folder the game,
+Godot and Zelus share.
 
 ## Every session
 

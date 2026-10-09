@@ -40,8 +40,7 @@
     createDirectories = true;
   };
 
-  # ~/Projects is where Blender, Godot and the coding agents work: on
-  # harmonia the only host directory Blender and Godot can see
+  # ~/Projects is where Blender, Godot and the coding agents work
   # (modules/nixos/studio.nix), and Zelus's ~/Projects (modules/nixos/zelus.nix).
   home.activation.projectsDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run mkdir -p "$HOME/Projects"
