@@ -10,7 +10,12 @@
 
   # Python, for uv and uvx (home/default.nix), which use it: a Python uv
   # downloads itself can't run on NixOS.
-  environment.systemPackages = [ pkgs.python3 ];
+  environment.systemPackages = [
+    pkgs.python3
+    # Forgejo CLI (`fj`): repos, issues and PRs on Forgejo instances such as
+    # Codeberg. `fj auth login` signs in to one.
+    pkgs.forgejo-cli
+  ];
   environment.variables = {
     UV_PYTHON = "${pkgs.python3}/bin/python3";
     UV_PYTHON_DOWNLOADS = "never";
