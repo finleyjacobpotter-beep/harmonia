@@ -1,15 +1,16 @@
 """secrets-backup [DIR]  (packaged as a command by home/secrets.nix)
 
-Bundle the KeePassXC database, a Bitwarden export and your gpg keys (secret
-keys included) into DIR/secrets-backup-<UTC timestamp>.tar.gz.gpg (DIR defaults
+Bundle every secret into one file: the KeePassXC database(s), a Bitwarden
+export, ~/.ssh, your gpg keys (secret keys included) and any pass store left
+from before, into DIR/secrets-backup-<UTC timestamp>.tar.gz.gpg (DIR defaults
 to $HOME), encrypted with a passphrase (AES-256) rather than a gpg key, so
 the backup can still be opened after the keys themselves are lost.
 
 Anything locked, logged out or not set up yet is skipped with a warning.
 Plaintext only ever exists inside a private temporary directory, which is
-removed on exit, and the tarball is streamed straight into gpg. gpg asks
-for passphrases in the terminal (loopback pinentry), as there is no
-gpg-agent setup with a pinentry of its own.
+removed on exit, and the tarball is streamed straight into gpg. The backup
+passphrase is asked for here; gpg asks for your key passphrase in the
+terminal (loopback pinentry), as there is no gpg-agent pinentry setup.
 """
 
 import datetime as dt
@@ -64,18 +65,61 @@ def export_gpg(tmp: Path) -> bool:
 
 
 def copy_keepassxc(tmp: Path) -> bool:
-    """The database is already encrypted: copy it as is."""
+    """$KEEPASSXC_DB and every other .kdbx next to it (and its key files),
+    already encrypted: copied as is."""
     default = Path.home() / ".local/share/keepassxc/passwords.kdbx"
     db = Path(os.environ.get("KEEPASSXC_DB") or default)
-    if not db.is_file():
+    files = {db} if db.is_file() else set()
+    if db.parent.is_dir():
+        files |= {f for f in db.parent.iterdir() if f.is_file() and f.suffix in (".kdbx", ".keyx", ".key")}
+    if not files:
         warn(f"keepassxc: no database at {db} (keepassxc-cli db-create -p \"$KEEPASSXC_DB\"), skipping")
         return False
+    d = tmp / "keepassxc"
+    d.mkdir()
     try:
-        shutil.copy2(db, tmp / "keepassxc.kdbx")
+        for f in sorted(files):
+            shutil.copy2(f, d / f.name)
         return True
     except OSError:
         warn("keepassxc: copy failed, skipping")
-        (tmp / "keepassxc.kdbx").unlink(missing_ok=True)
+        shutil.rmtree(d, ignore_errors=True)
+        return False
+
+
+def regular_only(directory: str, names: list[str]) -> list[str]:
+    """copytree ignore: skip sockets and other special files (agent sockets)."""
+    return [n for n in names if not (os.path.isdir(os.path.join(directory, n)) or os.path.isfile(os.path.join(directory, n)))]
+
+
+def copy_ssh(tmp: Path) -> bool:
+    """All of ~/.ssh: keys (passphrase-protected ones stay so), config, known_hosts."""
+    ssh = Path.home() / ".ssh"
+    if not ssh.is_dir():
+        warn("ssh: no ~/.ssh, skipping")
+        return False
+    try:
+        shutil.copytree(ssh, tmp / "ssh", symlinks=True, ignore=regular_only)
+        return True
+    except OSError:
+        warn("ssh: copy failed, skipping")
+        shutil.rmtree(tmp / "ssh", ignore_errors=True)
+        return False
+
+
+def copy_pass(tmp: Path) -> bool:
+    """A pass store left from before KeePassXC/Bitwarden, if there is one. It
+    is gpg-encrypted already: copied as is, with its git history."""
+    candidates = [os.environ.get("PASSWORD_STORE_DIR"), Path.home() / ".local/share/password-store", Path.home() / ".password-store"]
+    store = next((Path(c) for c in candidates if c and (Path(c) / ".gpg-id").is_file()), None)
+    if store is None:
+        return False  # nothing left over: not worth a warning
+    try:
+        shutil.copytree(store, tmp / "pass", symlinks=True)
+        return True
+    except OSError:
+        warn("pass: copy failed, skipping")
+        shutil.rmtree(tmp / "pass", ignore_errors=True)
         return False
 
 
@@ -155,7 +199,13 @@ def main(args: list[str]) -> int:
     try:
         included = [
             name
-            for name, step in (("gpg", export_gpg), ("keepassxc", copy_keepassxc), ("bitwarden", export_bitwarden))
+            for name, step in (
+                ("gpg", export_gpg),
+                ("ssh", copy_ssh),
+                ("keepassxc", copy_keepassxc),
+                ("bitwarden", export_bitwarden),
+                ("pass", copy_pass),
+            )
             if step(tmp)
         ]
         if not included:

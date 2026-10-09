@@ -2,7 +2,8 @@
 # Bitwarden CLI for the cloud vault, plain OpenSSH ssh-agent for SSH keys, gpg
 # (no agent setup of its own), ykman and the OpenBao CLI, plus the
 # `secrets-backup` command (home/secrets-backup.py), which bundles the
-# KeePassXC database, a Bitwarden export and gpg keys into one
+# KeePassXC database(s), a Bitwarden export, ~/.ssh, gpg keys and any old pass
+# store into one
 # passphrase-encrypted tarball. See docs/secrets.md.
 {
   pkgs,

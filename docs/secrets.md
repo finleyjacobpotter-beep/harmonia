@@ -70,7 +70,9 @@ skips, with a warning, anything missing, locked or logged out:
 
 | Part | What goes in | Needs |
 | --- | --- | --- |
-| `keepassxc.kdbx` | the database file as is (already encrypted) | a database at `$KEEPASSXC_DB` |
+| `keepassxc/` | `$KEEPASSXC_DB` and every other `.kdbx` (and key file) next to it, as is (already encrypted) | a database there |
+| `ssh/` | all of `~/.ssh`: keys, `config`, `known_hosts` (passphrase-protected keys stay protected) | a `~/.ssh` |
+| `pass/` | a pass store left from before, with its git history, if one is still there | `~/.local/share/password-store` or `~/.password-store` |
 | `bitwarden.json` | `bw export --format json` (asks for the master password again) | `bw status` is `unlocked` |
 | `gpg/` | public and secret keys, and the ownertrust | a secret key in the keyring |
 
@@ -81,7 +83,7 @@ caches it. The secret keys
 inside keep their own key passphrase on top of that. Pick a strong backup
 passphrase you can remember without this machine.
 
-Plaintext (the Bitwarden export) only exists in a private `mktemp -d`
+Plaintext (the Bitwarden export, unprotected SSH keys) only exists in a private `mktemp -d`
 directory that is deleted when the function exits or is interrupted; the tar
 stream goes straight into gpg, so no unencrypted archive is written.
 
@@ -93,6 +95,8 @@ Restore:
 ```sh
 d=$(mktemp -d) && gpg --pinentry-mode loopback -d secrets-backup-<time>.tar.gz.gpg | tar -xzf - -C "$d" && cd "$d"
 gpg --pinentry-mode loopback --import gpg/secret-keys.asc && gpg --import-ownertrust gpg/ownertrust.txt
-mkdir -p "$(dirname "$KEEPASSXC_DB")" && cp keepassxc.kdbx "$KEEPASSXC_DB"
+mkdir -p "$(dirname "$KEEPASSXC_DB")" && cp keepassxc/* "$(dirname "$KEEPASSXC_DB")"/
+mkdir -p ~/.ssh && cp -a ssh/. ~/.ssh/ && chmod 700 ~/.ssh
+[ -d pass ] && cp -a pass ~/.local/share/password-store   # only if the backup had one
 bw import bitwardenjson bitwarden.json   # then delete the plaintext: rm -rf "$d"
 ```
