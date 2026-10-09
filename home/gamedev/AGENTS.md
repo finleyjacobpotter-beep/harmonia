@@ -2,8 +2,8 @@
 
 You are working on a game in `~/Projects/<game>` with Godot 4 (4.7 or newer)
 and Blender, both open on this machine and reachable through the `godot` and
-`blender` MCP servers. The editors run in Flatpak sandboxes that can only see
-`~/Projects`, so every file they open or write must live under it.
+`blender` MCP servers. `~/Projects` is the folder the editors and Zelus
+share, so every file they open or write must live under it.
 
 ## Who does what
 

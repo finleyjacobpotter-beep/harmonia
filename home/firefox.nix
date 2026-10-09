@@ -8,6 +8,7 @@
 # (~/.var/app/org.mozilla.firefox) and into ~/.local/share/fonts, which
 # flatpak exposes to apps as /run/host/user-fonts.
 {
+  config,
   pkgs,
   lib,
   palette,
@@ -185,6 +186,13 @@ let
     user_pref("font.name.serif.x-western", "${p.font.name}");
     user_pref("font.default.x-western", "sans-serif");
     user_pref("widget.use-xdg-desktop-portal.file-picker", 1);
+
+    // Save downloads to ~/Downloads/firefox, the only host folder the sandbox
+    // can write (modules/nixos/flatpak.nix). Firefox's default, ~/Downloads,
+    // is hidden from the sandbox, so files saved there vanish when it closes.
+    user_pref("browser.download.folderList", 2);
+    user_pref("browser.download.dir", "${config.xdg.userDirs.download}/firefox");
+    user_pref("browser.download.useDownloadDir", true);
 
     // Vertical tabs in the sidebar, always shown.
     user_pref("sidebar.revamp", true);

@@ -18,10 +18,13 @@ user timer (`vdirsyncer.timer`) syncs every 15 minutes, then refreshes the
 calendar panel. It does nothing until you write the config below, which is
 not part of the repo, so your server and user name stay out of it.
 
-1. Store the password in pass (an app password if your provider has them):
+1. Store the password in Bitwarden (an app password if your provider has
+   them) as a login item named `calendar/caldav`, in the app, the web vault
+   or with `bw create item`, then unlock the vault in a terminal:
 
    ```sh
-   pass insert calendar/caldav
+   bw-unlock
+   bw get password calendar/caldav   # check it comes back
    ```
 
 2. Write `~/.config/vdirsyncer/config`:
@@ -40,7 +43,7 @@ not part of the repo, so your server and user name stay out of it.
    type = "caldav"
    url = "https://caldav.example.com/"
    username = "you@example.com"
-   password.fetch = ["command", "pass", "show", "calendar/caldav"]
+   password.fetch = ["command", "bw", "get", "password", "calendar/caldav", "--nointeraction"]
    read_only = true
 
    [storage calendar_local]
@@ -75,12 +78,13 @@ want the changes pushed back.
 
 ### The password and the timer
 
-pass decrypts with your gpg key, and gpg-agent (home/secrets.nix) asks for
-the passphrase in a terminal. A timer has no terminal, so a timed sync only
-works while gpg-agent still has the key cached (10 minutes after you last
-used it, 2 hours at most). When it isn't, the sync fails quietly and the
-calendar keeps the events from the last good sync; run `vdirsyncer sync`
-in a terminal to sync straight away. A published `.ics` link needs no
+The timer has no terminal to ask for the Bitwarden master password, so it
+uses the session `bw-unlock` saved in `$XDG_RUNTIME_DIR/bw-session`. A timed
+sync works while the vault is unlocked (until `bw-lock` or logout). When it
+isn't, the sync fails quietly and the calendar keeps the events from the last
+good sync; run `bw-unlock` and `vdirsyncer sync` in a terminal to sync
+straight away. KeePassXC isn't used here because `keepassxc-cli` asks for the
+database password on every call. A published `.ics` link needs no
 password, so it always syncs.
 
 ## Colours

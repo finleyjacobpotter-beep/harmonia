@@ -1,48 +1,43 @@
-# Blender and Godot from Flathub, each in a tightened flatpak sandbox that
-# shares only ~/Projects with the host ("studio jail"). ~/Projects itself is
-# created by home/default.nix. opencode, which drives them over MCP, runs on
-# Zelus (modules/nixos/zelus.nix, home/opencode.nix).
-{ username, ... }:
+# Blender and Godot from nixpkgs, as native programs: Super+o Shift+b and
+# Super+o d open them (harmonia.launchers, modules/nixos/flatpak.nix). They
+# work in ~/Projects (created by home/base.nix), which Zelus shares too.
+# Blender's add-ons (home/blender-addons.nix) are copied into
+# ~/.config/blender/harmonia-scripts, and the wrapper below points Blender
+# there. opencode, which drives them over MCP, runs on Zelus
+# (modules/nixos/zelus.nix, home/opencode.nix) and, on harmonia, on the host
+# (home/gamedev.nix).
+#
+# Plain pkgs.blender: Cycles renders on the CPU, Eevee and the viewport use
+# the GPU through OpenGL/Vulkan as usual. pkgs.blender-hip adds Cycles on AMD
+# GPUs (HIP), at the cost of a much bigger closure.
+{ pkgs, ... }:
 let
-  blender = "org.blender.Blender";
-  godot = "org.godotengine.Godot";
-
-  # Flathub gives Godot the whole host and Blender the whole home. Projects
-  # live in ~/Projects; anything else is opened or saved through the file
-  # chooser portal.
-  sandbox = {
-    Context.filesystems = [
-      "!host"
-      "!home"
-      "~/Projects"
-    ];
-    # Host-command escape (flatpak-spawn --host); see gaming.nix.
-    "Session Bus Policy"."org.freedesktop.Flatpak" = "none";
+  blender = pkgs.symlinkJoin {
+    name = "blender-harmonia";
+    paths = [ pkgs.blender ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    # The copies are pinned, so no self-update.
+    postBuild = ''
+      wrapProgram $out/bin/blender \
+        --run 'export BLENDER_USER_SCRIPTS="$HOME/.config/blender/harmonia-scripts"' \
+        --set BLENDERMCP_NO_UPDATE_CHECK 1
+    '';
   };
 in
 {
-  harmonia.apps = {
-    ${blender} = {
-      name = "blender";
+  environment.systemPackages = [
+    blender
+    pkgs.godot
+  ];
+
+  harmonia.launchers = {
+    blender = {
       key = "Shift+b";
-      sandbox = sandbox // {
-        # Flathub already shares the network; said here because the free-model
-        # add-ons (Poly Haven, Poly Pizza) and MCP for Blender need it.
-        Context = sandbox.Context // {
-          shared = [ "network" ];
-        };
-        # The add-ons and the script that enables them (home/blender-addons.nix);
-        # the copies are pinned, so no self-update.
-        Environment = {
-          BLENDER_USER_SCRIPTS = "/home/${username}/.var/app/${blender}/config/blender/harmonia-scripts";
-          BLENDERMCP_NO_UPDATE_CHECK = "1";
-        };
-      };
+      exec = "blender";
     };
-    ${godot} = {
-      name = "godot";
+    godot = {
       key = "d";
-      inherit sandbox;
+      exec = "godot";
     };
   };
 }

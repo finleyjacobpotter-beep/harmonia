@@ -60,7 +60,7 @@ rec {
   # The two as opencode on the host runs them (home/gamedev.nix): Blender's
   # add-on on localhost:9876, and a `godot-ai attach` stdio bridge to the
   # host's godot-ai service (modules/nixos/zelus.nix, same ports), which
-  # reads the capability record the service writes for the Flatpak editor.
+  # reads the capability record the service writes for the editor.
   host = {
     inherit blender;
     # radare2's own MCP server (pkgs/r2mcp.nix): analyses binaries on this
@@ -69,7 +69,7 @@ rec {
     godot = pkgs.writeShellApplication {
       name = "godot-mcp-attach";
       text = ''
-        export GODOT_AI_CAPABILITY_DIR="$HOME/.var/app/org.godotengine.Godot/config/godot-ai/capabilities"
+        export GODOT_AI_CAPABILITY_DIR="$HOME/.config/godot-ai/capabilities"
         exec ${godot}/bin/godot-mcp attach --port 8000 --ws-port 9500 "$@"
       '';
     };

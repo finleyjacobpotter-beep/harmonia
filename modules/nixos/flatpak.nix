@@ -10,7 +10,10 @@
 # Each becomes a services.flatpak package and override (nix-flatpak), and
 # sway's open mode and the bar's hint are built from the same list, so a
 # host only gets keys for the apps it installs. Flathub itself and the
-# weekly update timer are here too.
+# weekly update timer are here too. Native programs get open-mode keys the
+# same way, without the Flatpak parts:
+#
+#   harmonia.launchers.blender = { key = "Shift+b"; exec = "blender"; };
 #
 # Firefox, on every host and both architectures (Flathub ships x86_64 and
 # aarch64), runs in a tightened sandbox ("browser jail"). Its theme and
@@ -60,6 +63,19 @@ in
             type = types.attrsOf (types.attrsOf (types.either (types.listOf types.str) types.str));
             default = { };
           };
+        };
+      }
+    );
+  };
+
+  options.harmonia.launchers = mkOption {
+    default = { };
+    description = "Native programs in sway's open mode (Super+o), by name.";
+    type = types.attrsOf (
+      types.submodule {
+        options = {
+          key = mkOption { type = types.str; };
+          exec = mkOption { type = types.str; };
         };
       }
     );

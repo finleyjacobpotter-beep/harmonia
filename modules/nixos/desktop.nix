@@ -81,6 +81,8 @@ in
 
   programs.dconf.enable = true;
   services.gnome.gnome-keyring.enable = true;
+  # SSH keys go to OpenSSH's ssh-agent (home/secrets.nix), not gnome-keyring's.
+  services.gnome.gcr-ssh-agent.enable = false;
 
   environment.sessionVariables = {
     NIXOS_OZONE_WL = "1";

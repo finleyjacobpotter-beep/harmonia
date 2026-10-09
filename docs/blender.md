@@ -1,13 +1,20 @@
 # Blender
 
-Blender is the Flathub app, jailed with Godot so it sees only `~/Projects`
+Blender is the nixpkgs build, installed natively with Godot
 ([`modules/nixos/studio.nix`](../modules/nixos/studio.nix)); `Super+o Shift+b`
-opens it. It keeps the network, which the add-ons below need.
+opens it. Its settings are in `~/.config/blender`. It's the plain build, so
+Cycles renders on the CPU; `pkgs.blender-hip` in `studio.nix` adds Cycles on
+AMD GPUs.
+
+Coming from the Flatpak Blender and Godot, `sudo harmonia-cleanup --apply`
+moves their settings (Blender preferences, Godot's editor settings, project
+list and export templates) to the native apps' folders and uninstalls the
+flatpaks.
 
 ## Free models
 
 Two add-ons are installed and enabled on every start, pinned and copied into
-the sandbox by [`home/blender-addons.nix`](../home/blender-addons.nix) (with MCP
+`~/.config/blender/harmonia-scripts` by [`home/blender-addons.nix`](../home/blender-addons.nix) (with MCP
 for Blender, [opencode.md](opencode.md#mcp-servers)). None of them updates
 itself; bump the pin to update.
 

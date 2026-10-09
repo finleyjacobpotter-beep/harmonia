@@ -61,7 +61,7 @@ Godot's server runs on the host because godot-ai (since v4) authenticates the ed
 with a private file the server writes, which the editor has to be able to
 read. It's a user service, `systemctl --user status godot-ai`, started at
 login so it's up before the editor opens: the plugin adopts it rather than
-starting its own (which it can't, inside the Flatpak). Its first start
+starting its own, so the editor, the host's agents and Zelus share one. Its first start
 downloads it, so give it a minute after the first login.
 
 In Claude Code, `/mcp` lists both as user servers; they're written into

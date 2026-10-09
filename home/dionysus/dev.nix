@@ -1,75 +1,16 @@
-# Dionysus's dev toolset, on the host itself (not in a VM): opencode and
-# Claude Code, plus the Rust command-line tools. On harmonia these live in a
-# microVM (Zelus) or in flatpak sandboxes; Dionysus has no microVMs, so they
-# run natively here and are built from nixpkgs, which keeps them buildable on
-# both aarch64 and x86_64.
+# Dionysus's native command-line tooling: the language toolchains and the
+# Rust command-line tools. On harmonia the Rust tools live in a microVM
+# (Zelus); Dionysus has no microVMs, so they run natively here and are built
+# from nixpkgs, which keeps them buildable on both aarch64 and x86_64.
+#
+# The AI coding agents (Claude Code and opencode) used to live here too; both
+# were dropped at the user's request.
 { pkgs, lib, ... }:
 let
-  # opencode's providers.
-  local = "lmstudio/qwopus3.5-9b-v3";
-  opus = "anthropic/claude-opus-5-5";
-  sonnet = "anthropic/claude-sonnet-5-5";
-  claude = model: {
-    inherit model;
-    fallback_models = [ local ];
-  };
-  omo = pkgs.writeText "oh-my-openagent.json" (
-    builtins.toJSON {
-      "$schema" =
-        "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/v5.1.11/assets/oh-my-opencode.schema.json";
-      auto_update = false;
-      telemetry = false;
-      agents = {
-        sisyphus = claude opus;
-        prometheus = claude opus;
-        oracle = claude opus;
-        hephaestus = claude sonnet;
-        atlas = claude sonnet;
-        metis = claude sonnet;
-        momus = claude sonnet;
-        multimodal-looker = claude sonnet;
-        sisyphus-junior.model = local;
-        explore.model = local;
-        librarian.model = local;
-      };
-      categories = {
-        ultrabrain = claude opus;
-        deep = claude sonnet;
-        visual-engineering = claude sonnet;
-        artistry = claude sonnet;
-        unspecified-high = claude sonnet;
-        quick.model = local;
-        writing.model = local;
-        unspecified-low.model = local;
-      };
-    }
-  );
-  opencodeConfig = pkgs.writeText "opencode.json" (
-    builtins.toJSON {
-      "$schema" = "https://opencode.ai/config.json";
-      model = local;
-      # opencode installs plugins itself on first run (so it needs the
-      # internet once).
-      plugin = [ "oh-my-openagent@5.1.11" ];
-      autoupdate = false;
-      provider = {
-        # A local LM Studio server (its Developer tab), if you run one.
-        lmstudio = {
-          npm = "@ai-sdk/openai-compatible";
-          name = "LM Studio (local)";
-          options.baseURL = "http://127.0.0.1:1234/v1";
-          models."qwopus3.5-9b-v3".name = "Qwopus 3.5 9B v3 (Q4_K_M)";
-        };
-        # Set ANTHROPIC_API_KEY in your environment, or use opencode's
-        # /connect, to reach Claude.
-        anthropic.options.apiKey = "{env:ANTHROPIC_API_KEY}";
-      };
-    }
-  );
-
-  # The classic command → its Rust replacement, only in your own interactive
-  # shells: Claude Code (CLAUDECODE) and opencode (OPENCODE) run commands
-  # through bash too and expect the classic tools' flags.
+  # The classic command → its Rust replacement. Set as raw aliases (not
+  # programs.bash.shellAliases) so they override home/bash.nix's own aliases
+  # for the same names instead of conflicting with them; initExtra only runs
+  # in interactive shells, so scripts still get the classic tools.
   rustAliases = {
     grep = "rg";
     find = "fd";
@@ -87,9 +28,7 @@ let
 in
 {
   home.packages = with pkgs; [
-    # The coding agents.
-    opencode
-    # Toolchains the agents lean on.
+    # Language toolchains.
     uv
     nodejs
     python3
@@ -118,13 +57,6 @@ in
     tealdeer # tldr pages
   ];
 
-  # Claude Code.
-  programs.claude-code.enable = true;
-
-  # opencode's config (native, so a plain symlink into the store is fine).
-  xdg.configFile."opencode/opencode.json".source = opencodeConfig;
-  xdg.configFile."opencode/oh-my-openagent.json".source = omo;
-
   # cd learns your directories; bat and delta follow the terminal's colours.
   programs.zoxide = {
     enable = true;
@@ -143,12 +75,7 @@ in
     options.syntax-theme = "ansi";
   };
 
-  programs.bash.initExtra = ''
-    if [[ -z ''${CLAUDECODE-} && -z ''${OPENCODE-} ]]; then
-    ${
-      lib.concatStrings (
-        lib.mapAttrsToList (name: cmd: "  alias ${name}=${lib.escapeShellArg cmd}\n") rustAliases
-      )
-    }fi
-  '';
+  programs.bash.initExtra = "${lib.concatStrings (
+    lib.mapAttrsToList (name: cmd: "alias ${name}=${lib.escapeShellArg cmd}\n") rustAliases
+  )}";
 }
