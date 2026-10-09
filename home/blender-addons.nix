@@ -1,8 +1,9 @@
-# Blender add-ons, installed and enabled in the Flatpak Blender
-# (modules/nixos/studio.nix): flatpak-miami-wind (home/flatpak-files.nix)
-# copies them into the sandbox's own config folder, Blender's
-# BLENDER_USER_SCRIPTS points there, and a startup script enables them.
-# Every copy is pinned, so none of them updates itself.
+# Blender add-ons, installed and enabled in Blender (modules/nixos/studio.nix):
+# flatpak-miami-wind (home/flatpak-files.nix) copies them into
+# ~/.config/blender/harmonia-scripts as real, writable files (the add-ons
+# write next to themselves), Blender's wrapper points BLENDER_USER_SCRIPTS
+# there, and a startup script enables them. Every copy is pinned, so none of
+# them updates itself.
 #
 #   - MCP for Blender, so Claude Code and opencode on Zelus can drive Blender
 #     (modules/nixos/zelus.nix). It starts its server (localhost:9876)
@@ -78,5 +79,5 @@ let
   '';
 in
 {
-  harmonia.flatpakFiles.".var/app/org.blender.Blender/config/blender/harmonia-scripts" = scripts;
+  harmonia.flatpakFiles.".config/blender/harmonia-scripts" = scripts;
 }

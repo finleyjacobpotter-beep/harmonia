@@ -1,6 +1,9 @@
-# Local secrets: gpg + gpg-agent, pass, ykman, Bitwarden CLI and the OpenBao
-# CLI, plus the `secrets-backup` command (home/secrets-backup.py), which bundles pass,
-# Bitwarden and gpg keys into one passphrase-encrypted tarball. See docs/secrets.md.
+# Local secrets: KeePassXC (keepassxc-cli) for the local database, the
+# Bitwarden CLI for the cloud vault, plain OpenSSH ssh-agent for SSH keys, gpg
+# (no agent setup of its own), ykman and the OpenBao CLI, plus the
+# `secrets-backup` command (home/secrets-backup.py), which bundles the
+# KeePassXC database(s), a Bitwarden export, ~/.ssh, gpg keys and any old pass
+# store into one passphrase-encrypted tarball. See docs/secrets.md.
 {
   pkgs,
   lib,
@@ -12,8 +15,9 @@ let
 in
 {
   home.packages = with pkgs; [
-    yubikey-manager # ykman
+    keepassxc # keepassxc-cli (and the GUI)
     bitwarden-cli # bw
+    yubikey-manager # ykman
     openbao # bao
     (pyScript "secrets-backup" {
       runtimeInputs = [
@@ -23,6 +27,11 @@ in
     } ./secrets-backup.py)
   ];
 
+  # The local KeePassXC database, for `keepassxc-cli <command> "$KEEPASSXC_DB" ...`.
+  home.sessionVariables.KEEPASSXC_DB = "${config.xdg.dataHome}/keepassxc/passwords.kdbx";
+
+  # gpg stays for the YubiKey and secrets-backup, but gpg-agent no longer
+  # backs pass or SSH: there is no pass store and no services.gpg-agent.
   programs.gpg = {
     enable = true;
     settings = {
@@ -33,23 +42,27 @@ in
     scdaemonSettings.disable-ccid = true;
   };
 
-  services.gpg-agent = {
-    enable = true;
-    enableSshSupport = true;
-    enableBashIntegration = true;
-    # In-terminal passphrase prompt, keyboard only like the rest of the desktop.
-    pinentry.package = pkgs.pinentry-curses;
-    defaultCacheTtl = 600;
-    maxCacheTtl = 7200;
-  };
+  # OpenSSH's own agent ($XDG_RUNTIME_DIR/ssh-agent); `ssh-add` your keys.
+  services.ssh-agent.enable = true;
 
-  services.ssh-agent.enable = false;
-
-  programs.password-store = {
-    enable = true;
-    settings = {
-      PASSWORD_STORE_DIR = "${config.xdg.dataHome}/password-store";
-      PASSWORD_STORE_CLIP_TIME = "45";
-    };
-  };
+  # `bw-unlock` unlocks the Bitwarden vault for this shell, for new shells and
+  # for user services (the calendar sync) until `bw-lock` or logout: the
+  # session key is kept in $XDG_RUNTIME_DIR, a private tmpfs.
+  programs.bash.initExtra = ''
+    bw-unlock() {
+      local s
+      s=$(bw unlock --raw) || return
+      export BW_SESSION=$s
+      (umask 077 && printf 'BW_SESSION=%s\n' "$s" > "$XDG_RUNTIME_DIR/bw-session")
+    }
+    bw-lock() {
+      bw lock
+      unset BW_SESSION
+      rm -f "$XDG_RUNTIME_DIR/bw-session"
+    }
+    if [ -z "$BW_SESSION" ] && [ -r "$XDG_RUNTIME_DIR/bw-session" ]; then
+      read -r __bw < "$XDG_RUNTIME_DIR/bw-session" && export BW_SESSION=''${__bw#BW_SESSION=}
+      unset __bw
+    fi
+  '';
 }
