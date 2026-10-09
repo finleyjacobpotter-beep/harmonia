@@ -2,7 +2,7 @@
 
 ## EditorConfig
 
-Every machine (harmonia, Cadmus, Dionysus, and the Nike and Zelus microVMs)
+Every machine (harmonia, Cadmus, Dionysus, and the Nike microVM)
 gets the same EditorConfig from `modules/nixos/editorconfig.nix`. It is
 written to `/etc/editorconfig` and linked to `/.editorconfig`, the top of the
 directory tree, so it applies to every file on the system:

@@ -76,6 +76,7 @@ only change when an input's commit is bumped; update this table when you do.
 | Calibre | 9.14.0 |
 | Blender (harmonia, cadmus) | 5.2.2 |
 | Godot (harmonia, cadmus) | 4.7.2 |
+| Poly Haven Assets (Blender add-on) | 1.2.3 |
 
 Neovim plugins:
 
@@ -94,7 +95,7 @@ Neovim plugins:
 
 | Package | Version |
 | --- | --- |
-| QEMU (KVM, runs Nike and Zelus) | 11.1.1 |
+| QEMU (KVM, runs Nike) | 11.1.1 |
 | virtiofsd | 1.14.0 |
 | Podman | 5.8.7 |
 | podman-compose | 1.6.0 |
@@ -111,25 +112,20 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | Python | 3.14.7 |
 | OpenSSH | 10.5p1 |
 
-## Zelus (microVM)
+## Rust tools
 
-Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables above.
+[rust-tools.md](rust-tools.md).
 
 | Package | Version |
 | --- | --- |
-| Claude Code | 2.1.283 |
-| opencode | 1.18.31 |
-| ripgrep / fd / bat / eza (host, Nike and Zelus) | 15.2.0 / 10.5.0 / 0.26.1 / 0.23.5 |
+| ripgrep / fd / bat / eza | 15.2.0 / 10.5.0 / 0.26.1 / 0.23.5 |
 | dust / dysk / bottom / procs | 1.2.6 / 3.7.0 / 0.14.9 / 0.14.12 |
 | sd / ast-grep / jaq / difftastic / delta | 1.1.0 / 0.45.1 / 3.1.1 / 0.71.0 / 0.19.2 |
 | xh / hyperfine / tokei / watchexec / just / ouch / zoxide | 0.26.2 / 1.20.0 / 15.0.0 / 2.5.1 / 1.58.0 / 0.8.3 / 0.10.0 |
-| MCP for Blender (`mcp-for-blender`) | 2.1.3 |
-| Poly Haven Assets (Blender add-on) | 1.2.3 |
-| Godot AI (`godot-ai`) | 4.3.0 |
 
 ## Game dev (harmonia host)
 
-[gamedev.md](gamedev.md). Same opencode and Claude Code as Zelus; the plugin and the local model are fetched at runtime, pinned here.
+[gamedev.md](gamedev.md). The plugin, the MCP servers and the local model are fetched at runtime, pinned here.
 
 | Package | Version |
 | --- | --- |
@@ -138,6 +134,8 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | Ornith 1.5 9B (`protoLabsAI/Ornith-1.5-9B-MTP-GGUF`, served as `ai`) | Q4_K_M with the MTP head |
 | llama.cpp server image (`ghcr.io/ggml-org/llama.cpp`) | `server-vulkan-b11515` |
 | r2mcp (radare2 MCP server) | 1.8.8 |
+| MCP for Blender (`mcp-for-blender`) | 2.1.3 |
+| Godot AI (`godot-ai`) | 4.3.0 |
 | Claude Code | 2.1.283 |
 
 ## Secrets

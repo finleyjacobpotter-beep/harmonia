@@ -41,7 +41,7 @@
   };
 
   # ~/Projects is where Blender, Godot and the coding agents work
-  # (modules/nixos/studio.nix), and Zelus's ~/Projects (modules/nixos/zelus.nix).
+  # (modules/nixos/studio.nix, home/gamedev.nix).
   home.activation.projectsDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run mkdir -p "$HOME/Projects"
   '';

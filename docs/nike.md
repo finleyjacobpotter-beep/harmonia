@@ -24,7 +24,7 @@ for packages.
 ### Using it
 
 It doesn't start at boot. Start or stop it with the button in its bar panel
-([the bar](bar.md#nike-and-zelus)), or from a terminal:
+([the bar](bar.md#nike)), or from a terminal:
 
 ```sh
 sudo systemctl start microvm@nike     # stop / restart / status work too
@@ -95,12 +95,12 @@ leaves it alone; everything else stays with NetworkManager.
 
 `~/nike-share` is a virtiofs share, so files keep their owner: `k` on Nike
 and your user on the host are both uid 1000. If your host user has a
-different uid (`id -u`), change `uid` in `lib/microvm-guest.nix` to match (it applies to Zelus too).
+different uid (`id -u`), change `uid` in `lib/microvm-guest.nix` to match (it applies to every microVM).
 
 ### Root CAs
 
 To trust your own root CA on Nike, put its `.crt` or `.pem` in `certs/nike/`
-(or `certs/all/` for the host, Nike and Zelus), `git add` it and `rebuild`.
+(or `certs/all/` for the host and Nike), `git add` it and `rebuild`.
 See [certs/README.md](../certs/README.md).
 
 ### Changing it

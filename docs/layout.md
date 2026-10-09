@@ -26,7 +26,6 @@ modules/nixos/
   virtualisation.nix           plain QEMU (no libvirt)
   microvms.nix                 `harmonia.microvms`: each VM declared once; its network, NAT, folders, `ssh <vm>`, colours and firewall modes follow
   nike.nix                     the Nike microVM: its colours and VPN firewall modes
-  zelus.nix                    the Zelus microVM: its colours, ~/Projects, firewall modes, the local model and Blender sockets, the Godot MCP server
   vm-firewall.nix              per-VM firewall modes (nftables on the host) and the `vm-firewall` command
   laptop.nix                   cadmus only: Wi-Fi firmware + regulatory database, suspend on lid close, power profiles
   thinkpad.nix                 cadmus only: thinkfan fan curve, fwupd for BIOS updates
@@ -37,13 +36,10 @@ nike/                          the Nike microVM guest (microvm.nix)
   tools.nix                    the OSCP toolset and Penelope
   labs.nix                     podman + the Ligolo-ng and BloodHound compose services
   status.py                    writes each VM's utilization (and Nike's VPN) for the bar
-zelus/                         the Zelus microVM guest (microvm.nix): Claude Code and opencode with Blender and Godot MCP
-  default.nix                  packages, passwordless user c, the ~/Projects share, opencode, Claude Code
-  skills/                      skills for Claude Code and opencode (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
 home/                          home-manager, one file per program
   base.nix                     the home every host shares; default.nix (harmonia, cadmus) and dionysus/ add to it
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/local model, nike/zelus with firewall modes, display settings, cpu, mem, gpu, network with VPN asterisks, caffeine, volume, battery, clock + calendar)
+  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/local model, nike with firewall modes, display settings, cpu, mem, gpu, network with VPN asterisks, caffeine, volume, battery, clock + calendar)
   eww/                         the bar's layout (eww.yuck), styles (eww.scss) and scripts, in Python (displays, network, gpu, volume, clock, calendar, …, sharing common.py), and the display settings window
   open-mode.nix                Super+o's keys, for sway and the bar's hint
   keymap.nix                   build-time checks for the keyboard contract
@@ -53,23 +49,23 @@ home/                          home-manager, one file per program
   flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
-  opencode.nix                 opencode on Zelus: the host's local model + Claude providers, oh-my-openagent, Blender and Godot MCP servers
-  gamedev.nix                  game dev on the harmonia desktop: opencode with every agent on the local model (4 at once, no other provider), Claude Code, Blender, Godot and radare2 MCP
+  gamedev.nix                  game dev on the harmonia desktop: opencode with every agent on the local model (4 at once, no other provider), Claude Code, Blender, Godot and radare2 MCP, the godot-ai service, the Rust tool skills
   gamedev/                     its agent prompts, skills (Godot 4, Blender, planning), commands and design-doc templates
-  rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host, Nike and Zelus
+  skills/                      Rust tool skills for Claude Code and opencode on harmonia (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
+  rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host and Nike
   blender-addons.nix           Blender add-ons: MCP for Blender, Poly Haven, Poly Pizza (blender/poly_pizza.py)
-  mcp-servers.nix              the Blender and Godot MCP servers (Godot's runs on the host), for Claude Code and opencode on Zelus and the host
+  mcp-servers.nix              the Blender, Godot and radare2 MCP servers for Claude Code and opencode on harmonia (home/gamedev.nix)
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix firefox.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
 lib/python-app.nix             packages a folder of Python scripts that share modules as several commands (the bar)
-lib/root-cas.nix               trusts the root CAs in certs/ on the host, Nike and Zelus
+lib/root-cas.nix               trusts the root CAs in certs/ on the host and Nike
 lib/microvm-guest.nix          what every microVM guest shares: network, shares, volumes, user, openssh, status service, shell configs
-certs/                         your own root CAs: all/ for every machine, harmonia/, nike/ or zelus/ for one (empty by default, see certs/README.md)
+certs/                         your own root CAs: all/ for every machine, harmonia/ or nike/ for one (empty by default, see certs/README.md)
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          these pages
 mkdocs.yml                     the documentation site: theme, navigation (`nix build .#docs`)
 scripts/mkdocs-hooks.py        points the docs' links to repository files at GitHub
 scripts/install.py             base NixOS install from the minimal ISO (docs/install.md)
-scripts/cleanup-deprecated.py  `sudo harmonia-cleanup`: removes what older harmonia versions left behind (Zen, libvirt VMs, ...)
+scripts/cleanup-deprecated.py  `sudo harmonia-cleanup`: removes what older harmonia versions left behind (Zen, libvirt VMs, the Zelus microVM, ...)
 ```

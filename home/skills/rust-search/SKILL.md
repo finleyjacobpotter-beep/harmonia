@@ -1,11 +1,11 @@
 ---
 name: rust-search
-description: Find files and code fast on Zelus with ripgrep (rg), fd and ast-grep. Use when searching a codebase for text, symbols, call sites or files by name, type or age, or when grep/find would be slow or noisy.
+description: Find files and code fast with ripgrep (rg), fd and ast-grep. Use when searching a codebase for text, symbols, call sites or files by name, type or age, or when grep/find would be slow or noisy.
 ---
 
 # Searching with rg, fd and ast-grep
 
-These are installed on Zelus. The shell aliases (`grep` → `rg`, `find` → `fd`) only exist in the user's interactive shell, so call the tools by their own names.
+These are installed here. The shell aliases (`grep` → `rg`, `find` → `fd`) only exist in the user's interactive shell, so call the tools by their own names.
 
 ## Text: `rg` (ripgrep)
 

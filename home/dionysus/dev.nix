@@ -1,7 +1,6 @@
 # Dionysus's native command-line tooling: the language toolchains and the
-# Rust command-line tools. On harmonia the Rust tools live in a microVM
-# (Zelus); Dionysus has no microVMs, so they run natively here and are built
-# from nixpkgs, which keeps them buildable on both aarch64 and x86_64.
+# Rust command-line tools, built from nixpkgs, which keeps them buildable on
+# both aarch64 and x86_64.
 #
 # The AI coding agents (Claude Code and opencode) used to live here too; both
 # were dropped at the user's request.

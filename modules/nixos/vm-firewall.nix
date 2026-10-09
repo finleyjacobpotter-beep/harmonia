@@ -1,7 +1,7 @@
-# Firewall modes for the microVMs (Nike, Zelus), enforced on the host so
+# Firewall modes for the microVMs (Nike), enforced on the host so
 # nothing inside a VM (root included) can lift them. modules/nixos/microvms.nix
 # sets each VM's modes (Lockdown, Permissive and the VM's own, from
-# modules/nixos/nike.nix and zelus.nix); this turns
+# modules/nixos/nike.nix); this turns
 # every mode into an nftables table, prebuilt in /etc/vm-firewall, and adds
 # the `vm-firewall` command that switches between them:
 #
@@ -14,8 +14,8 @@
 #
 # A mode only filters what a VM starts: traffic it forwards out through the
 # host (the internet, through the host's NAT) and connections to the host
-# itself. `ssh nike` / `ssh zelus` are started by the host, so they work in
-# every mode; so do a VM's `firewall.hostPorts` (Zelus: Blender and Godot).
+# itself. `ssh nike` is started by the host, so it works in every mode; so
+# do a VM's `firewall.hostPorts`.
 {
   config,
   lib,

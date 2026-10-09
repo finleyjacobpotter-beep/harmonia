@@ -24,7 +24,7 @@ itself; bump the pin to update.
 | [Poly Pizza](https://poly.pizza/) (CC0 and CC-BY low-poly models) | Poly Pizza ([`home/blender/poly_pizza.py`](../home/blender/poly_pizza.py)), harmonia's own | 3D view sidebar (`N`), **Poly Pizza** tab | paste a free API key from [poly.pizza/settings/api](https://poly.pizza/settings/api) into the add-on's preferences |
 
 Downloads stay in `~/Projects/Assets` (Poly Haven and Poly Pizza), so Godot
-and Zelus can use them too. The Poly Haven library is created there on first
+and the game dev agents can use them too. The Poly Haven library is created there on first
 start, set to *Append* as the add-on wants.
 
 Notes:

@@ -5,8 +5,8 @@
 # there, and a startup script enables them. Every copy is pinned, so none of
 # them updates itself.
 #
-#   - MCP for Blender, so Claude Code and opencode on Zelus can drive Blender
-#     (modules/nixos/zelus.nix). It starts its server (localhost:9876)
+#   - MCP for Blender, so Claude Code and opencode on harmonia can drive
+#     Blender (home/gamedev.nix). It starts its server (localhost:9876)
 #     whenever Blender opens. It comes from the same release as the MCP server
 #     (home/mcp-servers.nix); bump both together.
 #   - Free models (docs/blender.md):

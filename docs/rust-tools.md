@@ -1,8 +1,8 @@
 # Rust tools
 
 [`home/rust-tools.nix`](../home/rust-tools.nix) installs Rust replacements
-for the classic commands on the host, [Nike](nike.md) and [Zelus](zelus.md),
-and your interactive bash on all three aliases the classics to them:
+for the classic commands on the host and [Nike](nike.md),
+and your interactive bash on both aliases the classics to them:
 
 | Command | Runs |
 | --- | --- |
@@ -30,5 +30,10 @@ changes), `just` (task runner), `ouch` (archives), `choose` (pick fields) and
 arguments.
 
 The aliases are skipped in shells started by Claude Code or opencode
-(`CLAUDECODE` or `OPENCODE` set), which expect the classic tools; on Zelus
-those agents get skills for the Rust tools instead.
+(`CLAUDECODE` or `OPENCODE` set), which expect the classic tools. On harmonia
+those agents get three skills that say when to use which Rust tool instead:
+`rust-search` (rg, fd, ast-grep), `rust-edit` (sd, ast-grep rewrites, jaq,
+difft) and `rust-inspect` (tokei, dust, procs, hyperfine, xh, just, ouch).
+They're in [`home/skills/`](../home/skills), installed into
+`~/.claude/skills` by [`home/gamedev.nix`](../home/gamedev.nix); opencode
+reads them there too.

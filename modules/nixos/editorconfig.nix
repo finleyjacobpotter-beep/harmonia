@@ -1,5 +1,5 @@
 # One EditorConfig for the whole machine: hosts, the Dionysus VM and the
-# Nike/Zelus microVMs all import this. EditorConfig looks for .editorconfig
+# Nike microVM all import this. EditorConfig looks for .editorconfig
 # in each parent directory of the file being edited, up to /, so linking it
 # at /.editorconfig covers every file on the system. A project's own
 # .editorconfig still wins for files inside it (and with `root = true`

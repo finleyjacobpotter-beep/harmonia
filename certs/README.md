@@ -5,10 +5,9 @@ folders, `git add` it and `rebuild`, and that machine trusts it:
 
 | Folder | Trusted by |
 | --- | --- |
-| `certs/all/` | the host, Nike and Zelus |
+| `certs/all/` | the host and Nike |
 | `certs/harmonia/` | the host |
 | `certs/nike/` | Nike |
-| `certs/zelus/` | Zelus |
 
 For example, to let Nike's tools go through a ZAP or Burp proxy, export its
 CA certificate and save it as `certs/nike/zap.crt`. A DER file (`.der`,

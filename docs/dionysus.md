@@ -54,7 +54,7 @@ Apple-silicon machine as much as on an x86 one.
 Everything architecture-specific or that needs a microVM, so both arches
 build:
 
-- the **Nike** and **Zelus** microVMs and all the host-side microVM wiring
+- the **Nike** microVM and all the host-side microVM wiring
   (Nike's tools are here natively instead);
 - **Steam** and the **gaming** stack (32-bit, x86-only);
 - **Blender** and **Godot**, the game dev agents and the local model server;

@@ -69,9 +69,8 @@ Each kind of VPN whose interface is up adds a small asterisk beside the
 network icon, after a space, stacked top to bottom in this order, each its
 own colour. The asterisks follow the interfaces themselves (`wg*`, `tun*`,
 `ppp*`), so a tunnel started by hand (`wg-quick up`, `sudo openvpn`,
-`sudo openfortivpn`) shows too. At most four fit, so a fifth or sixth
-kind (only possible with the microVMs' VPNs) shows only in the tooltip and
-the panel:
+`sudo openfortivpn`) shows too. At most four fit, so a fifth kind (only
+possible with Nike's VPN) shows only in the tooltip and the panel:
 
 | Asterisk | VPN |
 |---|---|
@@ -80,7 +79,6 @@ the panel:
 | purple | openfortivpn |
 | blue | another NetworkManager VPN (e.g. OpenConnect) |
 | orange | Nike's VPN (inside the VM) |
-| cyan | Zelus's VPN (inside the VM) |
 
 The stack keeps its width whether any are up or not, so the bar doesn't
 shift. Hover the network button for the names; click it to open the network

@@ -19,7 +19,8 @@ harmonia, cadmus and Dionysus all import [`hosts/base.nix`](../hosts/base.nix).
   (older than 14 days).
 - Base CLI tools: git, curl, wget, jq, ripgrep, fd, unzip, htop, and
   `sudo harmonia-cleanup`, which removes what older harmonia versions left
-  behind.
+  behind (such as the removed Zelus microVM,
+  [opencode.md](opencode.md#coming-from-zelus)).
 - Only one unfree package is allowed by default: the Tulasi icon theme
   (`harmonia.allowedUnfree`). A host can add its own to the list.
 
@@ -63,8 +64,8 @@ Every environment, microVMs included, uses the same
 [theme](theme.md): the Miami Wind palette from
 [`theme/miami-wind.nix`](../theme/miami-wind.nix), DepartureMono Nerd Font
 and the Tulasi icons. The hosts use pink as the primary colour; Nike swaps it
-for orange and Zelus for cyan, so you can tell at a glance which machine a
-terminal belongs to.
+for orange, so you can tell at a glance which machine a terminal belongs
+to.
 
 ## Desktop and laptop: `hosts/common.nix`
 
@@ -77,13 +78,13 @@ harmonia and cadmus also import [`hosts/common.nix`](../hosts/common.nix) and
 | `studio.nix` | Blender and Godot from nixpkgs, opened with Super+o Shift+b and Super+o d, working in `~/Projects` |
 | `virtualisation.nix` | Plain QEMU (no libvirt) and `/dev/kvm` access |
 | `microvms.nix`, `vm-firewall.nix` | The `harmonia.microvms` option and per-VM firewall modes switched from the bar |
-| `nike.nix`, `zelus.nix` | The [Nike](nike.md) and [Zelus](zelus.md) microVMs |
+| `nike.nix` | The [Nike](nike.md) microVM |
 | `lib/root-cas.nix` | Your own root CAs from `certs/all` and `certs/<hostname>` |
 | `home/default.nix` | The Flatpak GTK theme sync, the [Rust tools](rust-tools.md), [Blender add-ons](blender.md) and `uv` |
 
 ## Every microVM: `lib/microvm-guest.nix`
 
-Nike and Zelus share [`lib/microvm-guest.nix`](../lib/microvm-guest.nix):
+Every microVM (only Nike now) uses [`lib/microvm-guest.nix`](../lib/microvm-guest.nix):
 
 - A tap interface with a `/32` route each way (`10.20.<n>.1` on the host,
   `10.20.<n>.2` in the guest), so nothing else on your LAN can reach them,

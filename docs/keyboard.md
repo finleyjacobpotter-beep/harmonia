@@ -44,7 +44,7 @@ alacritty binding outside Ctrl+Shift fails `nixos-rebuild`.
 | Enter | Mode | Keys |
 | --- | --- | --- |
 | `Super+r` | resize | `h` `j` `k` `l` (`Shift` = bigger steps) |
-| `Super+o` | open | `b` Firefox · `f` ranger · `e` nvim · `t` tmux · `s` btop · `a` pulsemixer · `u` bluetuith · `n` nmtui · `v` Nike (ssh) · `z` Zelus (ssh) · `g` Lutris · `Shift+g` Steam · `c` Element · `Shift+b` Blender · `d` Godot |
+| `Super+o` | open | `b` Firefox · `f` ranger · `e` nvim · `t` tmux · `s` btop · `a` pulsemixer · `u` bluetuith · `n` nmtui · `v` Nike (ssh) · `g` Lutris · `Shift+g` Steam · `c` Element · `Shift+b` Blender · `d` Godot |
 | `Super+m` | media | `j`/`k` volume · `m` mute · `Shift+m` mic · `h`/`l` prev/next · `p` play/pause · `Shift+j`/`Shift+k` brightness |
 | `Super+Shift+e` | system | `l` lock · `e` exit sway · `s` suspend · `r` reboot · `Shift+p` power off |
 

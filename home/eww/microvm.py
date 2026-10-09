@@ -1,4 +1,4 @@
-"""A microVM for the bar (Nike or Zelus): whether it is running, its firewall
+"""A microVM for the bar (Nike): whether it is running, its firewall
 mode (modules/nixos/vm-firewall.nix), and the VPN and utilization numbers
 its own status service (nike/status.py) last wrote to its status share. The
 status is "fresh" while it is under STALE seconds old.

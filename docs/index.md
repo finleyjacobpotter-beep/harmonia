@@ -7,8 +7,8 @@ harmonia is a [NixOS flake](https://nixos.wiki/wiki/Flakes) with
 [home-manager](https://github.com/nix-community/home-manager) that builds a
 whole Wayland desktop: **Sway**, an **eww** bar, **alacritty**, **tmux**,
 **bash**, **ranger** and **neovim**, with sandboxed Flatpak apps, native
-Blender and Godot, a local model server and microVMs for risky or
-agent-driven work. Everything is themed with the
+Blender and Godot, a local model server with coding agents, and a microVM
+for VPN work and OSCP practice. Everything is themed with the
 [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, the **DepartureMono Nerd Font** and the pixel-art
 [Tulasi](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -24,7 +24,6 @@ configuration and differ only where the hardware or the job demands it.
 | [cadmus](cadmus.md) | The laptop, a Lenovo ThinkPad E14 Gen 2 | `.#cadmus` | `u` |
 | [Dionysus](dionysus.md) | The same desktop for a VM, Nike's OSCP toolset native, no microVMs, x86_64 and aarch64 | `.#dionysus`, `.#dionysus-aarch64` | `d` |
 | [Nike](nike.md) | MicroVM on harmonia and cadmus for VPN work and OSCP practice | built with the host | `k` |
-| [Zelus](zelus.md) | MicroVM on harmonia and cadmus for coding agents (Claude Code, opencode) | built with the host | `c` |
 
 [What every environment shares](common.md) covers the common base; each
 environment's page covers only what is unique to it.
@@ -38,14 +37,13 @@ Configuration is layered, so each machine imports only what it needs:
 hosts/base.nix         every host: boot, network, user, locale, nix settings,
                        Sway desktop, fonts, Firefox, Element, podman, secrets, VPNs
  └ hosts/common.nix    harmonia + cadmus: Lutris, Steam, Blender, Godot,
-                       QEMU and the Nike and Zelus microVMs
+                       QEMU and the Nike microVM
     ├ hosts/harmonia   the desktop: GPU fan control, local model, game dev agents
     └ hosts/cadmus     the laptop: Wi-Fi, lid, power profiles, ThinkPad fans
  └ hosts/dionysus      a VM: guest tools, Nike's OSCP toolset, both architectures
 
 lib/microvm-guest.nix  every microVM: network, shares, volumes, user, ssh, shell configs
- ├ nike/               OSCP toolset and lab containers
- └ zelus/              Claude Code, opencode, Blender/Godot MCP
+ └ nike/               OSCP toolset and lab containers
 ```
 
 The home side mirrors it: `home/base.nix` is the home every host shares,

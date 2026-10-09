@@ -9,7 +9,7 @@
 # the MTP head (--spec-type draft-mtp) and needs only /dev/dri.
 { ... }:
 let
-  # Also in home/eww/activity.py (the bar) and modules/nixos/zelus.nix.
+  # Also in home/eww/activity.py (the bar) and home/gamedev.nix.
   port = 1235;
   # The quants with the MTP head built in; Q4_K_M is one file of them.
   model = "protoLabsAI/Ornith-1.5-9B-MTP-GGUF:Q4_K_M";

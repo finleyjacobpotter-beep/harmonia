@@ -13,8 +13,9 @@ machine. Claude Code is installed too, with the same rules, skills and MCP
 servers, if you want to plan or finish there. It's all in
 [`home/gamedev.nix`](../home/gamedev.nix) and [`home/gamedev/`](../home/gamedev).
 
-opencode and Claude Code run on the host with your user's access, unlike the
-ones in [Zelus](opencode.md).
+opencode and Claude Code run on the host with your user's access, and only on
+harmonia: cadmus has no AI agents. The provider, the MCP servers, the
+`godot-ai` service and the skills are in [opencode.md](opencode.md).
 
 ## Set up once
 

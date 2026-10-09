@@ -20,8 +20,8 @@ pieces.
 | Lutris and Steam | ✓ | ✓ | |
 | Blender and Godot (native) | ✓ | ✓ | |
 | [Local model server](llama-server.md) (llama.cpp, `ai`) | ✓ | | |
-| Nike and Zelus microVMs | ✓ | ✓ | |
-| Claude Code and opencode | ✓ native, for [game dev](gamedev.md); also in Zelus | in Zelus | |
+| Nike microVM | ✓ | ✓ | |
+| Claude Code and opencode | ✓ for [game dev](gamedev.md) | | |
 | radare2 MCP | ✓ (game dev) | | |
 | OSCP toolset and lab stacks | in Nike | in Nike | ✓ native |
 | Forgejo CLI (`fj`) | ✓ | | |
@@ -35,17 +35,18 @@ pieces.
 
 ## MicroVMs
 
-Both run on harmonia and cadmus, built as part of the host.
+Nike is the only microVM. It runs on harmonia and cadmus, built as part of
+the host.
 
-| | [Nike](nike.md) | [Zelus](zelus.md) |
-| --- | --- | --- |
-| Purpose | VPN work and OSCP practice | Coding agents |
-| User | `k`, password `k` | `c`, no password |
-| Accent colour | Orange | Cyan |
-| Address (host side) | `10.20.0.2` (`10.20.0.1`) | `10.20.1.2` (`10.20.1.1`) |
-| Resources | 4 vCPUs, 6 GiB | 4 vCPUs, 6 GiB |
-| Volumes | `/home` 16 GiB, `/var` 24 GiB | `/home` 32 GiB, `/var` 4 GiB |
-| Shared folders | `~/nike-share` ↔ `~/share` | `~/zelus-share` ↔ `~/share`, `~/Projects` ↔ `~/Projects` |
-| Open key | `Super+o v` | `Super+o z` |
-| Firewall modes | Lockdown, OSCP, Hack The Box, Permissive | Lockdown, Local inference, Permissive |
-| Main software | OSCP toolset, podman lab stacks (Ligolo-ng, BloodHound, CyberChef, ZAP, Mythic) | Claude Code, opencode, Blender and Godot MCP |
+| | [Nike](nike.md) |
+| --- | --- |
+| Purpose | VPN work and OSCP practice |
+| User | `k`, password `k` |
+| Accent colour | Orange |
+| Address (host side) | `10.20.0.2` (`10.20.0.1`) |
+| Resources | 4 vCPUs, 6 GiB |
+| Volumes | `/home` 16 GiB, `/var` 24 GiB |
+| Shared folder | `~/nike-share` ↔ `~/share` |
+| Open key | `Super+o v` |
+| Firewall modes | Lockdown, OSCP, Hack The Box, Permissive |
+| Main software | OSCP toolset, podman lab stacks (Ligolo-ng, BloodHound, CyberChef, ZAP, Mythic) |

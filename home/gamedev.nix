@@ -3,12 +3,14 @@
 # agent runs on the local model, Ornith 1.5 9B served as "ai" by the
 # llama.cpp server (modules/nixos/llama-server.nix), four agents at a time,
 # and opencode offers no other provider; plus Claude Code, and the Blender,
-# Godot and radare2 MCP servers for both. The planning rules, skills and
+# Godot and radare2 MCP servers for both, with Godot's server running as a
+# user service next to the editor. The planning rules, skills and
 # project templates in ./gamedev are what make the local model good enough.
 # See docs/gamedev.md.
 { pkgs, lib, ... }:
 let
-  mcp = (import ./mcp-servers.nix { inherit pkgs; }).host;
+  mcpServers = import ./mcp-servers.nix { inherit pkgs; };
+  mcp = mcpServers.host;
 
   # How many requests the server serves at once and the context each one
   # gets (half of Ornith's native 262144); change them here and in
@@ -37,6 +39,16 @@ let
     "godot-mcp"
     "blender-mcp"
   ];
+  # When to use the Rust tools (home/rust-tools.nix), whose aliases agent
+  # shells don't get.
+  rustSkills = [
+    "rust-search"
+    "rust-edit"
+    "rust-inspect"
+  ];
+
+  # godot-ai's defaults, which the editor plugin expects.
+  godotPorts = "--port 8000 --ws-port 9500";
 
   # oh-my-openagent's settings for opencode, in the format of
   # assets/oh-my-opencode.schema.json. The version is pinned in
@@ -192,8 +204,8 @@ let
   );
 
   # The same servers for Claude Code, as user-scope servers in
-  # ~/.claude.json (as on Zelus: programs.claude-code.mcpServers ships them
-  # as a plugin, which Claude Code didn't show).
+  # ~/.claude.json (programs.claude-code.mcpServers ships them as a plugin,
+  # which Claude Code didn't show).
   claudeMcpServers = pkgs.writeText "claude-mcp-servers.json" (
     builtins.toJSON {
       blender = {
@@ -260,7 +272,9 @@ in
   programs.claude-code = {
     enable = true;
     context = ./gamedev/AGENTS.md;
-    skills = lib.genAttrs skills (name: ./gamedev/skills/${name}/SKILL.md);
+    skills =
+      lib.genAttrs skills (name: ./gamedev/skills/${name}/SKILL.md)
+      // lib.genAttrs rustSkills (name: ./skills/${name}/SKILL.md);
     commands = {
       gd-plan = claudeCommand "Interview me and write an ultrawork plan for the next milestone" (
         prompt "prometheus"
@@ -280,6 +294,35 @@ in
           The milestone: $ARGUMENTS
         ''
       );
+    };
+  };
+
+  # The Godot MCP server, in your session: running before the editor opens,
+  # so the plugin adopts it instead of starting its own, and the editor and
+  # every agent share one server (each agent's godot-mcp-attach is a stdio
+  # bridge to it). The record is removed first and waited for after, so a
+  # bridge never reads a stale one.
+  systemd.user.services.godot-ai = {
+    Unit.Description = "Godot MCP server (godot-ai) for the editor and the agents";
+    Install.WantedBy = [ "default.target" ];
+    Service = {
+      # The plugin reads the record from $XDG_CONFIG_HOME/godot-ai/capabilities.
+      Environment = "GODOT_AI_CAPABILITY_DIR=%h/.config/godot-ai/capabilities";
+      ExecStartPre = "${pkgs.coreutils}/bin/rm -f \${GODOT_AI_CAPABILITY_DIR}/http-8000.json";
+      ExecStart = "${mcpServers.godot}/bin/godot-mcp --transport streamable-http ${godotPorts}";
+      ExecStartPost = toString (
+        pkgs.writeShellScript "godot-ai-wait" ''
+          # uv downloads the server on its first start.
+          for _ in {1..600}; do
+            [ -e "$GODOT_AI_CAPABILITY_DIR/http-8000.json" ] && exit 0
+            ${pkgs.coreutils}/bin/sleep 0.5
+          done
+          exit 1
+        ''
+      );
+      TimeoutStartSec = 330;
+      Restart = "on-failure";
+      RestartSec = 5;
     };
   };
 

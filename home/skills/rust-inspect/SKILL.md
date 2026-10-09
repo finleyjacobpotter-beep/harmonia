@@ -1,11 +1,11 @@
 ---
 name: rust-inspect
-description: Inspect and measure on Zelus with tokei, dust, dysk, procs, hyperfine, xh, just, ouch and watchexec. Use to size up a codebase, find what fills a disk, check processes, benchmark commands, call an HTTP API, run project tasks or unpack archives.
+description: Inspect and measure with tokei, dust, dysk, procs, hyperfine, xh, just, ouch and watchexec. Use to size up a codebase, find what fills a disk, check processes, benchmark commands, call an HTTP API, run project tasks or unpack archives.
 ---
 
 # Inspecting and measuring
 
-These are installed on Zelus; call them by name.
+These are installed here; call them by name.
 
 | Task | Command |
 | --- | --- |
@@ -22,4 +22,4 @@ These are installed on Zelus; call them by name.
 
 `watchexec -e rs,toml -- cargo test` reruns on changes, and `btm` is an interactive monitor. Both run until stopped, so only start them in the background or in a tmux window the user can see, never as a blocking command.
 
-The host's local model server is at `http://10.20.1.1:1234/v1` from Zelus (`xh :1234` won't reach it; use the full address), and only in the permissive and local-inference firewall modes.
+The local model server (Ornith as `ai`, OpenAI-compatible) is at `http://127.0.0.1:1235/v1`, e.g. `xh :1235/v1/models`, while it runs (it is started from the bar).

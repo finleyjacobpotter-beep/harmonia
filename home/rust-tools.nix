@@ -1,7 +1,8 @@
-# Rust command-line tools, on the host, Nike and Zelus alike (imported by
+# Rust command-line tools, on the host and Nike alike (imported by
 # home/default.nix and lib/microvm-guest.nix). Your interactive
-# bash gets aliases from the classic commands to them. On Zelus, Claude Code
-# and opencode also get skills for them (zelus/skills/).
+# bash gets aliases from the classic commands to them. On harmonia, Claude
+# Code and opencode also get skills for them (home/skills/, installed by
+# home/gamedev.nix).
 { pkgs, lib, ... }:
 let
   # The classic command → its Rust replacement. `command grep` (or \grep)

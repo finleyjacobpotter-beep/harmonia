@@ -1,13 +1,6 @@
-# The Blender and Godot MCP servers, and radare2's on the host. Each is
-# pinned to a release so a new upstream commit doesn't run unreviewed.
-#
-# Blender and Godot run on the host, the agents on Zelus
-# (modules/nixos/zelus.nix) and, on harmonia, on the host too (home/gamedev.nix):
-#   - blender-mcp runs on Zelus and connects to the add-on (home/blender-addons.nix) through a socket
-#     on the host's end of the tap.
-#   - godot-ai's server (4.x) runs on the host, next to the editor that reads its
-#     private capability record; on Zelus, godot-mcp is a pipe to a
-#     `godot-ai attach` bridge the host starts per connection.
+# The Blender, Godot and radare2 MCP servers, for Claude Code and opencode
+# on harmonia (home/gamedev.nix), next to the editors. Each is pinned to a
+# release so a new upstream commit doesn't run unreviewed.
 #
 # uv runs them with nixpkgs' Python: a Python uv downloads itself can't run
 # on NixOS.
@@ -38,29 +31,10 @@ rec {
     '';
   };
 
-  # The two as Claude Code and opencode on Zelus run them; `vm` is Zelus's
-  # `vm` argument (ports from modules/nixos/zelus.nix).
-  zelus = vm: {
-    blender = pkgs.writeShellApplication {
-      name = "blender-mcp";
-      text = ''
-        export BLENDER_HOST=${vm.hostAddress} BLENDER_PORT=${toString vm.blenderPort}
-        exec ${blender}/bin/blender-mcp "$@"
-      '';
-    };
-    godot = pkgs.writeShellApplication {
-      name = "godot-mcp";
-      runtimeInputs = [ pkgs.socat ];
-      text = ''
-        exec socat - TCP:${vm.hostAddress}:${toString vm.godotPort}
-      '';
-    };
-  };
-
-  # The two as opencode on the host runs them (home/gamedev.nix): Blender's
-  # add-on on localhost:9876, and a `godot-ai attach` stdio bridge to the
-  # host's godot-ai service (modules/nixos/zelus.nix, same ports), which
-  # reads the capability record the service writes for the editor.
+  # The servers as Claude Code and opencode run them (home/gamedev.nix):
+  # Blender's add-on on localhost:9876, and a `godot-ai attach` stdio bridge
+  # to the godot-ai user service (home/gamedev.nix, same ports), which reads
+  # the capability record the service writes for the editor.
   host = {
     inherit blender;
     # radare2's own MCP server (pkgs/r2mcp.nix): analyses binaries on this

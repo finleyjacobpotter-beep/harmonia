@@ -1,11 +1,10 @@
 # Blender and Godot from nixpkgs, as native programs: Super+o Shift+b and
 # Super+o d open them (harmonia.launchers, modules/nixos/flatpak.nix). They
-# work in ~/Projects (created by home/base.nix), which Zelus shares too.
+# work in ~/Projects (created by home/base.nix).
 # Blender's add-ons (home/blender-addons.nix) are copied into
 # ~/.config/blender/harmonia-scripts, and the wrapper below points Blender
-# there. opencode, which drives them over MCP, runs on Zelus
-# (modules/nixos/zelus.nix, home/opencode.nix) and, on harmonia, on the host
-# (home/gamedev.nix).
+# there. Claude Code and opencode, which drive them over MCP, run on
+# harmonia only (home/gamedev.nix).
 #
 # Plain pkgs.blender: Cycles renders on the CPU, Eevee and the viewport use
 # the GPU through OpenGL/Vulkan as usual. pkgs.blender-hip adds Cycles on AMD

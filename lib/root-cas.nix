@@ -1,5 +1,5 @@
 # Extra root CAs to trust on one machine: every .crt or .pem file in
-# certs/all/ and certs/<name>/ (name = harmonia, nike or zelus) is added to
+# certs/all/ and certs/<name>/ (name = the hostname, or nike) is added to
 # its system trust store. See certs/README.md.
 #
 #   imports = [ (import ../lib/root-cas.nix "nike") ];

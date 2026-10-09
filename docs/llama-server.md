@@ -12,7 +12,7 @@ through Vulkan. It's an OpenAI-compatible API, and the image projector
 
 | | |
 | --- | --- |
-| API | `http://127.0.0.1:1235/v1` (Zelus: `http://10.20.1.1:1234/v1`) |
+| API | `http://127.0.0.1:1235/v1` |
 | Model name | `ai` |
 | Context | 4 requests at once, 131072 tokens each (half of Ornith's 262144); 524288 in all |
 | KV cache | 4-bit (`q4_0` for K and V), flash attention on |
@@ -72,5 +72,3 @@ head baked into it and needs only `/dev/dri`.
 
 - opencode on harmonia ([game dev](gamedev.md)): every agent, and it's the
   only provider opencode offers.
-- opencode on [Zelus](zelus.md): its `local` provider, through a socket on
-  the host's end of Zelus's tap (`ai-zelus.socket`).

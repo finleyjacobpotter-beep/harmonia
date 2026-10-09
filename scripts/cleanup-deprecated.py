@@ -12,7 +12,10 @@ removes it. Everything it knows about:
                      ~/.var/app data, mimeapps.list entries, ~/Downloads/zen
                      (replaced by Firefox, PR #37)
   opencode flatpak   ai.opencode.opencode and its ~/.var/app data (opencode
-                     moved into Zelus, PR #28)
+                     moved into Zelus, PR #28, and later onto the host)
+  harmonia, cadmus: the Zelus microVM: its /home and /var images (only with
+                     --user-files), status and firewall-mode files,
+                     ~/zelus-share (agents run natively on harmonia now)
   libvirt VMs        harmonia-kali / harmonia-ubuntu: disks, ISOs, NVRAM,
                      TPM state, nwfilters, the default network, virbr0,
                      virt-manager settings, ~/vms/kali-shared (replaced by the
@@ -42,8 +45,8 @@ Dry run by default: it lists what it would remove and changes nothing.
 Every host has it on its PATH (hosts/base.nix); before the first rebuild
 that adds it, run this file directly: sudo ./scripts/cleanup-deprecated.py
 
-Things that hold your own files (a non-empty ~/Downloads/zen or
-~/vms/kali-shared, LM Studio's models and chats, Dionysus's old ~/.mozilla profile, home-manager's
+Things that hold your own files (a non-empty ~/Downloads/zen,
+~/vms/kali-shared or ~/zelus-share, Zelus's disk images, LM Studio's models and chats, Dionysus's old ~/.mozilla profile, home-manager's
 *.hm-backup copies of your pre-harmonia dotfiles) are only removed with
 --user-files. Run it with sudo: system state (/var/lib/libvirt, system
 flatpaks) needs root; without it those steps are listed as skipped. The
@@ -261,7 +264,7 @@ class Cleanup:
         self.remove_if_empty(self.home / "Downloads/zen")
 
     def opencode(self) -> None:
-        self.section("opencode flatpak (opencode runs in Zelus now)")
+        self.section("opencode flatpak (opencode runs natively now)")
         self.flatpak(OPENCODE, "opencode")
         self.mimeapps([f"{OPENCODE}.desktop"])
         store = Path(os.environ.get("PASSWORD_STORE_DIR", self.home / ".local/share/password-store"))
@@ -348,6 +351,20 @@ class Cleanup:
         self.flatpak(GODOT, "Godot")
         self.mimeapps([f"{BLENDER}.desktop", f"{GODOT}.desktop"])
 
+    def zelus(self) -> None:
+        self.section("Zelus microVM (Claude Code and opencode run natively on harmonia)")
+        if self.output("systemctl", "is-active", "microvm@zelus.service") == "active":
+            self.note("microvm@zelus is still running: rebuild first, or `systemctl stop microvm@zelus`")
+            return
+        state = Path("/var/lib/microvms/zelus")
+        self.remove(state / "home.img", "Zelus's /home: Claude Code login, your work there", mine=True)
+        self.remove(state / "var.img", "Zelus's /var", mine=True)
+        if state.is_dir() and not any(p.name.endswith(".img") for p in state.iterdir()):
+            self.remove(state, "Zelus's microvm.nix runner state")
+        self.remove("/var/lib/zelus", "Zelus status share")
+        self.remove("/var/lib/vm-firewall/zelus", "Zelus firewall mode")
+        self.remove_if_empty(self.home / "zelus-share")
+
     def hm_backups(self) -> None:
         """home-manager moves a file it would overwrite to *.hm-backup
         (flake.nix). These are copies of your dotfiles from before harmonia."""
@@ -373,6 +390,7 @@ class Cleanup:
             self.lact()
         if self.host in ("harmonia", "cadmus"):
             self.studio_flatpaks()
+            self.zelus()
         if self.host == "dionysus":
             self.dionysus_apps()
         self.hm_backups()

@@ -13,7 +13,7 @@ the button again closes it too. Panels open on the primary display.
 | **CAPS** / **NUM** | shown while Caps Lock or Num Lock is on |
 | GameMode, Steam | shown while running; Steam opens a panel with **Close** |
 | 󰚩 local model | harmonia only: grey while stopped, yellow while it starts or loads, pink while it serves `ai`; opens a panel with **Start** or **Stop** ([llama-server.md](llama-server.md)) |
-| Nike, Zelus | always shown: running or not, and the firewall mode; each opens its VM panel (below) |
+| Nike | always shown: running or not, and the firewall mode; opens its VM panel (below) |
 | 󰍹 **2** | how many displays there are; opens the display settings window (below) |
 | CPU, memory | |
 | 󰢮 GPU | load and temperature from `rocm-smi`; the tooltip adds VRAM use |
@@ -61,12 +61,12 @@ has no primary display, so this only decides where the bar goes; the
 resolutions and positions are ordinary `swaymsg output` settings, and anything set in
 `home/sway.nix` still applies first.
 
-## Nike and Zelus
+## Nike
 
-Each microVM has the same 󰒋 badge ([nike.md](nike.md), [zelus.md](zelus.md)).
-The icon is grey while the VM is stopped, and orange (Nike) or cyan (Zelus)
-while it runs, and the badge ends with the VM's firewall mode: **open**
-(permissive), **lock** in red, or **oscp**, **htb** or **local** in purple.
+Each microVM has a 󰒋 badge; Nike ([nike.md](nike.md)) is the only one.
+The icon is grey while the VM is stopped and in the VM's colour (orange for
+Nike) while it runs, and the badge ends with the VM's firewall mode: **open**
+(permissive), **lock** in red, or **oscp** or **htb** in purple.
 The mode keeps its space when it changes, so the bar doesn't shift. While a
 VM's VPN is up, the network button shows an asterisk in the VM's colour
 ([vpn.md](vpn.md)). Hover the badge to see whether Nike's traffic actually

@@ -1,11 +1,11 @@
 ---
 name: rust-edit
-description: Make bulk or structural edits on Zelus with sd, ast-grep rewrites and jaq, and review them with difftastic (difft). Use for find-and-replace across many files, renaming a function or call pattern, editing JSON, or checking what an edit changed.
+description: Make bulk or structural edits with sd, ast-grep rewrites and jaq, and review them with difftastic (difft). Use for find-and-replace across many files, renaming a function or call pattern, editing JSON, or checking what an edit changed.
 ---
 
 # Editing with sd, ast-grep, jaq and difft
 
-These are installed on Zelus. Call them by name (the user's `diff` → `difft` alias isn't in agent shells). Preview first, then apply, then review the diff.
+These are installed here. Call them by name (the user's `diff` → `difft` alias isn't in agent shells). Preview first, then apply, then review the diff.
 
 ## Replace text: `sd`
 
