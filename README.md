@@ -30,6 +30,7 @@ modules/nixos/
   lmstudio.nix                 LM Studio from Flathub with a locked-down sandbox and GPU inference
   studio.nix                   Blender and Godot from Flathub, sharing only ~/Projects (and the network)
   fans.nix                     harmonia only: LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
+  llama-server.nix             harmonia only: Ornith 1.5 9B (Q4_K_M) on llama.cpp's server in a podman container, Vulkan on the GPU, port 1235
   podman.nix                   rootless podman, podman-compose, buildah (all hosts)
   virtualisation.nix           plain QEMU (no libvirt)
   microvms.nix                 `harmonia.microvms`: each VM declared once; its network, NAT, folders, `ssh <vm>`, colours and firewall modes follow
@@ -129,6 +130,7 @@ the right one for the machine.
 - [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
 - [LM Studio](docs/lmstudio.md): local LLMs in a Flatpak jail, on the GPU
+- [llama.cpp server](docs/llama-server.md): Ornith 1.5 9B in a podman container on harmonia, an OpenAI-compatible API beside LM Studio
 - [Game dev](docs/gamedev.md): opencode + oh-my-openagent on harmonia: Claude writes the plans and finishes the work, the local Ornith model does the rest
 - [Blender](docs/blender.md): free models from Poly Haven and Poly Pizza inside Blender
 - [opencode](docs/opencode.md): opencode on Zelus, providers, the Anthropic key, and the Blender and Godot MCP servers

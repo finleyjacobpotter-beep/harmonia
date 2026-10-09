@@ -6,6 +6,8 @@
     ../common.nix
     # The AMD GPU's fan curve (LACT). cadmus has its own (thinkpad.nix).
     ../../modules/nixos/fans.nix
+    # Ornith 1.5 9B on llama.cpp's server, in podman, on the GPU.
+    ../../modules/nixos/llama-server.nix
   ];
 
   # Python, for uv and uvx (home/default.nix), which use it: a Python uv
