@@ -1,7 +1,7 @@
 # Rust command-line tools, on the host and Nike alike (imported by
 # home/default.nix and lib/microvm-guest.nix). Your interactive
 # bash gets aliases from the classic commands to them. On harmonia, Claude
-# Code and omo also get skills for them (home/skills/, installed by
+# Code and pi also get skills for them (home/skills/, installed by
 # home/gamedev.nix).
 { pkgs, lib, ... }:
 let
@@ -66,7 +66,7 @@ in
     options.syntax-theme = "ansi";
   };
 
-  # Only in your own shells: Claude Code (CLAUDECODE) and omo
+  # Only in your own shells: Claude Code (CLAUDECODE) and pi
   # (PI_CODING_AGENT) run commands through bash too, and expect the classic
   # tools' flags.
   programs.bash.initExtra = ''

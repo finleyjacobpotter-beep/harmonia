@@ -1,6 +1,6 @@
 # Game dev
 
-On harmonia (the desktop; not Cadmus), [omo](omo.md) and Claude Code can
+On harmonia (the desktop; not Cadmus), [pi](pi.md) and Claude Code can
 drive Godot and Blender over MCP, and analyse binaries with radare2. Neither
 gets game dev rules globally: each game carries its own context, which
 `gamedev-init` starts for you. It's all in
@@ -8,20 +8,20 @@ gets game dev rules globally: each game carries its own context, which
 
 ## Set up once
 
-1. **The model**: omo runs everything on the local model. Click the robot
+1. **The model**: pi runs on the local model. Click the robot
    icon on the bar, then **Start**. The first start
    downloads the image and the model (~6 GB); it's ready when the icon
    turns pink ([llama-server.md](llama-server.md)).
 2. **Blender and Godot**: open them. The Blender MCP add-on is already
    enabled; in each Godot project install and enable the Godot AI 4.3.0
-   plugin ([omo.md](omo.md#mcp-servers)). The `godot-ai` service already
+   plugin ([pi.md](pi.md#mcp-servers)). The `godot-ai` service already
    runs on harmonia.
 3. The first time an agent starts the Blender and Godot MCP servers, uv
    downloads them, so it needs the internet once.
 
 ## MCP servers
 
-omo and Claude Code both get:
+pi and Claude Code both get:
 
 | Server | What it does |
 | --- | --- |
@@ -36,14 +36,14 @@ GDD, TECH, ART, ASSETS, DECISIONS, LESSONS) from
 [`home/gamedev/templates/`](../home/gamedev/templates), the instructions in
 `.agents/AGENTS.md` pointing at them, and a `CLAUDE.md` that imports them
 for Claude Code (`@.agents/AGENTS.md`), never overwriting. Edit them however
-you like: they're the project's. omo reads only `.agents/`
-([omo.md](omo.md#instructions-come-from-agents)).
+you like: they're the project's. pi reads only `.agents/`
+([pi.md](pi.md#instructions-come-from-agents)).
 
 ## What the agents are told
 
 Only what they ask for. The skills in
 [`home/gamedev/skills/`](../home/gamedev/skills), in `~/.claude/skills` for
-Claude Code and omo alike, load when a task needs them: `godot-4` (GDScript
+Claude Code and pi alike, load when a task needs them: `godot-4` (GDScript
 4 and the Godot 3 habits to avoid), `godot-mcp` and `blender-mcp` (how to
 drive the editors and the Blender to Godot export). The skills are
 read-only links into the Nix store; change them in the repo and rebuild.

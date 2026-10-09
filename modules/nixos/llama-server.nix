@@ -72,7 +72,7 @@ in
         "--spec-draft-n-max"
         "3"
         # 4 requests at once, each with half of Ornith's native 262144
-        # context: 131072 apiece, 524288 in all (the context omo is told
+        # context: 131072 apiece, 524288 in all (the context pi is told
         # about, home/gamedev.nix).
         "--ctx-size"
         "524288"

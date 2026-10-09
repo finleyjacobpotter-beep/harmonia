@@ -70,5 +70,5 @@ head baked into it and needs only `/dev/dri`.
 
 ## Who uses it
 
-- omo on harmonia ([omo.md](omo.md)): every model it uses, the main
-  session and every agent and category, is `local/ai`.
+- pi on harmonia ([pi.md](pi.md)): `local/ai` is the model every session
+  starts on.

@@ -1,24 +1,15 @@
 # AI agents and game dev tooling on harmonia itself (not Cadmus, which
-# doesn't import this; hosts/harmonia/default.nix does): OmO, oh-my-openagent's
-# native agent (`omo`), and Claude Code, both with the Blender, Godot and
-# radare2 MCP servers and the skills, with Godot's server running as a user
-# service next to the editor. Every omo model, the main session's and every
-# agent's and category's, is the local model (modules/nixos/llama-server.nix),
-# and a project's instructions come from its .agents/ only, never its .omo/
-# (./omo/agents-dir.ts); otherwise omo is on its defaults. See docs/omo.md
-# and docs/gamedev.md.
+# doesn't import this; hosts/harmonia/default.nix does): pi and Claude Code,
+# both with the Blender, Godot and radare2 MCP servers and the skills, with
+# Godot's server running as a user service next to the editor. pi runs on
+# the local model (modules/nixos/llama-server.nix) and takes a project's
+# instructions from its .agents/ only (./pi/agents-dir.ts); otherwise it's
+# on its defaults. See docs/pi.md and docs/gamedev.md.
 { pkgs, lib, ... }:
 let
-  # The local model as omo names it (provider "local", model "ai", below).
-  local = "local/ai";
-
   mcpServers = import ./mcp-servers.nix { inherit pkgs; };
   mcp = mcpServers.host;
-  omo = pkgs.callPackage ../pkgs/omo.nix {
-    # The rules engine reads .omo/rules, .claude/rules, AGENTS.md, CLAUDE.md
-    # and others; instructions come from .agents/ only (./omo/agents-dir.ts).
-    env.PI_RULES_DISABLED = "1";
-  };
+  pi = pkgs.callPackage ../pkgs/pi.nix { };
 
   skills = [
     "godot-4"
@@ -36,7 +27,7 @@ let
   # godot-ai's defaults, which the editor plugin expects.
   godotPorts = "--port 8000 --ws-port 9500";
 
-  # The MCP servers, in the shape both ~/.claude.json and omo's mcp.json
+  # The MCP servers, in the shape both ~/.claude.json and pi's mcp.json
   # take.
   mcpServerConfig = {
     blender = {
@@ -57,13 +48,13 @@ let
   };
   claudeMcpServers = pkgs.writeText "claude-mcp-servers.json" (builtins.toJSON mcpServerConfig);
 
-  # What omo gets in ~/.omo/agent, merged into the files it keeps there
-  # (it writes them too: /mcp, /model, /settings), so only these entries
-  # are reset on a switch and everything you add stays.
-  omoConfig = pkgs.writeText "omo-agent.json" (
+  # What pi gets in ~/.pi/agent, merged into the files it keeps there (it
+  # writes them too: /mcp, /model, /settings), so only these entries are
+  # reset on a switch and everything you add stays.
+  piConfig = pkgs.writeText "pi-agent.json" (
     builtins.toJSON {
       # The llama.cpp server on this machine (modules/nixos/llama-server.nix),
-      # started from the bar. It takes no key, but omo lists a provider's
+      # started from the bar. It takes no key, but pi lists a provider's
       # models only once it has one.
       models.providers.local = {
         name = "Local (llama.cpp)";
@@ -87,71 +78,9 @@ let
         ];
       };
       mcp.mcpServers = mcpServerConfig;
-
-      # omo's settings (~/.omo/omo.jsonc): a one-model chain for every builtin
-      # agent and category, so nothing falls back to another provider.
-      omo =
-        let
-          onlyLocal =
-            names:
-            lib.genAttrs names (_: {
-              models = [ local ];
-            });
-        in
-        {
-          telemetry.enabled = false;
-          "[native]" = {
-            # Headless and desktop sessions; the TUI's is in settings.json.
-            model_profile = local;
-            agents = onlyLocal [
-              "explore"
-              "librarian"
-              "plan-consultant"
-              "plan-reviewer"
-              "omo-native-gate-reviewer"
-              "omo-native-code-reviewer"
-              "omo-native-qa-executor"
-            ];
-            categories = onlyLocal [
-              "architect"
-              "artistry"
-              "deep-high"
-              "deep-low"
-              "quick"
-              "ultrabrain"
-              "unspecified-high"
-              "unspecified-low"
-              "visual-engineering"
-              "writing"
-            ];
-            # As many tasks at once as the server serves (llama-server.nix);
-            # the rest queue.
-            task.provider_concurrency.local = 4;
-            # Its desktop engine is a binary omo unpacks unpatched, so it
-            # can't start on NixOS.
-            computer.enabled = false;
-            # The bundled skills that write into a project's .omo/ (plans,
-            # drafts, evidence, ledgers, loops, DAGs, teams, LSP config).
-            disabled_skills = [
-              "ultrawork"
-              "ulw-plan"
-              "ulw-execute"
-              "ulw-loop"
-              "ulw-research"
-              "mass-ulw"
-              "hyperplan"
-              "dag-library"
-              "init-deep"
-              "frontend"
-              "visual-qa"
-              "refactor"
-              "debugging"
-              "lsp-setup"
-            ];
-          };
-        };
     }
   );
+
   # `gamedev-init` in a project folder: copies the design-doc templates into
   # .agents/design, the instructions into .agents/AGENTS.md and a CLAUDE.md
   # that points Claude Code at them, never overwriting.
@@ -169,17 +98,17 @@ let
 in
 {
   home.packages = [
-    omo
+    pi
     pkgs.radare2
     gamedev-init
   ];
 
-  # Instructions from .agents/ only, nothing from a project's .omo/.
-  home.file.".omo/agent/extensions/agents-dir.ts".source = ./omo/agents-dir.ts;
+  # Instructions from .agents/ only, nothing from a project's .pi/.
+  home.file.".pi/agent/extensions/agents-dir.ts".source = ./pi/agents-dir.ts;
 
   # Claude Code (`claude`, then /login or an API key) with the skills (which
-  # omo reads too) and the MCP servers. Neither agent gets global rules: each
-  # project brings its own AGENTS.md or CLAUDE.md.
+  # pi reads too) and the MCP servers. Neither agent gets global rules: each
+  # project brings its own .agents/AGENTS.md (CLAUDE.md imports it).
   programs.claude-code = {
     enable = true;
     skills =
@@ -225,37 +154,26 @@ in
     run mv "$tmp" "$f"
   '';
 
-  # omo's own files, merged in on every switch. What's set here wins
-  # (the provider and MCP servers by name, the models in omo.jsonc key by
-  # key); everything else you add with /mcp, /settings or by hand stays. A
-  # file jq can't parse (omo.jsonc with comments) is left alone, with a
-  # warning.
-  home.activation.omoConfig = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    run mkdir -p "$HOME/.omo/agent"
+  # pi's own files, merged in on every switch. What's set here wins (the
+  # provider and MCP servers by name, the settings key by key); everything
+  # else you add with /mcp, /settings or by hand stays. A session starts on
+  # the local model, and projects are never trusted (./pi/agents-dir.ts says
+  # so too).
+  home.activation.piConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run mkdir -p "$HOME/.pi/agent"
     merge() {
-      f="$HOME/.omo/$1"
-      # The read-only omo.jsonc this used to link in: keep only its
-      # migration markers.
-      if [ -L "$f" ]; then
-        old=$(${pkgs.jq}/bin/jq -c '{_migrations}' "$f")
-        run rm "$f"
-        echo "$old" > "$f"
-      fi
+      f="$HOME/.pi/agent/$1"
       [ -s "$f" ] || echo '{}' > "$f"
       tmp=$(mktemp "$f.XXXXXX")
-      if ${pkgs.jq}/bin/jq --slurpfile nix ${omoConfig} "$2" "$f" > "$tmp"; then
-        run mv "$tmp" "$f"
-      else
-        rm -f "$tmp"
-        warnEcho "$f isn't plain JSON; set omo's local-only settings in it by hand (home/gamedev.nix)"
-      fi
+      ${pkgs.jq}/bin/jq --slurpfile nix ${piConfig} "$2" "$f" > "$tmp"
+      run mv "$tmp" "$f"
     }
-    merge agent/models.json '.providers = ((.providers // {}) + $nix[0].models.providers)'
-    merge agent/mcp.json '.mcpServers = ((.mcpServers // {}) + $nix[0].mcp.mcpServers)'
-    merge agent/settings.json '
+    merge models.json '.providers = ((.providers // {}) + $nix[0].models.providers)'
+    merge mcp.json '.mcpServers = ((.mcpServers // {}) + $nix[0].mcp.mcpServers)'
+    merge settings.json '
       .skills = ((.skills // []) - ["~/.claude/skills"] + ["~/.claude/skills"])
       | .defaultProvider = "local" | .defaultModel = "ai"
-      | .defaultProjectTrust = "never"'
-    merge omo.jsonc '. * $nix[0].omo'
+      | .defaultProjectTrust = "never"
+      | .enableInstallTelemetry = false'
   '';
 }

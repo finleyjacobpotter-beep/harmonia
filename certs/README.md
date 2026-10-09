@@ -20,7 +20,7 @@ openssl x509 -inform der -in burp.der -out certs/nike/burp.crt
 The certificate joins the system bundle (`/etc/ssl/certs/ca-certificates.crt`),
 which OpenSSL, curl, git, wget, Go and Rust programs use. When any extra CA
 is present, `REQUESTS_CA_BUNDLE` (Python requests) and `NODE_EXTRA_CA_CERTS`
-(Node and Bun, so Claude Code and omo) point at that bundle too.
+(Node and Bun, so Claude Code and pi) point at that bundle too.
 Browsers and Java keep their own stores.
 
 These are public certificates, not keys: never put a CA's private key here.

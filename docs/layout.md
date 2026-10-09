@@ -50,13 +50,13 @@ home/                          home-manager, one file per program
   flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
-  gamedev.nix                  AI agents and game dev on the harmonia desktop: omo (oh-my-openagent, native) on the local model and Claude Code, no global prompts, Blender, Godot and radare2 MCP, the godot-ai service, the skills
+  gamedev.nix                  AI agents and game dev on the harmonia desktop: pi on the local model and Claude Code, no global prompts, Blender, Godot and radare2 MCP, the godot-ai service, the skills
   gamedev/                     its skills (Godot 4, Godot and Blender MCP) and the design-doc templates gamedev-init copies
-  omo/agents-dir.ts            omo extension: a project's instructions from .agents/ only, nothing from its .omo/
-  skills/                      Rust tool skills for Claude Code and omo on harmonia (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
+  pi/agents-dir.ts             pi extension: a project's instructions from .agents/ only, nothing from its .pi/
+  skills/                      Rust tool skills for Claude Code and pi on harmonia (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
   rust-tools.nix               Rust CLI tools (rg, fd, bat, eza, …) and the classic-command aliases, on the host and Nike
   blender-addons.nix           Blender add-ons: MCP for Blender, Poly Haven, Poly Pizza (blender/poly_pizza.py)
-  mcp-servers.nix              the Blender, Godot and radare2 MCP servers for Claude Code and omo on harmonia (home/gamedev.nix)
+  mcp-servers.nix              the Blender, Godot and radare2 MCP servers for Claude Code and pi on harmonia (home/gamedev.nix)
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix firefox.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
 lib/python-app.nix             packages a folder of Python scripts that share modules as several commands (the bar)
@@ -64,7 +64,7 @@ lib/root-cas.nix               trusts the root CAs in certs/ on the host and Nik
 lib/microvm-guest.nix          what every microVM guest shares: network, shares, volumes, user, openssh, status service, shell configs
 certs/                         your own root CAs: all/ for every machine, harmonia/ or nike/ for one (empty by default, see certs/README.md)
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
-pkgs/omo.nix                   omo, oh-my-openagent's native agent: the pinned release binary, patched for NixOS
+pkgs/pi.nix                    pi, the coding agent: the pinned release build (with MCP), patched for NixOS
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          these pages
 mkdocs.yml                     the documentation site: theme, navigation (`nix build .#docs`)

@@ -26,12 +26,12 @@ its multi-token prediction head) as `ai` on the AMD GPU through Vulkan, at
 start at boot. See
 [The local model](llama-server.md).
 
-**AI agents** ([`home/gamedev.nix`](../home/gamedev.nix)). omo
-(oh-my-openagent's native agent) and Claude Code run natively on the host on
+**AI agents** ([`home/gamedev.nix`](../home/gamedev.nix)). pi and
+Claude Code run natively on the host on
 no global prompts, with the Blender, Godot and radare2 MCP servers for both;
-every omo agent runs on the local model. Their licenses are why
-harmonia adds `claude-code` and `omo` to `harmonia.allowedUnfree`. See
-[omo](omo.md) and [Game dev](gamedev.md).
+pi runs on the local model. Claude Code's license is why harmonia adds
+`claude-code` to `harmonia.allowedUnfree`. See [pi](pi.md) and
+[Game dev](gamedev.md).
 
 **Forgejo CLI.** `fj` for repositories, issues and pull requests on Forgejo
 instances such as Codeberg; `fj auth login` signs in.
@@ -45,7 +45,7 @@ that uv downloads itself can't run on NixOS. The host-side MCP servers use it.
 Everything in [hosts/common.nix](common.md#desktop-and-laptop-hostscommonnix):
 Lutris and Steam, native Blender and Godot, QEMU, and the
 [Nike](nike.md) microVM with its bar badge and firewall modes. The AI agents
-(Claude Code and omo) are harmonia only.
+(Claude Code and pi) are harmonia only.
 
 ## Hardware
 

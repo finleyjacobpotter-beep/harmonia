@@ -21,7 +21,7 @@ pieces.
 | Blender and Godot (native) | ✓ | ✓ | |
 | [Local model server](llama-server.md) (llama.cpp, `ai`) | ✓ | | |
 | Nike microVM | ✓ | ✓ | |
-| Claude Code and omo | ✓ for [game dev](gamedev.md) | | |
+| Claude Code and pi | ✓ for [game dev](gamedev.md) | | |
 | radare2 MCP | ✓ (game dev) | | |
 | OSCP toolset and lab stacks | in Nike | in Nike | ✓ native |
 | Forgejo CLI (`fj`) | ✓ | | |

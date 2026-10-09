@@ -45,7 +45,7 @@ IOMMU in software mode, which amdgpu needs on BIOS versions before 1.13.
 - The AMD GPU fan control (LACT); cadmus uses thinkfan instead.
 - The [local model server](llama-server.md) and the [game dev agents](gamedev.md);
   they are harmonia only. cadmus has no AI agents: no Claude Code, no
-  omo.
+  pi.
 - The Forgejo CLI.
 
 ## Shared with harmonia

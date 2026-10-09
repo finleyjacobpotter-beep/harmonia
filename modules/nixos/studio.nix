@@ -3,7 +3,7 @@
 # work in ~/Projects (created by home/base.nix).
 # Blender's add-ons (home/blender-addons.nix) are copied into
 # ~/.config/blender/harmonia-scripts, and the wrapper below points Blender
-# there. Claude Code and omo, which drive them over MCP, run on
+# there. Claude Code and pi, which drive them over MCP, run on
 # harmonia only (home/gamedev.nix).
 #
 # Plain pkgs.blender: Cycles renders on the CPU, Eevee and the viewport use

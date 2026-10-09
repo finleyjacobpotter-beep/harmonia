@@ -20,7 +20,7 @@ harmonia, cadmus and Dionysus all import [`hosts/base.nix`](../hosts/base.nix).
 - Base CLI tools: git, curl, wget, jq, ripgrep, fd, unzip, htop, and
   `sudo harmonia-cleanup`, which removes what older harmonia versions left
   behind (such as the removed Zelus microVM,
-  [omo.md](omo.md#coming-from-zelus)).
+  [pi.md](pi.md#coming-from-zelus)).
 - Only one unfree package is allowed by default: the Tulasi icon theme
   (`harmonia.allowedUnfree`). A host can add its own to the list.
 

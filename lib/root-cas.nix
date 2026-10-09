@@ -22,7 +22,7 @@ lib.mkIf (certs != [ ]) {
   security.pki.certificateFiles = certs;
 
   # OpenSSL, curl, git, Go and Rust tools read the system bundle already;
-  # Python's requests and Node/Bun (Claude Code, omo) need telling.
+  # Python's requests and Node/Bun (Claude Code, pi) need telling.
   environment.variables = {
     REQUESTS_CA_BUNDLE = bundle;
     NODE_EXTRA_CA_CERTS = bundle;

@@ -29,11 +29,11 @@ changes), `just` (task runner), `ouch` (archives), `choose` (pick fields) and
 `tldr`. `sed` and `curl` keep their names, since `sd` and `xh` take different
 arguments.
 
-The aliases are skipped in shells started by Claude Code or omo
+The aliases are skipped in shells started by Claude Code or pi
 (`CLAUDECODE` or `PI_CODING_AGENT` set), which expect the classic tools. On harmonia
 those agents get three skills that say when to use which Rust tool instead:
 `rust-search` (rg, fd, ast-grep), `rust-edit` (sd, ast-grep rewrites, jaq,
 difft) and `rust-inspect` (tokei, dust, procs, hyperfine, xh, just, ouch).
 They're in [`home/skills/`](../home/skills), installed into
-`~/.claude/skills` by [`home/gamedev.nix`](../home/gamedev.nix); omo
+`~/.claude/skills` by [`home/gamedev.nix`](../home/gamedev.nix); pi
 reads them there too.

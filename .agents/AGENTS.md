@@ -20,4 +20,4 @@ layout; docs/ is the documentation site (mkdocs).
 - Applying a change takes `sudo nixos-rebuild switch --flake .#<host>`;
   leave that to the user.
 - Agent instructions live in `.agents/` (this file); `CLAUDE.md` only
-  points here. Nothing goes in `.omo/`.
+  points here. Nothing goes in `.pi/`.

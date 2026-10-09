@@ -125,11 +125,11 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 
 ## Game dev (harmonia host)
 
-[gamedev.md](gamedev.md), [omo.md](omo.md). The MCP servers and the local model are fetched at runtime, pinned here.
+[gamedev.md](gamedev.md), [pi.md](pi.md). The MCP servers and the local model are fetched at runtime, pinned here.
 
 | Package | Version |
 | --- | --- |
-| omo (oh-my-openagent, native; `pkgs/omo.nix`) | 5.1.29 |
+| pi (`pkgs/pi.nix`) | 1.1.0 |
 | Ornith 1.5 9B (`protoLabsAI/Ornith-1.5-9B-MTP-GGUF`, served as `ai`) | Q4_K_M with the MTP head |
 | llama.cpp server image (`ghcr.io/ggml-org/llama.cpp`) | `server-vulkan-b11515` |
 | r2mcp (radare2 MCP server) | 1.8.8 |
