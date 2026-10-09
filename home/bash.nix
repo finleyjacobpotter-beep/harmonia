@@ -41,7 +41,6 @@ in
     initExtra = import ./bash-prompt.nix {
       inherit palette;
       gitPrompt = "${pkgs.git}/share/bash-completion/completions/git-prompt.sh";
-      gpg = if config.programs.gpg.enable then config.programs.gpg.package else null;
     };
   };
   # vi editing mode for bash (and everything else that uses readline).
