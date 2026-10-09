@@ -102,6 +102,13 @@
           ++ nixpkgs.lib.optional vms microvm.nixosModules.host;
         };
 
+      # Per-architecture outputs (the formatter, the docs) for both systems.
+      forAllSystems =
+        f:
+        nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
+          system: f nixpkgs.legacyPackages.${system}
+        );
+
       # Dionysus: harmonia's Sway desktop with the coding toolset built in
       # natively (opencode, Claude Code and the Rust tools) and no microVMs,
       # so the same config works on aarch64-linux and x86_64-linux.
@@ -130,9 +137,26 @@
         dionysus-aarch64 = mkDionysus "aarch64-linux";
       };
 
-      formatter = {
-        x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt;
-        aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.nixfmt;
-      };
+      formatter = forAllSystems (pkgs: pkgs.nixfmt);
+
+      # The documentation site (mkdocs.yml, docs/): `nix build .#docs` builds
+      # it into ./result, `nix develop .#docs` gives a shell for `mkdocs serve`.
+      packages = forAllSystems (pkgs: {
+        docs = pkgs.runCommand "harmonia-docs" {
+          nativeBuildInputs = [ pkgs.python3Packages.mkdocs-material ];
+          src = nixpkgs.lib.fileset.toSource {
+            root = ./.;
+            fileset = nixpkgs.lib.fileset.unions [
+              ./mkdocs.yml
+              ./docs
+              ./scripts/mkdocs-hooks.py
+            ];
+          };
+        } "cd $src && mkdocs build --strict --site-dir $out";
+      });
+
+      devShells = forAllSystems (pkgs: {
+        docs = pkgs.mkShell { packages = [ pkgs.python3Packages.mkdocs-material ]; };
+      });
     };
 }

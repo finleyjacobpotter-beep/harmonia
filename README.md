@@ -75,7 +75,9 @@ lib/microvm-guest.nix          what every microVM guest shares: network, shares,
 certs/                         your own root CAs: all/ for every machine, harmonia/, nike/ or zelus/ for one (empty by default, see certs/README.md)
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
-docs/                          the rest of the documentation (linked below)
+docs/                          the rest of the documentation (linked below), also built as a site by mkdocs.yml
+mkdocs.yml                     the documentation site: theme, navigation (`nix build .#docs`)
+scripts/mkdocs-hooks.py        points the docs' links to repository files at GitHub
 scripts/install.py             base NixOS install from the minimal ISO (docs/install.md)
 scripts/cleanup-deprecated.py  `sudo harmonia-cleanup`: removes what older harmonia versions left behind (Zen, libvirt VMs, ...)
 ```
