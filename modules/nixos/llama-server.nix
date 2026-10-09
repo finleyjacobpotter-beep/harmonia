@@ -19,9 +19,19 @@ let
   # the image projector (mmproj), kept here between restarts.
   cache = "/var/lib/llama-server";
   unit = "podman-llama-server.service";
+  # The RX 9070's render node, named by udev below: the container sees only
+  # this GPU, never the RX 5600 XT, whatever order the kernel finds them in.
+  gpu = "/dev/dri/llm-gpu";
 in
 {
   systemd.tmpfiles.rules = [ "d ${cache} 0755 root root -" ];
+
+  # PCI device 0x7550 is Navi 48: the RX 9070 (and 9070 XT). The 5600 XT is
+  # Navi 10 (0x731f) and gets no link. With another card, change the ID
+  # (`cat /sys/class/drm/renderD*/device/device`).
+  services.udev.extraRules = ''
+    SUBSYSTEM=="drm", KERNEL=="renderD*", ATTRS{vendor}=="0x1002", ATTRS{device}=="0x7550", SYMLINK+="dri/llm-gpu"
+  '';
 
   virtualisation.oci-containers = {
     backend = "podman";
@@ -33,7 +43,7 @@ in
       ports = [ "127.0.0.1:${toString port}:8080" ];
       volumes = [ "${cache}:/models" ];
       environment.LLAMA_CACHE = "/models";
-      extraOptions = [ "--device=/dev/dri" ];
+      extraOptions = [ "--device=${gpu}:/dev/dri/renderD128" ];
       cmd = [
         # Fetches the GGUF and its mmproj from Hugging Face into
         # LLAMA_CACHE, or uses the copies already there.
@@ -52,8 +62,7 @@ in
         "999"
         "--fit"
         "off"
-        # One GPU (Vulkan device 0, or --main-gpu N): splitting onto a
-        # second, slower card only slows it down.
+        # One GPU: the container only has the 9070 (above).
         "--split-mode"
         "none"
         # Multi-token prediction: the model's own MTP head drafts up to 3

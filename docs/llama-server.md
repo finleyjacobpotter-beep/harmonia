@@ -40,9 +40,12 @@ set `autoStart = true;` in the module and rebuild.
 
 ## Tuning
 
-- **GPU**: `--split-mode none` keeps the whole model on one GPU, Vulkan
-  device 0. The log lists the devices at start (`ggml_vulkan: 0 = …`); if
-  device 0 isn't the RX 9070, add `--main-gpu` with its number to `cmd`.
+- **GPU**: the container gets only the RX 9070's render node, so the model
+  never touches the RX 5600 XT. A udev rule links the card with PCI ID
+  `0x7550` (Navi 48, the 9070) to `/dev/dri/llm-gpu`; if that link is
+  missing, the server won't start. The log names the GPU at start
+  (`ggml_vulkan: 0 = …`). For another card, change the ID in the module
+  (`cat /sys/class/drm/renderD*/device/device`).
 - **Memory**: if the 262144 context doesn't fit in VRAM, add
   `--cache-type-k q8_0 --cache-type-v q8_0` first, then lower `--ctx-size`
   and change `contextLength` in `home/gamedev.nix` to match. Without images,
