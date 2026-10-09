@@ -4,7 +4,7 @@
 # natively, so the whole thing builds on aarch64 and x86_64 alike. Steam,
 # Blender and Godot are not on Dionysus, the AI coding agents (Claude Code,
 # opencode) have been removed, and the other architecture-specific and
-# flatpak-only modules harmonia uses (gaming, LM Studio, the Nike microVM
+# flatpak-only modules harmonia uses (gaming, the Nike microVM
 # itself) are left out too.
 {
   pkgs,

@@ -13,11 +13,10 @@
 # utilization numbers to /var/lib/zelus/status for the bar
 # (home/eww/microvm.py).
 #
-# LM Studio (on the host, modules/nixos/lmstudio.nix) is reachable from Zelus
-# at 10.20.1.1:1234, for opencode's local model: the host redirects that to a
-# socket on the tap's address (port 11234), which passes connections on to
-# LM Studio's localhost:1234. The socket can't sit on 1234 itself: LM Studio's
-# "serve on local network" binds 0.0.0.0:1234, which would then fail.
+# The host's local model server (harmonia's llama.cpp server, "ai",
+# modules/nixos/llama-server.nix) is reachable from Zelus at 10.20.1.1:1234,
+# for opencode's local model: a socket on the tap's address passes
+# connections on to the server's localhost:1235.
 #
 # Blender and Godot run on the host (modules/nixos/studio.nix);
 # Claude Code and opencode on Zelus reach them through two sockets on the
@@ -42,8 +41,8 @@
 }:
 let
   inherit (config.harmonia.microvms.zelus) vm;
-  # Where the proxy below listens; Zelus's 10.20.1.1:1234 is redirected here.
-  proxyPort = 11234;
+  # The host's llama.cpp server (modules/nixos/llama-server.nix).
+  aiServerPort = 1235;
 
   mcp = import ../../home/mcp-servers.nix { inherit pkgs; };
   # godot-ai's defaults, which the editor plugin expects.
@@ -68,7 +67,7 @@ in
     panel.footer = "ssh zelus (c, no password) · claude, opencode · ~/zelus-share is ~/share, ~/Projects is shared";
     extra = {
       projectsDir = "/home/${username}/Projects";
-      lmstudioPort = 1234;
+      aiPort = 1234;
       blenderPort = 19876;
       godotPort = 19500;
     };
@@ -87,10 +86,9 @@ in
         name = "local";
         label = "Local inference";
         short = "local";
-        description = "Only the host's LM Studio, Blender and Godot; no internet";
+        description = "Only the host's local model, Blender and Godot; no internet";
         forwardPolicy = "drop";
-        # After the redirect (below), so the proxy's port.
-        input = [ "tcp dport ${toString proxyPort} accept" ];
+        input = [ "tcp dport ${toString vm.aiPort} accept" ];
         inputPolicy = "drop";
       }
     ];
@@ -98,34 +96,27 @@ in
 
   systemd.tmpfiles.rules = [ "d ${vm.projectsDir} 0755 ${username} users -" ];
 
-  # LM Studio for Zelus: listens on the host's end of the tap (FreeBind, so
-  # it can start before Zelus brings the tap up) and hands each connection to
-  # LM Studio's local server, whether that serves on localhost only or on the
-  # local network. The firewall modes decide whether Zelus may use it.
-  systemd.sockets.lmstudio-zelus = {
-    description = "LM Studio for Zelus";
+  # The local model for Zelus: listens on the host's end of the tap
+  # (FreeBind, so it can start before Zelus brings the tap up) and hands each
+  # connection to the llama.cpp server on localhost. The firewall modes decide
+  # whether Zelus may use it.
+  systemd.sockets.ai-zelus = {
+    description = "Local model server for Zelus";
     wantedBy = [ "sockets.target" ];
-    listenStreams = [ "${vm.hostAddress}:${toString proxyPort}" ];
+    listenStreams = [ "${vm.hostAddress}:${toString vm.aiPort}" ];
     socketConfig.FreeBind = true;
   };
-  systemd.services.lmstudio-zelus = {
-    description = "LM Studio for Zelus (proxy to localhost:${toString vm.lmstudioPort})";
-    requires = [ "lmstudio-zelus.socket" ];
+  systemd.services.ai-zelus = {
+    description = "Local model server for Zelus (proxy to localhost:${toString aiServerPort})";
+    requires = [ "ai-zelus.socket" ];
     serviceConfig = {
-      ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd 127.0.0.1:${toString vm.lmstudioPort}";
+      ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd 127.0.0.1:${toString aiServerPort}";
       DynamicUser = true;
       PrivateTmp = true;
     };
   };
-  # Zelus keeps using 10.20.1.1:1234. The redirect happens before the host's
-  # firewall (and the VM's firewall mode) sees the connection, so both filter
-  # on the proxy's port.
-  networking.nat.extraCommands = ''
-    iptables -w -t nat -A nixos-nat-pre -i ${vm.tap} -d ${vm.hostAddress} -p tcp \
-      --dport ${toString vm.lmstudioPort} -j REDIRECT --to-ports ${toString proxyPort}
-  '';
   networking.firewall.interfaces.${vm.tap}.allowedTCPPorts = [
-    proxyPort
+    vm.aiPort
     vm.blenderPort
     vm.godotPort
   ];

@@ -43,12 +43,15 @@ IOMMU in software mode, which amdgpu needs on BIOS versions before 1.13.
 ## Not on cadmus
 
 - The AMD GPU fan control (LACT); cadmus uses thinkfan instead.
-- The [game dev agents](gamedev.md); they are harmonia only.
+- The [local model server](llama-server.md) and the [game dev agents](gamedev.md);
+  they are harmonia only. Zelus's opencode on cadmus has no local model to
+  reach, so use its Claude provider there.
+- The Forgejo CLI.
 
 ## Shared with harmonia
 
 Everything in [hosts/common.nix](common.md#desktop-and-laptop-hostscommonnix):
-Lutris and Steam, LM Studio, Blender and Godot in Flatpak, QEMU, and the
+Lutris and Steam, native Blender and Godot, QEMU, and the
 [Nike](nike.md) and [Zelus](zelus.md) microVMs. The bar adds a battery module
 when there is a battery to show.
 

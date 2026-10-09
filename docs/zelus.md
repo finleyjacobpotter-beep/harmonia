@@ -85,13 +85,13 @@ ast-grep), `rust-edit` (sd, ast-grep rewrites, jaq, difft) and
 [`zelus/skills/`](../zelus/skills) and installed in `~/.claude/skills`, which
 opencode reads too.
 
-## LM Studio
+## The local model
 
-LM Studio runs on the host ([lmstudio.md](lmstudio.md)), and Zelus reaches its
-server at `10.20.1.1:1234`: a socket on the host's end of Zelus's tap
-(`lmstudio-zelus.socket`) passes each connection on to LM Studio's
-`localhost:1234`. opencode's `lmstudio` provider points there. Start the
-server in LM Studio's *Developer* tab first.
+The local model server runs on the host ([llama-server.md](llama-server.md),
+harmonia only), and Zelus reaches it at `10.20.1.1:1234`: a socket on the
+host's end of Zelus's tap (`ai-zelus.socket`) passes each connection on to
+the server's `localhost:1235`. opencode's `local` provider points there.
+Start the server from the host's bar first.
 
 ## Firewall modes
 
@@ -104,7 +104,7 @@ sudo vm-firewall set zelus local   # permissive | lockdown | local
 vm-firewall                        # every VM's current mode
 ```
 
-| Mode | Internet | Host's LM Studio |
+| Mode | Internet | Host's local model |
 | --- | --- | --- |
 | Permissive (default) | yes | yes |
 | Lockdown | no | no |

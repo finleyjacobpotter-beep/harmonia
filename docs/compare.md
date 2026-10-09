@@ -18,16 +18,20 @@ pieces.
 | Firefox, Element (Flatpak) | ✓ | ✓ | ✓ |
 | Podman, VPNs, secrets tools | ✓ | ✓ | ✓ |
 | Lutris and Steam | ✓ | ✓ | |
-| LM Studio | ✓ | ✓ | |
-| Blender and Godot (Flatpak) | ✓ | ✓ | |
+| Blender and Godot (native) | ✓ | ✓ | |
+| [Local model server](llama-server.md) (llama.cpp, `ai`) | ✓ | | |
 | Nike and Zelus microVMs | ✓ | ✓ | |
-| Claude Code and opencode | ✓ native, for [game dev](gamedev.md); also in Zelus | in Zelus | ✓ native |
+| Claude Code and opencode | ✓ native, for [game dev](gamedev.md); also in Zelus | in Zelus | |
+| radare2 MCP | ✓ (game dev) | | |
+| OSCP toolset and lab stacks | in Nike | in Nike | ✓ native |
+| Forgejo CLI (`fj`) | ✓ | | |
 | Rust CLI tools | ✓ | ✓ | ✓ |
+| Git identity set | | | `Dionysus` |
 | Fan control | LACT (AMD GPU) | thinkfan | |
 | Wi-Fi firmware, lid, power profiles | | ✓ | |
 | fwupd | | ✓ | |
 | Guest tools (SPICE, VirtualBox) | | | ✓ |
-| Extra unfree packages | `claude-code` | | `claude-code` |
+| Extra unfree packages | `claude-code` | | |
 
 ## MicroVMs
 

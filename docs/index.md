@@ -6,8 +6,9 @@ one icon theme, shared by every program on the desktop.*
 harmonia is a [NixOS flake](https://nixos.wiki/wiki/Flakes) with
 [home-manager](https://github.com/nix-community/home-manager) that builds a
 whole Wayland desktop: **Sway**, an **eww** bar, **alacritty**, **tmux**,
-**bash**, **ranger** and **neovim**, with sandboxed Flatpak apps and microVMs
-for risky or agent-driven work. Everything is themed with the
+**bash**, **ranger** and **neovim**, with sandboxed Flatpak apps, native
+Blender and Godot, a local model server and microVMs for risky or
+agent-driven work. Everything is themed with the
 [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, the **DepartureMono Nerd Font** and the pixel-art
 [Tulasi](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -21,20 +22,13 @@ configuration and differ only where the hardware or the job demands it.
 | --- | --- | --- | --- |
 | [harmonia](harmonia.md) | The desktop (AMD GPU) | `.#harmonia` | `u` |
 | [cadmus](cadmus.md) | The laptop, a Lenovo ThinkPad E14 Gen 2 | `.#cadmus` | `u` |
-| [Dionysus](dionysus.md) | The same desktop for a VM, dev tools native, no microVMs, x86_64 and aarch64 | `.#dionysus`, `.#dionysus-aarch64` | `d` |
+| [Dionysus](dionysus.md) | The same desktop for a VM, Nike's OSCP toolset native, no microVMs, x86_64 and aarch64 | `.#dionysus`, `.#dionysus-aarch64` | `d` |
 | [Nike](nike.md) | MicroVM on harmonia and cadmus for VPN work and OSCP practice | built with the host | `k` |
 | [Zelus](zelus.md) | MicroVM on harmonia and cadmus for coding agents (Claude Code, opencode) | built with the host | `c` |
 
 [What every environment shares](common.md) covers the common base; each
 environment's page covers only what is unique to it.
 [Comparing environments](compare.md) puts them side by side.
-
-!!! note "In flight"
-    These pages describe `main`. Open pull requests will change some details
-    when they merge: Blender and Godot moving from Flathub to nixpkgs,
-    KeePassXC and Bitwarden replacing gpg-agent and pass, a llama.cpp model
-    server on harmonia, Nike's OSCP toolset on Dionysus, and two servers
-    (proteus and atlas) deployed with nixos-anywhere.
 
 ## How it is put together
 
@@ -43,11 +37,11 @@ Configuration is layered, so each machine imports only what it needs:
 ```
 hosts/base.nix         every host: boot, network, user, locale, nix settings,
                        Sway desktop, fonts, Firefox, Element, podman, secrets, VPNs
- └ hosts/common.nix    harmonia + cadmus: gaming, Steam, LM Studio, Blender/Godot,
+ └ hosts/common.nix    harmonia + cadmus: Lutris, Steam, Blender, Godot,
                        QEMU and the Nike and Zelus microVMs
-    ├ hosts/harmonia   the desktop: GPU fan control, game dev agents
+    ├ hosts/harmonia   the desktop: GPU fan control, local model, game dev agents
     └ hosts/cadmus     the laptop: Wi-Fi, lid, power profiles, ThinkPad fans
- └ hosts/dionysus      a VM: guest tools, native dev tools, both architectures
+ └ hosts/dionysus      a VM: guest tools, Nike's OSCP toolset, both architectures
 
 lib/microvm-guest.nix  every microVM: network, shares, volumes, user, ssh, shell configs
  ├ nike/               OSCP toolset and lab containers

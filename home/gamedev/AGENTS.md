@@ -7,12 +7,15 @@ share, so every file they open or write must live under it.
 
 ## Who does what
 
-Claude is used for two things only: the planner (Prometheus, with Metis and
-Momus checking) writes the design docs and an ultrawork plan, and the
-finisher reviews, simplifies and completes the work before the developer
-sees it. Everything in between runs on the local model (Ornith 1.5 9B in
-LM Studio), up to four agents at once. If you're the local model, the plan
-is all the guidance you get: follow it exactly.
+The planner (Prometheus, with Metis and Momus checking) writes the design
+docs and an ultrawork plan, and the finisher reviews, simplifies and
+completes the work before the developer sees it. Everything in between runs
+on the local model, Ornith 1.5 9B (served as `ai` on this machine), up to
+four agents at once; in opencode the planner and finisher do too. The plan
+is all the guidance the workers get: follow it exactly.
+
+Besides Godot and Blender, the `radare2` MCP server analyses binaries
+(open a file with an absolute path first).
 
 ## The design docs are the source of truth
 

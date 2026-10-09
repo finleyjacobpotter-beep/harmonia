@@ -11,7 +11,8 @@ the button again closes it too. Panels open on the primary display.
 |---|---|
 |  logo (top left) | opens the session panel: **Lock** (swaylock), **Log out** (exits sway) and **Power off**. `Super+Shift+e` has the same actions from the keyboard, plus suspend and reboot |
 | **CAPS** / **NUM** | shown while Caps Lock or Num Lock is on |
-| GameMode, Steam, LM Studio | shown while running; Steam and LM Studio open a panel with **Close** ([lmstudio.md](lmstudio.md)) |
+| GameMode, Steam | shown while running; Steam opens a panel with **Close** |
+| 󰚩 local model | harmonia only: grey while stopped, yellow while it starts or loads, pink while it serves `ai`; opens a panel with **Start** or **Stop** ([llama-server.md](llama-server.md)) |
 | Nike, Zelus | always shown: running or not, and the firewall mode; each opens its VM panel (below) |
 | 󰍹 **2** | how many displays there are; opens the display settings window (below) |
 | CPU, memory | |

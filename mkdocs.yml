@@ -69,7 +69,7 @@ nav:
       - Firefox: firefox.md
       - Element: element.md
       - Gaming: gaming.md
-      - LM Studio: lmstudio.md
+      - The local model: llama-server.md
       - Blender: blender.md
       - Game dev: gamedev.md
       - opencode: opencode.md

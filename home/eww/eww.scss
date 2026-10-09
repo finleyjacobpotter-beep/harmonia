@@ -48,9 +48,10 @@
   &.clock .icon { color: $pink; }
   &.gamemode .icon { color: $green; }
   &.steam .icon { color: $blue; }
-  &.steam, &.lmstudio, &.vm { &:hover { background-color: $surface; } }
-  &.lmstudio .icon { color: $muted; }
-  &.lmstudio.serving .icon { color: $pink; }
+  &.steam, &.ai, &.vm { &:hover { background-color: $surface; } }
+  &.ai .icon { color: $muted; }
+  &.ai.loading .icon { color: $yellow; }
+  &.ai.ready .icon { color: $pink; }
   &.vm .icon { color: $muted; }
   // Firewall modes: open is the plain one, lockdown red, the
   // restricted ones (OSCP, Hack The Box, local inference) purple.

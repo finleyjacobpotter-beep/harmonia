@@ -29,7 +29,7 @@ harmonia, cadmus and Dionysus all import [`hosts/base.nix`](../hosts/base.nix).
 | --- | --- |
 | `desktop.nix` | Sway, greetd/tuigreet login, PipeWire audio, portals, Bluetooth, console colours |
 | `fonts.nix` | DepartureMono Nerd Font as the system default |
-| `flatpak.nix` | Flathub, the `harmonia.apps` list (each app's sandbox and Super+o key), [Firefox](firefox.md) in a tightened sandbox |
+| `flatpak.nix` | Flathub, the `harmonia.apps` list (each app's sandbox and Super+o key), `harmonia.launchers` (Super+o keys for native programs), [Firefox](firefox.md) in a tightened sandbox |
 | `element.nix` | [Element](element.md) (Matrix) from Flathub in a locked-down sandbox |
 | `podman.nix` | Rootless podman, podman-compose and buildah |
 | `git-lfs.nix` | Git with LFS |
@@ -51,8 +51,9 @@ file per program:
 - **Apps**: Firefox's add-ons and theme, Element's theme, Calibre, and
   `flatpak-miami-wind`, which copies themes and configs into the Flatpak
   sandboxes.
-- **Secrets**: gpg and gpg-agent, pass, ykman, the Bitwarden and OpenBao CLIs,
-  and `secrets-backup` ([Secrets](secrets.md)).
+- **Secrets**: KeePassXC (`keepassxc-cli` and the app), the Bitwarden CLI
+  with `bw-unlock`, OpenSSH's ssh-agent, gpg, ykman, the OpenBao CLI and
+  `secrets-backup` ([Secrets](secrets.md)).
 - The XDG user directories and `~/Projects`, and a `rebuild` alias for
   `sudo nixos-rebuild switch --flake ~/harmonia`.
 
@@ -73,8 +74,7 @@ harmonia and cadmus also import [`hosts/common.nix`](../hosts/common.nix) and
 | Piece | What it adds |
 | --- | --- |
 | `gaming.nix`, `steam.nix` | [Lutris and Steam](gaming.md) from Flathub in jails sharing only `~/Games`, controller rules, GameMode |
-| `lmstudio.nix` | [LM Studio](lmstudio.md) from Flathub with GPU inference |
-| `studio.nix` | Blender and Godot from Flathub, sharing only `~/Projects` |
+| `studio.nix` | Blender and Godot from nixpkgs, opened with Super+o Shift+b and Super+o d, working in `~/Projects` |
 | `virtualisation.nix` | Plain QEMU (no libvirt) and `/dev/kvm` access |
 | `microvms.nix`, `vm-firewall.nix` | The `harmonia.microvms` option and per-VM firewall modes switched from the bar |
 | `nike.nix`, `zelus.nix` | The [Nike](nike.md) and [Zelus](zelus.md) microVMs |
