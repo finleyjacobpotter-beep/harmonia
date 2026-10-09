@@ -71,12 +71,25 @@ in
         "draft-mtp"
         "--spec-draft-n-max"
         "3"
-        # Ornith's native context, shared by 4 parallel requests (65536
-        # each), for opencode's agents (home/gamedev.nix).
+        # 4 requests at once, each with half of Ornith's native 262144
+        # context: 131072 apiece, 524288 in all (opencode's agents,
+        # home/gamedev.nix).
         "--ctx-size"
-        "262144"
+        "524288"
         "--parallel"
         "4"
+        # What makes that fit in the 9070's 16 GiB: only 8 of Ornith's 32
+        # layers (plus the MTP head's one) keep a KV cache, 4 KV heads of
+        # 256, and the cache is quantised to 4 bits (flash attention needs
+        # to be on for that). ~5 GiB of cache + ~5.4 GiB of weights + ~1 GiB
+        # mmproj + compute buffers is ~12.5 GiB; q8_0 for K instead would be
+        # ~15 GiB, too close to 16 with the desktop on the same card.
+        "--flash-attn"
+        "on"
+        "--cache-type-k"
+        "q4_0"
+        "--cache-type-v"
+        "q4_0"
         # The model's own chat template, for tool calls.
         "--jinja"
         # Ornith's recommended sampling for coding (its model card).

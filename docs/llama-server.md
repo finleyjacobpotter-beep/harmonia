@@ -14,7 +14,8 @@ through Vulkan. It's an OpenAI-compatible API, and the image projector
 | --- | --- |
 | API | `http://127.0.0.1:1235/v1` (Zelus: `http://10.20.1.1:1234/v1`) |
 | Model name | `ai` |
-| Context | 262144 tokens, 4 requests at once (65536 each) |
+| Context | 4 requests at once, 131072 tokens each (half of Ornith's 262144); 524288 in all |
+| KV cache | 4-bit (`q4_0` for K and V), flash attention on |
 | Speculative decoding | MTP (`--spec-type draft-mtp`), up to 3 drafted tokens |
 | Image | `ghcr.io/ggml-org/llama.cpp:server-vulkan-b11515` |
 | Model files | `/var/lib/llama-server` |
@@ -46,10 +47,15 @@ set `autoStart = true;` in the module and rebuild.
   missing, the server won't start. The log names the GPU at start
   (`ggml_vulkan: 0 = …`). For another card, change the ID in the module
   (`cat /sys/class/drm/renderD*/device/device`).
-- **Memory**: if the 262144 context doesn't fit in VRAM, add
-  `--cache-type-k q8_0 --cache-type-v q8_0` first, then lower `--ctx-size`
-  and change `contextLength` in `home/gamedev.nix` to match. Without images,
-  `--no-mmproj` saves ~1 GB.
+- **Memory**: 4 × 131072 tokens fit in the 9070's 16 GiB because only 8 of
+  Ornith's 32 layers (plus the MTP head's one) keep a KV cache (4 KV heads
+  × 256), about 10 KiB per token at 4 bits: ~5 GiB of cache, plus ~5.4 GiB
+  of weights, ~1 GiB of mmproj and the compute buffers, ~12.5 GiB in all.
+  At f16 the cache alone would be ~18 GiB, at q8_0 ~9.6 GiB (~17 GiB in
+  all). With room to spare (check `rocm-smi` or the bar's VRAM), try
+  `--cache-type-k q8_0` (~15 GiB). Without images, `--no-mmproj` saves
+  ~1 GiB. If you change `--ctx-size` or `--parallel`, change `slotContext`
+  and `parallel` in `home/gamedev.nix` to match.
 - **MTP**: `--spec-draft-n-max` is how many tokens the head drafts; the
   model card measured Q4_K_M's gain as small on prose and larger on code.
   Drop the two `--spec-*` arguments to turn it off.

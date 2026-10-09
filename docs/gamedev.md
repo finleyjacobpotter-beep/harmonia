@@ -21,7 +21,7 @@ ones in [Zelus](opencode.md).
 1. **The model**: click the robot icon on the bar, then **Start**. The first
    start downloads the image and the model (~6 GB); it's ready when the icon
    turns pink. See [llama-server.md](llama-server.md) if it doesn't fit in
-   VRAM; change `contextLength` and `parallel` in `home/gamedev.nix` to
+   VRAM; change `slotContext` and `parallel` in `home/gamedev.nix` to
    match whatever you settle on.
 2. **Blender and Godot**: open them. The Blender MCP add-on is already
    enabled; in each Godot project install and enable the Godot AI 4.3.0

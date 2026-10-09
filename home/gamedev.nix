@@ -10,11 +10,11 @@
 let
   mcp = (import ./mcp-servers.nix { inherit pkgs; }).host;
 
-  # The server's context length (Ornith's native maximum) and how many
-  # requests it serves at once; change them here and in llama-server.nix
-  # together.
-  contextLength = 262144;
+  # How many requests the server serves at once and the context each one
+  # gets (half of Ornith's native 262144); change them here and in
+  # llama-server.nix together.
   parallel = 4;
+  slotContext = 131072;
 
   local = "local/ai";
 
@@ -165,7 +165,7 @@ let
               # The server splits its context between the parallel
               # requests, so each agent gets its share and compacts before
               # it runs out.
-              context = contextLength / parallel;
+              context = slotContext;
               output = 32768;
             };
           };
