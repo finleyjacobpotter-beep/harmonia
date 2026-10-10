@@ -1,7 +1,7 @@
 # Theming and add-ons for the flatpak'd Firefox (installed in
-# modules/nixos/flatpak.nix): vertical tabs, uBlock Origin, Vimium, and Miami
-# Wind on the browser, its about: pages and Vimium's link hints, HUD and
-# Vomnibar.
+# modules/nixos/flatpak.nix): vertical tabs, uBlock Origin, Vimium, Bitwarden,
+# and Miami Wind on the browser, its about: pages and Vimium's link hints, HUD
+# and Vomnibar.
 #
 # The sandbox can't follow symlinks into /nix/store, so everything here is
 # *copied* (home/flatpak-files.nix) into the app's own data dir
@@ -199,8 +199,7 @@ let
     user_pref("sidebar.verticalTabs", true);
     user_pref("sidebar.visibility", "always-show");
 
-    // Keyboard: enable the side-loaded uBlock Origin and Vimium without a
-    // prompt, and keep Firefox features that eat bare keys out of Vimium's way.
+    // Keyboard: enable the side-loaded add-ons without a prompt, and keep Firefox features that eat bare keys out of Vimium's way.
     user_pref("extensions.autoDisableScopes", 0);
     user_pref("extensions.enabledScopes", 15);
     user_pref("accessibility.typeaheadfind", false);
@@ -229,6 +228,15 @@ let
       xpi = pkgs.fetchurl {
         url = "https://addons.mozilla.org/firefox/downloads/file/4717567/vimium_ff-2.4.2.xpi";
         sha256 = "131e2a67580e7ae9125ab19781159e61409fac47b441fc2782aab76396ead196";
+      };
+    };
+    # Bitwarden: the browser side of the cloud vault the `bw` CLI also reads
+    # (home/secrets.nix); sign in once per profile.
+    bitwarden = {
+      id = "{446900e4-71c2-419f-a6a7-df9c091e268b}";
+      xpi = pkgs.fetchurl {
+        url = "https://addons.mozilla.org/firefox/downloads/file/5076543/bitwarden_password_manager-2026.9.3.xpi";
+        sha256 = "5dd6efa5d228dbeac7a0c6a883f951787dc66e57985322ce549210b0df8d054c";
       };
     };
   };

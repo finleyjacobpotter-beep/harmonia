@@ -11,6 +11,8 @@ Local secrets tooling lives in `home/secrets.nix` (user side) and
 | GnuPG | `gpg` | for the YubiKey and the backup; no gpg-agent setup, so it backs neither passwords nor SSH |
 | YubiKey Manager | `ykman` | talks to the key through pcscd; gpg's scdaemon does too (`disable-ccid`) |
 | OpenBao CLI | `bao` | set `BAO_ADDR` to your server, then `bao login` |
+| age | `age`, `age-keygen` | the key sops encrypts to, at `~/.config/sops/age/keys.txt` |
+| sops | `sops` | edits files kept encrypted in a repository |
 
 ## KeePassXC and Bitwarden together
 
@@ -19,7 +21,8 @@ The two are split by where a secret needs to be:
 - **Bitwarden (`bw`) is the everyday vault.** Anything you also want on your
   phone or another machine, and anything a background job needs (the
   calendar sync reads its CalDAV password from here), because `bw` can stay
-  unlocked for the session.
+  unlocked for the session. Firefox has the Bitwarden add-on for the same
+  vault ([firefox.md](firefox.md)).
 - **KeePassXC (`keepassxc-cli`) is the local, offline database.** Secrets that
   should never sit on someone else's server: recovery codes, the Bitwarden
   master password and 2FA recovery code, disk and backup passphrases, keys
@@ -52,6 +55,35 @@ out. `SSH_AUTH_SOCK` is set by home-manager for bash. A key on the YubiKey
 works through ssh's FIDO2 support (`ssh-keygen -t ed25519-sk`), with no agent
 in between.
 
+## sops with age
+
+sops encrypts the values in a YAML, JSON or `.env` file so it can be
+committed; age keys say who can open it. Make a key once per machine (on
+harmonia, cadmus and Dionysus alike) and list its public half in the
+repository's `.sops.yaml`:
+
+```sh
+mkdir -p ~/.config/sops/age
+age-keygen -o ~/.config/sops/age/keys.txt    # prints the public key, age1...
+age-keygen -y ~/.config/sops/age/keys.txt    # prints it again later
+```
+
+```yaml
+# .sops.yaml
+creation_rules:
+  - path_regex: secrets/.*
+    age: age1harmonia...,age1cadmus...,age1dionysus...
+```
+
+```sh
+sops secrets/app.yaml                        # opens decrypted in $EDITOR, saves encrypted
+sops updatekeys secrets/app.yaml             # after adding a key to .sops.yaml
+```
+
+sops finds `keys.txt` there by default (or at `$SOPS_AGE_KEY_FILE`).
+`secrets-backup` includes it; another machine's key listed in `.sops.yaml`
+can also still open the files.
+
 ## First run
 
 ```sh
@@ -72,6 +104,7 @@ skips, with a warning, anything missing, locked or logged out:
 | --- | --- | --- |
 | `keepassxc/` | `$KEEPASSXC_DB` and every other `.kdbx` (and key file) next to it, as is (already encrypted) | a database there |
 | `ssh/` | all of `~/.ssh`: keys, `config`, `known_hosts` (passphrase-protected keys stay protected) | a `~/.ssh` |
+| `sops/keys.txt` | the age key sops decrypts with (`$SOPS_AGE_KEY_FILE` or `~/.config/sops/age/keys.txt`) | a key there |
 | `pass/` | a pass store left from before, with its git history, if one is still there | `~/.local/share/password-store` or `~/.password-store` |
 | `bitwarden.json` | `bw export --format json` (asks for the master password again) | `bw status` is `unlocked` |
 | `gpg/` | public and secret keys, and the ownertrust | a secret key in the keyring |
@@ -83,7 +116,7 @@ caches it. The secret keys
 inside keep their own key passphrase on top of that. Pick a strong backup
 passphrase you can remember without this machine.
 
-Plaintext (the Bitwarden export, unprotected SSH keys) only exists in a private `mktemp -d`
+Plaintext (the Bitwarden export, unprotected SSH keys, the age key) only exists in a private `mktemp -d`
 directory that is deleted when the function exits or is interrupted; the tar
 stream goes straight into gpg, so no unencrypted archive is written.
 
@@ -97,6 +130,7 @@ d=$(mktemp -d) && gpg --pinentry-mode loopback -d secrets-backup-<time>.tar.gz.g
 gpg --pinentry-mode loopback --import gpg/secret-keys.asc && gpg --import-ownertrust gpg/ownertrust.txt
 mkdir -p "$(dirname "$KEEPASSXC_DB")" && cp keepassxc/* "$(dirname "$KEEPASSXC_DB")"/
 mkdir -p ~/.ssh && cp -a ssh/. ~/.ssh/ && chmod 700 ~/.ssh
+[ -f sops/keys.txt ] && install -Dm600 sops/keys.txt ~/.config/sops/age/keys.txt
 [ -d pass ] && cp -a pass ~/.local/share/password-store   # only if the backup had one
 bw import bitwardenjson bitwarden.json   # then delete the plaintext: rm -rf "$d"
 ```

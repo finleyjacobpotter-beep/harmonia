@@ -45,7 +45,7 @@ home/                          home-manager, one file per program
   open-mode.nix                Super+o's keys, for sway and the bar's hint
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
-  secrets.nix                  keepassxc-cli, bw, ssh-agent, gpg, ykman, bao
+  secrets.nix                  keepassxc-cli, bw, ssh-agent, gpg, ykman, bao, age, sops
   secrets-backup.py            the `secrets-backup` command
   flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes

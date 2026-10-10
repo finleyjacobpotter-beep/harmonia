@@ -24,10 +24,12 @@ Open it with `Super+o b`, or `firefox` in a shell.
   with its default filter lists.
 - **[Vimium](https://github.com/philc/vimium)** (keys in
   [keyboard.md](keyboard.md#firefox-vimium)).
+- **[Bitwarden](https://bitwarden.com/)** for the cloud vault, the same one
+  the `bw` CLI reads ([secrets.md](secrets.md)); sign in once per profile.
 - **Miami Wind** on the toolbar, tab strip, menus and `about:` pages, and on
   Vimium's link hints, find bar (HUD) and Vomnibar.
 
-Both add-ons are pinned (`docs/versions.md`) and side-loaded, so they are
+The add-ons are pinned (`docs/versions.md`) and side-loaded, so they are
 enabled without a prompt and update only when the pin is bumped.
 
 All of it is copied into each Firefox profile as `userChrome.css`,

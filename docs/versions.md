@@ -147,6 +147,8 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | pcsc-lite | 2.4.1 |
 | Bitwarden CLI (`bw`) | 2026.9.0 |
 | OpenBao (`bao`) | 2.7.0 |
+| age (`age`, `age-keygen`) | 1.3.2 |
+| sops | 3.13.3 |
 
 ## Firefox
 
@@ -155,6 +157,7 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | Firefox (Flathub `org.mozilla.firefox`) | follows Flathub until `firefoxCommit` is set in `modules/nixos/flatpak.nix` |
 | uBlock Origin add-on | 1.75.0 |
 | Vimium add-on | 2.4.2 |
+| Bitwarden add-on | 2026.9.3 |
 
 ## Lutris and Element
 

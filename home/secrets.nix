@@ -1,9 +1,10 @@
 # Local secrets: KeePassXC (keepassxc-cli) for the local database, the
 # Bitwarden CLI for the cloud vault, plain OpenSSH ssh-agent for SSH keys, gpg
-# (no agent setup of its own), ykman and the OpenBao CLI, plus the
+# (no agent setup of its own), ykman, the OpenBao CLI, and age and sops for
+# secrets kept encrypted in a repository, plus the
 # `secrets-backup` command (home/secrets-backup.py), which bundles the
-# KeePassXC database(s), a Bitwarden export, ~/.ssh, gpg keys and any old pass
-# store into one passphrase-encrypted tarball. See docs/secrets.md.
+# KeePassXC database(s), a Bitwarden export, ~/.ssh, gpg keys, the sops age key
+# and any old pass store into one passphrase-encrypted tarball. See docs/secrets.md.
 {
   pkgs,
   lib,
@@ -19,6 +20,10 @@ in
     bitwarden-cli # bw
     yubikey-manager # ykman
     openbao # bao
+    # age-keygen makes the key sops reads from ~/.config/sops/age/keys.txt,
+    # its default on Linux, so neither needs more setup here.
+    age # age, age-keygen
+    sops
     (pyScript "secrets-backup" {
       runtimeInputs = [
         gnupg

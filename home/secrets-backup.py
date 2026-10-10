@@ -1,8 +1,8 @@
 """secrets-backup [DIR]  (packaged as a command by home/secrets.nix)
 
 Bundle every secret into one file: the KeePassXC database(s), a Bitwarden
-export, ~/.ssh, your gpg keys (secret keys included) and any pass store left
-from before, into DIR/secrets-backup-<UTC timestamp>.tar.gz.gpg (DIR defaults
+export, ~/.ssh, your gpg keys (secret keys included), the age key sops
+decrypts with and any pass store left from before, into DIR/secrets-backup-<UTC timestamp>.tar.gz.gpg (DIR defaults
 to $HOME), encrypted with a passphrase (AES-256) rather than a gpg key, so
 the backup can still be opened after the keys themselves are lost.
 
@@ -107,6 +107,26 @@ def copy_ssh(tmp: Path) -> bool:
         return False
 
 
+def copy_sops(tmp: Path) -> bool:
+    """The age key sops decrypts with ($SOPS_AGE_KEY_FILE, or sops' default
+    ~/.config/sops/age/keys.txt), unencrypted on disk: without it, or another
+    key listed in .sops.yaml, the repository's secrets can't be opened."""
+    config = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
+    key = Path(os.environ.get("SOPS_AGE_KEY_FILE") or config / "sops/age/keys.txt")
+    if not key.is_file():
+        warn(f"sops: no age key at {key} (age-keygen -o {key}), skipping")
+        return False
+    d = tmp / "sops"
+    d.mkdir()
+    try:
+        shutil.copy2(key, d / "keys.txt")
+        return True
+    except OSError:
+        warn("sops: copy failed, skipping")
+        shutil.rmtree(d, ignore_errors=True)
+        return False
+
+
 def copy_pass(tmp: Path) -> bool:
     """A pass store left from before KeePassXC/Bitwarden, if there is one. It
     is gpg-encrypted already: copied as is, with its git history."""
@@ -203,6 +223,7 @@ def main(args: list[str]) -> int:
                 ("gpg", export_gpg),
                 ("ssh", copy_ssh),
                 ("keepassxc", copy_keepassxc),
+                ("sops", copy_sops),
                 ("bitwarden", export_bitwarden),
                 ("pass", copy_pass),
             )

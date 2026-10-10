@@ -31,7 +31,7 @@ Apple-silicon machine as much as on an x86 one.
   - **Element** (Matrix), on both architectures (Flathub ships x86_64 and
     aarch64 builds);
   - **Firefox**, on both architectures, with the same vertical tabs,
-    uBlock Origin, Vimium and theming as harmonia.
+    uBlock Origin, Vimium, Bitwarden and theming as harmonia.
 - Guest tools for both hypervisors, on both architectures, side by side:
   - **SPICE** (virt-manager/QEMU): `spice-vdagentd` for clipboard and display
     resizing, `spice-webdavd` for the shared folder;
