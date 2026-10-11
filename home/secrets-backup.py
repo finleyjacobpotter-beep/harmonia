@@ -1,18 +1,18 @@
 """secrets-backup [DIR]  (packaged as a command by home/secrets.nix)
 
 Bundle every secret into one file: the KeePassXC database(s), a Bitwarden
-export, ~/.ssh, your gpg keys (secret keys included), the age key sops
-decrypts with and any pass store left from before, into DIR/secrets-backup-<UTC timestamp>.tar.gz.gpg (DIR defaults
-to $HOME), encrypted with a passphrase (AES-256) rather than a gpg key, so
-the backup can still be opened after the keys themselves are lost.
+export, ~/.ssh, the age key sops decrypts with and any pass store left from
+before, into DIR/secrets-backup-<UTC timestamp>.tar.gz.gpg (DIR defaults to
+$HOME), encrypted with a passphrase (AES-256), so the backup opens with
+nothing but that passphrase. gpg keys are left out: no gpg identity is kept.
 
 Anything locked, logged out or not set up yet is skipped with a warning.
 Plaintext only ever exists inside a private temporary directory, which is
 removed on exit, and the tarball is streamed straight into gpg. The backup
-passphrase is asked for here; gpg asks for your key passphrase in the
-terminal (loopback pinentry), as there is no gpg-agent pinentry setup.
+passphrase is asked for here, in the terminal.
 """
 
+import argparse
 import datetime as dt
 import getpass
 import json
@@ -41,27 +41,6 @@ def ok(*args: str, stdout: Path | None = None, quiet: bool = False) -> bool:
     except OSError as e:
         warn(f"{args[0]}: {e.strerror}")
         return False
-
-
-def export_gpg(tmp: Path) -> bool:
-    """Public and secret keys plus ownertrust. Secret keys stay protected by
-    their own passphrase inside the export (gpg asks for it)."""
-    keys = subprocess.run(["gpg", "--list-secret-keys", "--with-colons"], capture_output=True, text=True)
-    if not keys.stdout.strip():
-        warn("gpg: no secret keys, skipping")
-        return False
-    d = tmp / "gpg"
-    d.mkdir()
-    exports = [
-        (["--armor", "--export"], "public-keys.asc"),
-        (["--pinentry-mode", "loopback", "--armor", "--export-secret-keys"], "secret-keys.asc"),
-        (["--export-ownertrust"], "ownertrust.txt"),
-    ]
-    if all(ok("gpg", *flags, stdout=d / name) for flags, name in exports):
-        return True
-    warn("gpg: export failed, skipping")
-    shutil.rmtree(d)
-    return False
 
 
 def copy_keepassxc(tmp: Path) -> bool:
@@ -208,9 +187,27 @@ def encrypt(tmp: Path, out: Path, passphrase: str) -> bool:
     return False
 
 
-def main(args: list[str]) -> int:
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    # The usage line argparse writes itself; the rest of the docstring is the help.
+    parser = argparse.ArgumentParser(
+        prog="secrets-backup",
+        description=__doc__.partition("\n\n")[2].strip(),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "dir",
+        nargs="?",
+        metavar="DIR",
+        type=Path,
+        default=Path.home(),
+        help="where to write the backup (default: $HOME)",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str]) -> int:
     os.umask(0o077)
-    out_dir = Path(args[0]) if args else Path.home()
+    out_dir = parse_args(argv).dir
     if not out_dir.is_dir():
         warn(f"no such directory: {out_dir}")
         return 1
@@ -220,7 +217,6 @@ def main(args: list[str]) -> int:
         included = [
             name
             for name, step in (
-                ("gpg", export_gpg),
                 ("ssh", copy_ssh),
                 ("keepassxc", copy_keepassxc),
                 ("sops", copy_sops),

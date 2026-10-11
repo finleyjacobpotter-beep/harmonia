@@ -3,8 +3,8 @@
 # (no agent setup of its own), ykman, the OpenBao CLI, and age and sops for
 # secrets kept encrypted in a repository, plus the
 # `secrets-backup` command (home/secrets-backup.py), which bundles the
-# KeePassXC database(s), a Bitwarden export, ~/.ssh, gpg keys, the sops age key
-# and any old pass store into one passphrase-encrypted tarball. See docs/secrets.md.
+# KeePassXC database(s), a Bitwarden export, ~/.ssh, the sops age key and any
+# old pass store into one passphrase-encrypted tarball. See docs/secrets.md.
 {
   pkgs,
   lib,
@@ -35,8 +35,9 @@ in
   # The local KeePassXC database, for `keepassxc-cli <command> "$KEEPASSXC_DB" ...`.
   home.sessionVariables.KEEPASSXC_DB = "${config.xdg.dataHome}/keepassxc/passwords.kdbx";
 
-  # gpg stays for the YubiKey and secrets-backup, but gpg-agent no longer
-  # backs pass or SSH: there is no pass store and no services.gpg-agent.
+  # gpg stays for the YubiKey and to encrypt secrets-backup (no gpg identity
+  # is kept), but gpg-agent no longer backs pass or SSH: there is no pass
+  # store and no services.gpg-agent.
   programs.gpg = {
     enable = true;
     settings = {

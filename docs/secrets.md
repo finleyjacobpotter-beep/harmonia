@@ -96,8 +96,8 @@ ykman info                       # with the key plugged in
 
 ## Backup: `secrets-backup`
 
-`secrets-backup [DIR]` (a command on your PATH) writes `DIR/secrets-backup-<UTC time>.tar.gz.gpg`
-(`DIR` defaults to `$HOME`). It includes whatever is reachable right now and
+`secrets-backup [DIR]` (a command on your PATH; `--help` lists its options)
+writes `DIR/secrets-backup-<UTC time>.tar.gz.gpg` (`DIR` defaults to `$HOME`). It includes whatever is reachable right now and
 skips, with a warning, anything missing, locked or logged out:
 
 | Part | What goes in | Needs |
@@ -107,14 +107,15 @@ skips, with a warning, anything missing, locked or logged out:
 | `sops/keys.txt` | the age key sops decrypts with (`$SOPS_AGE_KEY_FILE` or `~/.config/sops/age/keys.txt`) | a key there |
 | `pass/` | a pass store left from before, with its git history, if one is still there | `~/.local/share/password-store` or `~/.password-store` |
 | `bitwarden.json` | `bw export --format json` (asks for the master password again) | `bw status` is `unlocked` |
-| `gpg/` | public and secret keys, and the ownertrust | a secret key in the keyring |
 
 The tarball is encrypted with a **passphrase** (gpg `--symmetric`, AES-256),
-not with a gpg key, so it still opens if your keys are lost. `secrets-backup`
+not with a gpg key, so it opens with nothing but that passphrase. `secrets-backup`
 asks for it twice in the terminal and hands it to gpg through a pipe; nothing
-caches it. The secret keys
-inside keep their own key passphrase on top of that. Pick a strong backup
-passphrase you can remember without this machine.
+caches it. Pick a strong backup passphrase you can remember without this
+machine.
+
+gpg keys are not in the backup: no gpg identity is kept, and gpg is here only
+to encrypt the backup and to talk to the YubiKey.
 
 Plaintext (the Bitwarden export, unprotected SSH keys, the age key) only exists in a private `mktemp -d`
 directory that is deleted when the function exits or is interrupted; the tar
@@ -127,7 +128,6 @@ Restore:
 
 ```sh
 d=$(mktemp -d) && gpg --pinentry-mode loopback -d secrets-backup-<time>.tar.gz.gpg | tar -xzf - -C "$d" && cd "$d"
-gpg --pinentry-mode loopback --import gpg/secret-keys.asc && gpg --import-ownertrust gpg/ownertrust.txt
 mkdir -p "$(dirname "$KEEPASSXC_DB")" && cp keepassxc/* "$(dirname "$KEEPASSXC_DB")"/
 mkdir -p ~/.ssh && cp -a ssh/. ~/.ssh/ && chmod 700 ~/.ssh
 [ -f sops/keys.txt ] && install -Dm600 sops/keys.txt ~/.config/sops/age/keys.txt

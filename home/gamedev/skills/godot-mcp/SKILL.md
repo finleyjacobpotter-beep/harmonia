@@ -1,6 +1,6 @@
 ---
 name: godot-mcp
-description: How to drive the open Godot editor through the godot MCP server (godot-ai): inspecting scenes, editing nodes and scripts, running the game, reading errors, sending input and taking screenshots. Load before the first godot tool call.
+description: How to drive the open Godot editor through the godot MCP server (godot-ai), for inspecting scenes, editing nodes and scripts, running the game, reading errors, sending input and taking screenshots. Load before the first godot tool call.
 ---
 
 # The `godot` MCP server
