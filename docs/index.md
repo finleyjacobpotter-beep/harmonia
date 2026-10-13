@@ -7,7 +7,7 @@ harmonia is a [NixOS flake](https://nixos.wiki/wiki/Flakes) with
 [home-manager](https://github.com/nix-community/home-manager) that builds a
 whole Wayland desktop: **Sway**, an **eww** bar, **alacritty**, **tmux**,
 **bash**, **ranger** and **neovim**, with sandboxed Flatpak apps, native
-Blender and Godot, a local model server with coding agents, and a microVM
+Blender and Godot, coding agents, and a microVM
 for VPN work and OSCP practice. Everything is themed with the
 [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, the **DepartureMono Nerd Font** and the pixel-art
@@ -38,7 +38,7 @@ hosts/base.nix         every host: boot, network, user, locale, nix settings,
                        Sway desktop, fonts, Firefox, Element, podman, secrets, VPNs
  └ hosts/common.nix    harmonia + cadmus: Lutris, Steam, Blender, Godot,
                        QEMU and the Nike microVM
-    ├ hosts/harmonia   the desktop: GPU fan control, local model, game dev agents
+    ├ hosts/harmonia   the desktop: GPU fan control, game dev agents
     └ hosts/cadmus     the laptop: Wi-Fi, lid, power profiles, ThinkPad fans
  └ hosts/dionysus      a VM: guest tools, Nike's OSCP toolset, both architectures
 

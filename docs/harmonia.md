@@ -1,8 +1,7 @@
 # harmonia (desktop)
 
 harmonia is the desktop the project is named after: an AMD GPU workstation
-with the full set of apps, the Nike microVM, and the local model server that
-the coding agents use. Build it with
+with the full set of apps, the Nike microVM, and the coding agents. Build it with
 `sudo nixos-rebuild switch --flake .#harmonia`.
 
 It is [`hosts/base.nix`](../hosts/base.nix) plus
@@ -19,18 +18,10 @@ GPU's fan curve; amdgpu overdrive is on so RX 7000/9000 cards accept a custom
 curve; `rocm-smi` and lm_sensors report temperatures. Case and CPU fans are
 set in the BIOS. See [Fans](fans.md).
 
-**Local model server** ([`modules/nixos/llama-server.nix`](../modules/nixos/llama-server.nix)).
-llama.cpp's server in a podman container serves Ornith 1.5 9B (Q4_K_M, with
-its multi-token prediction head) as `ai` on the AMD GPU through Vulkan, at
-`127.0.0.1:1235`. The robot icon on the bar starts and stops it; it doesn't
-start at boot. See
-[The local model](llama-server.md).
-
 **AI agents** ([`home/ai.nix`](../home/ai.nix), [`home/gamedev.nix`](../home/gamedev.nix)). pi and
-Claude Code run natively on the host on
-no global prompts, with the Blender, Godot and radare2 MCP servers for both;
-pi runs on the local model. Claude Code's license is why harmonia adds
-`claude-code` to `harmonia.allowedUnfree`. See [pi](pi.md) and
+Claude Code run natively on the host with no global prompts, and the
+Blender, Godot and radare2 MCP servers for both. Claude Code's license is
+why harmonia adds `claude-code` to `harmonia.allowedUnfree`. See [pi](pi.md) and
 [Game dev](gamedev.md).
 
 **Forgejo CLI.** `fj` for repositories, issues and pull requests on Forgejo
@@ -57,5 +48,7 @@ the first switch:
 sudo nixos-generate-config --show-hardware-config > hosts/harmonia/hardware-configuration.nix
 ```
 
-The bar's GPU module reads the AMD card through `rocm-smi`; it hides itself
-when there is no GPU to report.
+The bar's GPU module reads both AMD cards (the RX 9070 and the RX 5600 XT)
+through `rocm-smi`, with a load and a VRAM meter for each; click it for the
+GPU panel, where you pick which card's numbers the bar shows
+([The bar](bar.md#gpus)). It hides itself when there is no GPU to report.

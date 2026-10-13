@@ -1,17 +1,20 @@
-"""Displays: their saved resolution and position, and which one is primary
-(the one with the bar). The settings window (display-settings.py) changes
+"""Displays: their saved resolution, rotation and position, which one is primary
+(the one with the bar), and the GPU each is plugged into (gpu.py). The settings window (display-settings.py) changes
 them through `eww-display apply`.
 
 Usage: eww-display              JSON: {"primary": name, "outputs": [...]}
        eww-display watch        the same on every output change (for deflisten);
-                                also reapplies saved resolutions and positions to
+                                also reapplies saved resolutions, rotations and positions to
                                 displays as they connect and moves the bar if the
                                 primary one comes or goes
        eww-display start        apply saved settings and open the bar (sway startup)
        eww-display apply JSON   set and remember every display at once:
                                 {"primary": NAME, "outputs": {NAME: {"enabled": true,
-                                 "mode": "2560x1440@143.998Hz", "x": 0, "y": 0}}}
+                                 "mode": "2560x1440@143.998Hz", "transform": "90",
+                                 "x": 0, "y": 0}}}
        eww-display mode NAME MODE   set and remember a resolution
+       eww-display rotate NAME normal|90|180|270
+                                    set and remember a rotation (clockwise)
        eww-display primary NAME     move the bar (and its panels) to NAME, remembered
        eww-display power NAME on|off
        eww-display menu WINDOW      toggle one of the bar's panels on the primary display
@@ -26,10 +29,12 @@ import sys
 from pathlib import Path
 
 from common import RUN_DIR, STATE_DIR, output, read
+from gpu import output_gpu
 
 PRIMARY_FILE = STATE_DIR / "primary-display"
 MODES_FILE = STATE_DIR / "display-modes.json"
 LAYOUT_FILE = STATE_DIR / "display-layout.json"
+ROTATION_FILE = STATE_DIR / "display-rotation.json"
 SEEN_FILE = RUN_DIR / "eww-display.seen"
 LAST_FILE = RUN_DIR / "eww-display.primary"
 
@@ -103,6 +108,8 @@ def listing(outs: list | None = None) -> str:
                 "title": " ".join(p for p in (o.get("make"), o.get("model")) if p and p != "Unknown"),
                 "current": mode_label(current) if current else "off",
                 "current_id": mode_id(current) if current else "",
+                "transform": o.get("transform") or "normal",
+                "gpu": output_gpu(o["name"]),
                 "modes": [{"id": mode_id(m), "label": mode_label(m)} for m in ordered],
             }
         )
@@ -123,11 +130,11 @@ def key(outs: list, name: str) -> str:
 
 
 def apply_saved(outs: list) -> None:
-    """Give newly connected displays their saved resolution and position (once
-    per connection, so a mode sway can't do doesn't loop)."""
+    """Give newly connected displays their saved resolution, rotation and
+    position (once per connection, so a mode sway can't do doesn't loop)."""
     seen = read(SEEN_FILE).splitlines()
     now_on = [o["name"] for o in outs if o.get("active")]
-    modes, layout = load(MODES_FILE), load(LAYOUT_FILE)
+    modes, layout, rotation = load(MODES_FILE), load(LAYOUT_FILE), load(ROTATION_FILE)
     for name in now_on:
         if name in seen:
             continue
@@ -135,6 +142,8 @@ def apply_saved(outs: list) -> None:
         args = []
         if modes.get(k):
             args += ["mode", modes[k]]
+        if rotation.get(k):
+            args += ["transform", rotation[k]]
         if layout.get(k):
             args += ["position", *(str(int(v)) for v in layout[k])]
         if args:
@@ -158,23 +167,28 @@ def apply(wanted: dict) -> None:
         command = f"output {name} enable"
         if v.get("mode"):
             command += f" mode {v['mode']}"
+        if v.get("transform"):
+            command += f" transform {v['transform']}"
         if "x" in v and "y" in v:
             command += f" position {int(v['x'])} {int(v['y'])}"
         commands.append(command)
     if commands:
         swaymsg("; ".join(commands))
 
-    modes, layout = load(MODES_FILE), load(LAYOUT_FILE)
+    modes, layout, rotation = load(MODES_FILE), load(LAYOUT_FILE), load(ROTATION_FILE)
     for name, v in settings.items():
         if not v.get("enabled", True):
             continue
         k = key(outs, name)
         if v.get("mode"):
             modes[k] = v["mode"]
+        if v.get("transform"):
+            rotation[k] = v["transform"]
         if "x" in v and "y" in v:
             layout[k] = [int(v["x"]), int(v["y"])]
     save(MODES_FILE, modes)
     save(LAYOUT_FILE, layout)
+    save(ROTATION_FILE, rotation)
     if wanted.get("primary") in names:
         STATE_DIR.mkdir(parents=True, exist_ok=True)
         PRIMARY_FILE.write_text(wanted["primary"] + "\n")
@@ -223,6 +237,8 @@ def main(args: list[str]) -> None:
         apply(json.loads(rest[0]))
     elif command == "mode" and len(rest) == 2:
         apply({"outputs": {rest[0]: {"mode": rest[1]}}})
+    elif command == "rotate" and len(rest) == 2:
+        apply({"outputs": {rest[0]: {"transform": rest[1]}}})
     elif command == "primary" and rest:
         apply({"primary": rest[0]})
     elif command == "power" and len(rest) == 2:

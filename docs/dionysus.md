@@ -57,7 +57,7 @@ build:
 - the **Nike** microVM and all the host-side microVM wiring
   (Nike's tools are here natively instead);
 - **Steam** and the **gaming** stack (32-bit, x86-only);
-- **Blender** and **Godot**, the game dev agents and the local model server;
+- **Blender** and **Godot**, and the game dev agents;
 - the Lutris/LACT flatpak theme sync;
 - 32-bit graphics (`hardware.graphics.enable32Bit`), which has no aarch64 Mesa.
 

@@ -48,10 +48,7 @@
   &.clock .icon { color: $pink; }
   &.gamemode .icon { color: $green; }
   &.steam .icon { color: $blue; }
-  &.steam, &.ai, &.vm { &:hover { background-color: $surface; } }
-  &.ai .icon { color: $muted; }
-  &.ai.loading .icon { color: $yellow; }
-  &.ai.ready .icon { color: $pink; }
+  &.steam, &.vm { &:hover { background-color: $surface; } }
   &.vm .icon { color: $muted; }
   // Firewall modes: open is the plain one, lockdown red, the
   // restricted ones (OSCP, Hack The Box, local inference) purple.
@@ -61,6 +58,20 @@
   &.caffeine { color: $muted; &:hover { background-color: $surface; } }
   &.caffeine.on { color: $orange; }
   &.gpu .icon { color: $red; }
+  // Each GPU's load and VRAM as two thin bars filling upwards (gpu.py);
+  // the main GPU's (the numbers' one) brighter than the rest.
+  .gpu-bar {
+    trough { background-color: $surface; min-width: 3px; min-height: 16px; }
+    progress { min-width: 3px; }
+    &.use progress { background-color: $muted; }
+    &.vram progress { background-color: $muted; }
+    &.high progress { background-color: $orange; }
+  }
+  .gpu-pair.main .gpu-bar {
+    &.use progress { background-color: $red; }
+    &.vram progress { background-color: $purple; }
+    &.high progress { background-color: $orange; }
+  }
   &.net .icon { color: $blue; }
   &.net.down { color: $muted; }
   // One small asterisk per VPN that is up, stacked in a column that
@@ -74,7 +85,7 @@
   &.display .icon { color: $pink; }
   &.usb { color: $muted; }
   &.usb.on { color: $fg; .icon { color: $yellow; } }
-  &.display, &.usb, &.net, &.vol, &.clock { &:hover { background-color: $surface; } }
+  &.display, &.usb, &.gpu, &.net, &.vol, &.clock { &:hover { background-color: $surface; } }
   .tz { color: $muted; }
 }
 
@@ -92,6 +103,16 @@
   font-weight: bold;
   &.caps { background-color: $yellow; }
   &.num { background-color: $purple; }
+}
+
+// Running containers (pods.py): grey 00 while none, a green block like
+// CAPS/NUM while some run.
+.pods {
+  padding: 0 8px;
+  color: $muted;
+  &:hover { background-color: $surface; }
+  &.on { color: $bg; background-color: $green; font-weight: bold; }
+  &.on:hover { background-color: $cyan; }
 }
 
 .wg-panel {
@@ -158,6 +179,8 @@
   }
 
   .power-action { padding: 8px 12px; }
+
+  .pod .pod-image { color: $yellow; }
 
   .usb-device .wg-name { color: $fg; }
   .usb-device.hub .wg-name { color: $muted; }

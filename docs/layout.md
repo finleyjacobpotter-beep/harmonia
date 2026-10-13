@@ -22,8 +22,7 @@ modules/nixos/
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   studio.nix                   Blender and Godot from nixpkgs, with their Super+o keys
   fans.nix                     harmonia only: LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
-  llama-server.nix             harmonia only: Ornith 1.5 9B (Q4_K_M, MTP) as `ai` on llama.cpp's server in a podman container, Vulkan on the GPU, port 1235
-  podman.nix                   rootless podman, podman-compose, buildah (all hosts)
+  podman.nix                   rootless podman, podman-compose, buildah, the bar's read-only sudo for root's containers (all hosts)
   virtualisation.nix           plain QEMU (no libvirt)
   microvms.nix                 `harmonia.microvms`: each VM declared once; its network, NAT, folders, `ssh <vm>`, colours and firewall modes follow
   nike.nix                     the Nike microVM: its colours and VPN firewall modes
@@ -40,8 +39,8 @@ nike/                          the Nike microVM guest (microvm.nix)
 home/                          home-manager, one file per program
   base.nix                     the home every host shares; default.nix (harmonia, cadmus) and dionysus/ add to it
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/local model, nike with firewall modes, display settings, cpu, mem, gpu, network with VPN asterisks, caffeine, volume, battery, clock + calendar)
-  eww/                         the bar's layout (eww.yuck), styles (eww.scss) and scripts, in Python (displays, network, gpu, volume, clock, calendar, …, sharing common.py), and the display settings window
+  eww.nix                      eww bar (workspaces, title, caps/num lock, running containers, gamemode/steam, nike with firewall modes, display settings with rotation, cpu, mem, gpus with a panel to pick the main one, network with VPN asterisks, caffeine, volume, battery, clock + calendar)
+  eww/                         the bar's layout (eww.yuck), styles (eww.scss) and scripts, in Python (displays, network, gpu, pods, volume, clock, calendar, …, sharing common.py), and the display settings window
   open-mode.nix                Super+o's keys, for sway and the bar's hint
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
@@ -50,7 +49,7 @@ home/                          home-manager, one file per program
   flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
-  ai.nix                       pi on the harmonia desktop: the release build, on the local model, with the MCP servers, the skills and the .agents/ extension
+  ai.nix                       pi on the harmonia desktop: the release build, with the MCP servers, the skills and the .agents/ extension
   gamedev.nix                  game dev on the harmonia desktop: Claude Code (no global prompts), Blender, Godot and radare2 MCP, the godot-ai service, the skills, gamedev-init
   gamedev/                     its skills (Godot 4, Godot and Blender MCP) and the design-doc templates gamedev-init copies
   pi/agents-dir.ts             pi extension (home/ai.nix): a project's instructions from .agents/ only, nothing from its .pi/
@@ -71,5 +70,5 @@ docs/                          these pages
 mkdocs.yml                     the documentation site: theme, navigation (`nix build .#docs`)
 scripts/mkdocs-hooks.py        points the docs' links to repository files at GitHub
 scripts/install.py             base NixOS install from the minimal ISO (docs/install.md)
-scripts/cleanup-deprecated.py  `sudo harmonia-cleanup`: removes what older harmonia versions left behind (Zen, libvirt VMs, the Zelus microVM, ...)
+scripts/cleanup-deprecated.py  `sudo harmonia-cleanup`: removes what older harmonia versions left behind (Zen, libvirt VMs, the Zelus microVM, the llama.cpp server's model, ...)
 ```

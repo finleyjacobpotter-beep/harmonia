@@ -9,7 +9,8 @@
 (defpoll volume :interval "2s" :initial "{\"pct\":0,\"muted\":false,\"sink\":\"\",\"text\":\"\"}"
   "@bin@/eww-volume")
 (defpoll cpuinfo :interval "5s" :initial "{\"model\":\"\",\"temp\":\"\",\"load\":\"\"}" "@bin@/eww-cpu")
-(defpoll gpu :interval "3s" :initial "{\"ok\":false,\"use\":0,\"temp\":0,\"vram\":0,\"vram_text\":\"\",\"text\":\"\"}"
+(defpoll gpu :interval "3s"
+  :initial "{\"ok\":false,\"auto\":true,\"use\":0,\"temp\":0,\"vram\":0,\"vram_text\":\"\",\"name\":\"\",\"text\":\"\",\"gpus\":[]}"
   "@bin@/eww-gpu")
 (defpoll net :interval "2s"
   :initial "{\"auto\":true,\"default\":\"\",\"shown\":{\"name\":\"\",\"state\":\"down\",\"wireless\":false,\"down\":\"\",\"up\":\"\",\"address\":\"\"},\"ifaces\":[]}"
@@ -18,10 +19,10 @@
 (defpoll vpn :interval "5s"
   :initial "{\"up\":{\"wireguard\":false,\"openvpn\":false,\"forti\":false,\"other\":false},\"active\":0,\"connections\":[]}"
   "@bin@/eww-vpn")
-(defpoll activity :interval "5s"
-  :initial "{\"gamemode\":false,\"steam\":false,\"ai\":{\"on\":false,\"ready\":false,\"text\":\"stopped\"}}"
-  "@bin@/eww-activity")
+(defpoll activity :interval "5s" :initial "{\"gamemode\":false,\"steam\":false}" "@bin@/eww-activity")
 @vmPolls@
+(defpoll pods :interval "5s" :initial "{\"count\":0,\"text\":\"00\",\"stopped\":0,\"containers\":[]}"
+  "@bin@/eww-pods")
 (deflisten usb :initial "{\"count\":0,\"devices\":[]}" "@bin@/eww-usb watch")
 (defpoll locks :interval "500ms" :initial "{\"caps\":false,\"num\":false}" "@bin@/eww-locks")
 (defpoll caffeine :interval "10s" "@bin@/eww-caffeine")
@@ -69,20 +70,18 @@
   (box :orientation "h" :space-evenly false :halign "end" :spacing 4
     (label :class "lock caps" :visible {locks.caps} :text "CAPS")
     (label :class "lock num" :visible {locks.num} :text "NUM")
+    ; Running podman containers (home/eww/pods.py): a grey 00 while none
+    ; run, a green block with the count like CAPS/NUM while some do.
+    (button :class "pods ${pods.count > 0 ? "on" : ""}"
+      :tooltip "${pods.count} container${pods.count == 1 ? "" : "s"} running${pods.stopped > 0 ? ", ${pods.stopped} stopped" : ""}: click for details"
+      :onclick "@bin@/eww-display menu pods-menu"
+      (label :text "󰡨 ${pods.text}"))
     (box :class "module gamemode" :visible {activity.gamemode} :tooltip "GameMode is on"
       (label :class "icon" :text "󰊗"))
     (button :class "module steam" :visible {activity.steam}
       :tooltip "Steam is running: click for options"
       :onclick "@bin@/eww-display menu steam-menu"
       (label :class "icon" :text "󰓓"))
-    ; The local model server (modules/nixos/llama-server.nix), on hosts
-    ; that have it: grey while stopped, yellow while it starts or loads the
-    ; model, pink while it serves.
-    (button :class "module ai ${activity.ai.ready ? "ready" : (activity.ai.on ? "loading" : "")}"
-      :visible @aiServer@
-      :tooltip "Local model (ai): ${activity.ai.text}. Click to start or stop it"
-      :onclick "@bin@/eww-display menu ai-menu"
-      (label :class "icon" :text "󰚩"))
     ; The microVMs (generated in home/eww.nix): grey while stopped, in the
     ; VM's own colour while running, with the firewall mode.
     @vmBadges@
@@ -105,10 +104,19 @@
     ${cpuinfo.model}")
     (module-pct :class "mem" :icon "" :value {round(EWW_RAM.used_mem_perc, 0)}
       :tooltip "RAM ${round(EWW_RAM.used_mem / 1073741824, 1)}/${round(EWW_RAM.total_mem / 1073741824, 1)} GiB (${round(EWW_RAM.used_mem_perc, 0)}%) · ${round(EWW_RAM.available_mem / 1073741824, 1)} GiB available · swap ${round((EWW_RAM.total_swap - EWW_RAM.free_swap) / 1073741824, 1)}/${round(EWW_RAM.total_swap / 1073741824, 1)} GiB")
-    (box :class "module gpu" :visible {gpu.ok} :orientation "h" :space-evenly false :spacing 6
-      :tooltip "GPU ${gpu.use}% · ${gpu.temp}°C · VRAM ${gpu.vram_text} (${gpu.vram}%)"
-      (label :class "icon" :text "󰢮")
-      (label :unindent false :text "${gpu.text}"))
+    ; The main GPU's load and temperature, then a pair of small meters per
+    ; GPU (home/eww/gpu.py): load, then VRAM, the main GPU's brighter.
+    (button :class "module gpu" :visible {gpu.ok}
+      :tooltip "${gpu.name}: ${gpu.use}% · ${gpu.temp}°C · VRAM ${gpu.vram_text} (${gpu.vram}%). Click for every GPU"
+      :onclick "@bin@/eww-display menu gpu-menu"
+      (box :orientation "h" :space-evenly false :spacing 6
+        (label :class "icon" :text "󰢮")
+        (label :unindent false :text "${gpu.text}")
+        (box :class "gpu-bars" :orientation "h" :space-evenly false :spacing 4
+          (for g in {gpu.gpus}
+            (box :class "gpu-pair ${g.main ? "main" : ""}" :orientation "h" :space-evenly false :spacing 1
+              (progress :class "gpu-bar use ${g.use >= 90 ? "high" : ""}" :orientation "v" :flipped true :value {g.use})
+              (progress :class "gpu-bar vram ${g.vram >= 90 ? "high" : ""}" :orientation "v" :flipped true :value {g.vram}))))))
     ; Network, with an asterisk per VPN that is up beside the icon,
     ; stacked and coloured by VPN (vpnStars).
     (button :class "module net ${net.shown.state == "up" ? "" : "down"}"
@@ -163,8 +171,8 @@
     (power-action :icon "󰍃" :name "Log out" :onclick "@swaymsg@ exit")
     (power-action :icon "󰐥" :name "Power off" :onclick "@systemctl@ poweroff")))
 
-; Panels opened by the Steam and local model buttons, laid out like the
-; network panel; with :down true, the app shows as stopped.
+; The panel opened by the Steam button, laid out like the network panel;
+; with :down true, the app shows as stopped.
 (defwidget app-panel [title name status action onclose onaction ?down]
   (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
     (box :orientation "h" :space-evenly false
@@ -176,16 +184,6 @@
         (label :class "wg-detail" :halign "start" :wrap true :text status))
       (button :class "wg-toggle" :valign "center" :onclick onaction action))))
 
-(defwidget ai-menu []
-  (app-panel
-    :title "Local model"
-    :name "Ornith 1.5 9B as ai"
-    :status "${activity.ai.text}"
-    :down {!activity.ai.ready}
-    :action {activity.ai.on ? "Stop" : "Start"}
-    :onclose "@eww@ close ai-menu"
-    :onaction "@bin@/eww-activity ai ${activity.ai.on ? "stop" : "start"}"))
-
 (defwidget steam-menu []
   (app-panel
     :title "Steam"
@@ -195,13 +193,69 @@
     :onclose "@eww@ close steam-menu"
     :onaction "@eww@ close steam-menu; @bin@/eww-steam-close"))
 
-; A meter in a VM's panel (vmPanel).
+; A meter in a VM's panel (vmPanel) and the GPU panel.
 (defwidget vm-meter [name value text]
   (box :orientation "v" :space-evenly false :spacing 2
     (box :orientation "h" :space-evenly false
       (label :class "wg-detail" :hexpand true :halign "start" :text name)
       (label :class "wg-detail" :text text))
     (progress :class "vm-meter ${value >= 90 ? "high" : ""}" :orientation "h" :value value)))
+
+; GPUs: every one's load, VRAM, temperatures, power, fan, clocks and
+; displays, and which one the bar shows (Automatic: the most VRAM).
+(defwidget gpu-panel []
+  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+    (box :orientation "h" :space-evenly false
+      (label :class "wg-title" :hexpand true :halign "start" :text "GPUs")
+      (button :class "wg-close" :onclick "@eww@ close gpu-menu" "✕"))
+    (box :class "wg-tunnel ${gpu.auto ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
+      (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+        (label :class "wg-name" :halign "start" :text "${gpu.auto ? "●" : "○"} Automatic")
+        (label :class "wg-detail" :halign "start" :text "The GPU with the most VRAM"))
+      (button :class "wg-toggle ${gpu.auto ? "active" : ""}" :valign "center"
+        :onclick "@bin@/eww-gpu main auto"
+        "${gpu.auto ? "Main" : "Set main"}"))
+    (for g in {gpu.gpus}
+      (box :class "wg-tunnel gpu-card ${g.main ? "up" : "down"}" :orientation "v" :space-evenly false :spacing 6
+        (box :orientation "h" :space-evenly false :spacing 16
+          (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+            (label :class "wg-name" :halign "start" :limit-width 34 :text "${g.main ? "●" : "○"} ${g.name}")
+            (label :class "wg-detail" :halign "start" :text "${g.chip} · PCI ${g.short} · ${g.pcie}"))
+          (button :class "wg-toggle ${g.main && !gpu.auto ? "active" : ""}" :valign "center"
+            :onclick "@bin@/eww-gpu main ${g.bus}"
+            "${g.main && !gpu.auto ? "Main" : "Set main"}"))
+        (vm-meter :name "Load" :value {g.use} :text "${g.use}%")
+        (vm-meter :name "VRAM" :value {g.vram} :text "${g.vram_text} (${g.vram}%)")
+        (vm-meter :name "Memory bus" :value {g.mem_busy} :text "${g.mem_busy}%")
+        (label :class "wg-detail" :halign "start"
+          :text "Temp ${g.temp}°C · hotspot ${g.hotspot}°C · memory ${g.mem_temp}°C")
+        (label :class "wg-detail" :halign "start" :text "Power ${g.power_text} · fan ${g.fan_text}")
+        (label :class "wg-detail" :halign "start" :text "Core ${g.sclk} · memory ${g.mclk}")
+        (label :class "wg-detail" :halign "start" :text "Displays: ${g.displays}")))))
+
+; Pods: every running container, yours and root's, at a glance.
+(defwidget pods-panel []
+  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+    (box :orientation "h" :space-evenly false
+      (label :class "wg-title" :hexpand true :halign "start"
+        :text "Containers: ${pods.count} running${pods.stopped > 0 ? ", ${pods.stopped} stopped" : ""}")
+      (button :class "wg-close" :onclick "@eww@ close pods-menu" "✕"))
+    (label :class "wg-detail" :visible {pods.count == 0} :halign "start" :text "No containers running")
+    (for c in {pods.containers}
+      (box :class "wg-tunnel up pod" :orientation "v" :space-evenly false :spacing 2
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "wg-name" :hexpand true :halign "start" :limit-width 34 :text "● ${c.name}")
+          (label :class "wg-detail" :text "${c.owner}"))
+        (label :class "wg-detail" :visible {c.pod != ""} :halign "start" :text "Pod ${c.pod}")
+        (label :class "pod-image" :halign "start" :limit-width 48 :text "${c.image}")
+        (label :class "wg-detail" :halign "start" :text "Container ${c.id} · image ${c.image_id}")
+        (label :class "wg-detail" :halign "start"
+          :text "${c.status}${c.restarts > 0 ? " · ${c.restarts} restarts" : ""} · ${c.pids} PIDs")
+        (label :class "wg-detail" :halign "start" :text "CPU ${c.cpu} · memory ${c.mem} (${c.mem_pct})")
+        (label :class "wg-detail" :halign "start" :text "Net ↓↑ ${c.net} · disk r/w ${c.block}")
+        (label :class "wg-detail" :halign "start" :wrap true :text "Ports ${c.ports}")
+        (for m in {c.mounts}
+          (label :class "wg-detail" :halign "start" :limit-width 52 :text "Mount ${m}"))))))
 
 ; Each microVM's panel (generated in home/eww.nix).
 @vmPanels@
@@ -377,12 +431,19 @@
   :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
   (steam-menu))
 
-(defwindow ai-menu
+(defwindow pods-menu
   :monitor 0
   :stacking "overlay"
   :namespace "eww-menu"
-  :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-  (ai-menu))
+  :geometry (geometry :x "8px" :y "34px" :width "440px" :anchor "top right")
+  (pods-panel))
+
+(defwindow gpu-menu
+  :monitor 0
+  :stacking "overlay"
+  :namespace "eww-menu"
+  :geometry (geometry :x "8px" :y "34px" :width "380px" :anchor "top right")
+  (gpu-panel))
 
 ;; The overlay layer, the highest one: sway draws fullscreen windows (games,
 ;; video) and X11 popups over the "fg" (top) layer but under this one, so

@@ -51,8 +51,12 @@ let
           ;
       };
       usbIds = "${pkgs.hwdata}/share/hwdata/usb.ids";
+      # The GPUs' names in the GPU panel (gpu.py).
+      pciIds = "${pkgs.hwdata}/share/hwdata/pci.ids";
       # The exact path sudo allows (modules/nixos/vpn.nix).
       wg = "${pkgs.wireguard-tools}/bin/wg";
+      # The same for root's containers (modules/nixos/podman.nix).
+      podman = "${osConfig.virtualisation.podman.package}/bin/podman";
     }
   );
 
@@ -82,6 +86,7 @@ let
       eww-microvm = "microvm";
       eww-battery = "battery";
       eww-usb = "usb";
+      eww-pods = "pods";
     };
     libraries = with pkgs.python3Packages; [
       icalendar
@@ -399,9 +404,6 @@ in
     swaymsg = "${pkgs.sway}/bin/swaymsg";
     swaylock = "${pkgs.swaylock}/bin/swaylock";
     systemctl = "${pkgs.systemd}/bin/systemctl";
-    # The local model button, on hosts with the server
-    # (modules/nixos/llama-server.nix).
-    aiServer = lib.boolToString (osConfig.virtualisation.oci-containers.containers ? llama-server);
     vmPolls = lib.concatMapStrings vmPoll vmNames;
     vmBadges = lib.concatMapStrings vmBadge vmNames;
     vmPanels = lib.concatMapStrings vmPanel vmNames;

@@ -24,8 +24,9 @@ removes it. Everything it knows about:
                      (replaced by openfortivpn, PR #32)
   Vagrant            ~/.vagrant.d (removed in PR #5)
   LM Studio          ai.lmstudio.lm-studio and its ~/.var/app data: models
-                     and chats, so only with --user-files (replaced by the
-                     llama.cpp server)
+                     and chats, so only with --user-files
+  harmonia: llama.cpp server  its downloaded model in /var/lib/llama-server
+                     (~6 GB) and its podman image (removed)
   cadmus: LACT       the LACT flatpak, its data and /etc/lact (cadmus uses
                      thinkfan, PR #29)
   dionysus: Blender, Godot and native Firefox settings (PR #36, PR #37)
@@ -74,6 +75,7 @@ LMSTUDIO = "ai.lmstudio.lm-studio"
 LACT = "io.github.ilya_zlobintsev.LACT"
 BLENDER = "org.blender.Blender"
 GODOT = "org.godotengine.Godot"
+LLAMA_IMAGE = "ghcr.io/ggml-org/llama.cpp:server-vulkan-b11515"
 
 LIBVIRT_DOMAINS = ("harmonia-kali", "harmonia-ubuntu")
 LIBVIRT_FILTERS = (
@@ -272,7 +274,7 @@ class Cleanup:
             self.note("pass entry opencode/anthropic-api-key is no longer used; remove it yourself with `pass rm` if you like")
 
     def lmstudio(self) -> None:
-        self.section("LM Studio (replaced by the llama.cpp server)")
+        self.section("LM Studio")
         self.flatpak(LMSTUDIO, "LM Studio: downloaded models and chats", mine=True)
         self.mimeapps([f"{LMSTUDIO}.desktop"])
 
@@ -365,6 +367,21 @@ class Cleanup:
         self.remove("/var/lib/vm-firewall/zelus", "Zelus firewall mode")
         self.remove_if_empty(self.home / "zelus-share")
 
+    def llama_server(self) -> None:
+        self.section("llama.cpp server on harmonia (removed)")
+        if self.output("systemctl", "is-active", "podman-llama-server.service") == "active":
+            self.note("podman-llama-server is still running: rebuild first, or `systemctl stop podman-llama-server`")
+            return
+        self.remove("/var/lib/llama-server", "its downloaded model, ~6 GB")
+        # Root's image (the container ran as root); only root can see it.
+        if not shutil.which("podman"):
+            return
+        if not self.root:
+            self.item(f"podman image {LLAMA_IMAGE}, if root still has it", root=True)
+        elif subprocess.run(["podman", "image", "exists", LLAMA_IMAGE]).returncode == 0:
+            if self.item(f"podman image {LLAMA_IMAGE}", root=True):
+                self.run("podman", "rmi", LLAMA_IMAGE)
+
     def hm_backups(self) -> None:
         """home-manager moves a file it would overwrite to *.hm-backup
         (flake.nix). These are copies of your dotfiles from before harmonia."""
@@ -391,6 +408,8 @@ class Cleanup:
         if self.host in ("harmonia", "cadmus"):
             self.studio_flatpaks()
             self.zelus()
+        if self.host == "harmonia":
+            self.llama_server()
         if self.host == "dionysus":
             self.dionysus_apps()
         self.hm_backups()

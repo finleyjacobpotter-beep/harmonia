@@ -30,8 +30,7 @@ modules/nixos/
   element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   studio.nix                   Blender and Godot from nixpkgs, with their Super+o keys
   fans.nix                     harmonia only: LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
-  llama-server.nix             harmonia only: Ornith 1.5 9B (Q4_K_M, MTP) as `ai` on llama.cpp's server in a podman container, Vulkan on the GPU, port 1235
-  podman.nix                   rootless podman, podman-compose, buildah (all hosts)
+  podman.nix                   rootless podman, podman-compose, buildah, the bar's read-only sudo for root's containers (all hosts)
   virtualisation.nix           plain QEMU (no libvirt)
   microvms.nix                 `harmonia.microvms`: each VM declared once; its network, NAT, folders, `ssh <vm>`, colours and firewall modes follow
   nike.nix                     the Nike microVM: its colours and VPN firewall modes
@@ -48,8 +47,8 @@ nike/                          the Nike microVM guest (microvm.nix)
 home/                          home-manager, one file per program
   base.nix                     the home every host shares; default.nix (harmonia, cadmus) and dionysus/ add to it
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, caps/num lock, gamemode/steam/local model, nike with firewall modes, display settings, cpu, mem, gpu, network with VPN asterisks, caffeine, volume, battery, clock + calendar)
-  eww/                         the bar's layout (eww.yuck), styles (eww.scss) and scripts, in Python (displays, network, gpu, volume, clock, calendar, …, sharing common.py), and the display settings window
+  eww.nix                      eww bar (workspaces, title, caps/num lock, running containers, gamemode/steam, nike with firewall modes, display settings with rotation, cpu, mem, gpus with a panel to pick the main one, network with VPN asterisks, caffeine, volume, battery, clock + calendar)
+  eww/                         the bar's layout (eww.yuck), styles (eww.scss) and scripts, in Python (displays, network, gpu, pods, volume, clock, calendar, …, sharing common.py), and the display settings window
   open-mode.nix                Super+o's keys, for sway and the bar's hint
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
@@ -58,7 +57,7 @@ home/                          home-manager, one file per program
   flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
   element.nix                  Miami Wind theme for Element
-  ai.nix                       pi on the harmonia desktop: the release build, on the local model, with the MCP servers, the skills and the .agents/ extension
+  ai.nix                       pi on the harmonia desktop: the release build, with the MCP servers, the skills and the .agents/ extension
   gamedev.nix                  game dev on the harmonia desktop: Claude Code (no global prompts), Blender, Godot and radare2 MCP, the godot-ai service, the skills, gamedev-init
   gamedev/                     its skills (Godot 4, Godot and Blender MCP) and the design-doc templates gamedev-init copies
   pi/agents-dir.ts             pi extension (home/ai.nix): a project's instructions from .agents/ only, nothing from its .pi/
@@ -79,7 +78,7 @@ docs/                          the rest of the documentation (linked below), als
 mkdocs.yml                     the documentation site: theme, navigation (`nix build .#docs`)
 scripts/mkdocs-hooks.py        points the docs' links to repository files at GitHub
 scripts/install.py             base NixOS install from the minimal ISO (docs/install.md)
-scripts/cleanup-deprecated.py  `sudo harmonia-cleanup`: removes what older harmonia versions left behind (Zen, libvirt VMs, the Zelus microVM, ...)
+scripts/cleanup-deprecated.py  `sudo harmonia-cleanup`: removes what older harmonia versions left behind (Zen, libvirt VMs, the Zelus microVM, the llama.cpp server's model, ...)
 ```
 
 ## Install
@@ -130,7 +129,6 @@ the right one for the machine.
 - [Firefox jail](docs/firefox.md): the Flatpak sandbox, add-ons and theming
 - [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
 - [Element](docs/element.md): the Matrix client's Flatpak jail and theme
-- [The local model](docs/llama-server.md): Ornith 1.5 9B as `ai` on llama.cpp's server in podman on harmonia, with MTP, started from the bar
 - [Game dev](docs/gamedev.md): Blender, Godot and radare2 over MCP for the agents on harmonia, and per-game context
 - [Blender](docs/blender.md): free models from Poly Haven and Poly Pizza inside Blender
 - [pi](docs/pi.md): pi and Claude Code on harmonia, what the repo configures for them, the MCP servers, the godot-ai service
@@ -188,10 +186,6 @@ harmonia stands on other people's work:
   microVM.
 - **[Poly Haven](https://polyhaven.com/)** ([add-on](https://github.com/Poly-Haven/polyhavenassets), GPL-3.0)
   and **[Poly Pizza](https://poly.pizza/)**: free models inside Blender.
-- **[llama.cpp](https://github.com/ggml-org/llama.cpp)** (MIT): the local
-  model server, running
-  **[Ornith 1.5 9B](https://huggingface.co/ornith-ai/Ornith-1.5-9B)** in
-  [protoLabsAI's MTP GGUF](https://huggingface.co/protoLabsAI/Ornith-1.5-9B-MTP-GGUF).
 - **[radare2](https://github.com/radareorg/radare2)** and
   **[r2mcp](https://github.com/radareorg/radare2-mcp)** (MIT): binary
   analysis for the agents.

@@ -19,7 +19,6 @@ pieces.
 | Podman, VPNs, secrets tools | ✓ | ✓ | ✓ |
 | Lutris and Steam | ✓ | ✓ | |
 | Blender and Godot (native) | ✓ | ✓ | |
-| [Local model server](llama-server.md) (llama.cpp, `ai`) | ✓ | | |
 | Nike microVM | ✓ | ✓ | |
 | Claude Code and pi | ✓ for [game dev](gamedev.md) | | |
 | radare2 MCP | ✓ (game dev) | | |

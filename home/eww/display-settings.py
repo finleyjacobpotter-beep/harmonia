@@ -1,4 +1,4 @@
-"""The display settings window: every display's layout, resolution and on/off,
+"""The display settings window: every display's layout, resolution, rotation and on/off,
 and which one is primary (has the bar), in one place. Nothing changes until
 Apply, which hands everything to `eww-display apply` at once; a new
 resolution, or a display turned on or off, is undone after 15 seconds
@@ -21,6 +21,13 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gdk, GLib, Gtk  # noqa: E402
 
 APP_ID = "harmonia.display-settings"
+# Sway's output transforms, rotating clockwise, and how the form names them.
+ROTATIONS = [
+    ("normal", "Landscape"),
+    ("90", "Portrait (90° clockwise)"),
+    ("180", "Landscape, upside down (180°)"),
+    ("270", "Portrait (90° counter-clockwise)"),
+]
 # The Miami Wind palette (home/eww.nix).
 COLORS = {"bg": "#181825", "surface": "#313244", "fg": "#cdd6f4", "muted": "#7f849c", "pink": "#f472b6", "cyan": "#22d3ee"} | config().get("colors", {})
 KEEP_SECONDS = 15
@@ -43,15 +50,20 @@ class Display:
         self.name = entry["name"]
         self.number = entry["number"]
         self.title = entry["title"]
+        self.gpu = entry.get("gpu", "")
         self.modes = entry["modes"]
         self.enabled = bool(sway.get("active"))
         self.mode = entry["current_id"] or (self.modes[0]["id"] if self.modes else "")
         self.scale = sway.get("scale") or 1.0
         if self.scale <= 0:
             self.scale = 1.0
-        self.rotated = sway.get("transform") in ("90", "270", "flipped-90", "flipped-270")
+        self.transform = entry.get("transform") or sway.get("transform") or "normal"
         rect = sway.get("rect") or {}
         self.x, self.y = rect.get("x", 0), rect.get("y", 0)
+
+    @property
+    def rotated(self) -> bool:
+        return self.transform in ("90", "270", "flipped-90", "flipped-270")
 
     @property
     def size(self) -> tuple:
@@ -66,7 +78,7 @@ class Display:
     def setting(self) -> dict:
         if not self.enabled:
             return {"enabled": False}
-        return {"enabled": True, "mode": self.mode, "x": int(self.x), "y": int(self.y)}
+        return {"enabled": True, "mode": self.mode, "transform": self.transform, "x": int(self.x), "y": int(self.y)}
 
 
 def load() -> tuple:
@@ -185,20 +197,29 @@ class Window(Gtk.ApplicationWindow):
         self.enabled.connect("notify::active", self.on_enabled)
         grid.attach(self.enabled, 1, 1, 1, 1)
 
+        self.gpu = Gtk.Label(xalign=0)
+        self.gpu.get_style_context().add_class("dim-label")
+        grid.attach(self.gpu, 0, 6, 2, 1)
+
         grid.attach(Gtk.Label(label="Resolution", xalign=0), 0, 2, 1, 1)
         self.resolution = Gtk.ComboBoxText(hexpand=True)
         self.resolution.connect("changed", self.on_resolution)
         grid.attach(self.resolution, 1, 2, 1, 1)
 
-        grid.attach(Gtk.Label(label="Primary", xalign=0), 0, 3, 1, 1)
+        grid.attach(Gtk.Label(label="Rotation", xalign=0), 0, 3, 1, 1)
+        self.rotation = Gtk.ComboBoxText(hexpand=True)
+        self.rotation.connect("changed", self.on_rotation)
+        grid.attach(self.rotation, 1, 3, 1, 1)
+
+        grid.attach(Gtk.Label(label="Primary", xalign=0), 0, 4, 1, 1)
         self.make_primary = Gtk.CheckButton(label="Has the bar and its panels")
         self.make_primary.connect("toggled", self.on_primary)
-        grid.attach(self.make_primary, 1, 3, 1, 1)
+        grid.attach(self.make_primary, 1, 4, 1, 1)
 
-        grid.attach(Gtk.Label(label="Position", xalign=0), 0, 4, 1, 1)
+        grid.attach(Gtk.Label(label="Position", xalign=0), 0, 5, 1, 1)
         self.position = Gtk.Label(xalign=0)
         self.position.get_style_context().add_class("dim-label")
-        grid.attach(self.position, 1, 4, 1, 1)
+        grid.attach(self.position, 1, 5, 1, 1)
 
         buttons = Gtk.Box(spacing=8, halign=Gtk.Align.END)
         reset = Gtk.Button(label="Reset")
@@ -270,9 +291,11 @@ class Window(Gtk.ApplicationWindow):
         d = self.find(self.selected)
         self.updating = True
         self.resolution.remove_all()
+        self.rotation.remove_all()
         if d:
             title = f" · {d.title}" if d.title else ""
             self.heading.set_markup(f"<b>Display {d.number}</b>  {GLib.markup_escape_text(d.name + title)}")
+            self.gpu.set_text(f"Plugged into {d.gpu}" if d.gpu else "")
             self.enabled.set_active(d.enabled)
             # The primary display stays on: something has to hold the bar.
             self.enabled.set_sensitive(d.name != self.primary)
@@ -280,6 +303,11 @@ class Window(Gtk.ApplicationWindow):
                 self.resolution.append(m["id"], m["label"])
             self.resolution.set_active_id(d.mode)
             self.resolution.set_sensitive(d.enabled)
+            # A flipped transform set in home/sway.nix is listed as it is.
+            for t, label in ROTATIONS + ([] if d.transform in dict(ROTATIONS) else [(d.transform, d.transform)]):
+                self.rotation.append(t, label)
+            self.rotation.set_active_id(d.transform)
+            self.rotation.set_sensitive(d.enabled)
             self.make_primary.set_active(d.name == self.primary)
             self.make_primary.set_sensitive(d.enabled and d.name != self.primary)
             self.position.set_text(f"{int(d.x)}, {int(d.y)}" if d.enabled else "off")
@@ -305,7 +333,22 @@ class Window(Gtk.ApplicationWindow):
         mode = combo.get_active_id()
         if self.updating or not d or not mode or mode == d.mode:
             return
-        (ow, oh), d.mode = d.size, mode
+        size = d.size
+        d.mode = mode
+        self.resized(d, size)
+
+    def on_rotation(self, combo) -> None:
+        d = self.find(self.selected)
+        transform = combo.get_active_id()
+        if self.updating or not d or not transform or transform == d.transform:
+            return
+        size = d.size
+        d.transform = transform
+        self.resized(d, size)
+
+    def resized(self, d: Display, old: tuple) -> None:
+        """d's size changed from old (a new resolution or rotation)."""
+        ow, oh = old
         dw, dh = d.size[0] - ow, d.size[1] - oh
         # Keep the arrangement: displays right of or below this one move with
         # its new edge.
@@ -388,7 +431,10 @@ class Window(Gtk.ApplicationWindow):
             cr.show_text(label)
             cr.set_font_size(11)
             cr.set_source_rgba(*rgb("fg"), 0.7)
-            for i, line in enumerate((d.name, d.mode.split("@")[0])):
+            turned = "" if d.transform == "normal" else f" ↻{d.transform}"
+            # The GPU's short model, "RX 9070", under the name and mode.
+            card = d.gpu.split("/")[0].removeprefix("Radeon ").split(" (")[0]
+            for i, line in enumerate(p for p in (d.name, d.mode.split("@")[0] + turned, card) if p):
                 ext = cr.text_extents(line)
                 cr.move_to(x + (w * scale - ext.width) / 2 - ext.x_bearing, y + h * scale / 2 + 16 + 14 * i)
                 cr.show_text(line)
@@ -438,7 +484,7 @@ class Window(Gtk.ApplicationWindow):
         before = {"primary": before_primary, "outputs": {d.name: d.setting() for d in before_displays}}
         wanted = {"primary": self.primary, "outputs": {d.name: d.setting() for d in self.displays}}
         risky = any(
-            d.enabled != b.enabled or (d.enabled and d.mode != b.mode)
+            d.enabled != b.enabled or (d.enabled and (d.mode != b.mode or d.transform != b.transform))
             for d in self.displays for b in before_displays if b.name == d.name)
         output("eww-display", "apply", json.dumps(wanted))
         if risky:

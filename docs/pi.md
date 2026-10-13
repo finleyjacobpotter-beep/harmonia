@@ -3,14 +3,13 @@
 [pi](https://pi.dev) and [Claude Code](https://github.com/anthropics/claude-code)
 run natively on harmonia, configured by [`home/ai.nix`](../home/ai.nix) (pi)
 and [`home/gamedev.nix`](../home/gamedev.nix) (Claude Code).
-They're harmonia only: cadmus, Dionysus and Nike have no AI agents. pi runs
-on the local model; otherwise both are on their own defaults, with no global
-rules or system prompts from this repo: a project's instructions live in its
+They're harmonia only: cadmus, Dionysus and Nike have no AI agents. Both
+are on their own defaults, with no global rules or system prompts from this repo: a project's instructions live in its
 own `.agents/AGENTS.md` ([below](#instructions-come-from-agents);
 [gamedev.md](gamedev.md) has templates for games).
 
 ```sh
-pi          # start the local model from the bar first
+pi          # /login the first time, or set a provider's API key
 claude      # /login the first time
 ```
 
@@ -25,11 +24,9 @@ pi's built-in MCP client. To update, bump the version and the hashes there
 install telemetry (`PI_TELEMETRY=0`) and its version check
 (`PI_SKIP_VERSION_CHECK=1`).
 
-pi is one agent: no subagents or task categories. Every session starts on
-`local/ai`, Ornith 1.5 9B on the [local model server](llama-server.md);
-start the server from the bar before you start pi. `/model` can switch the
-current session to another model if you `/login` somewhere, but the next
-session is back on `local/ai`.
+pi is one agent: no subagents or task categories. The repo sets no
+provider or model: `/login` to one (or set its API key) and pick a model
+with `/model`, which pi remembers.
 
 pi keeps its state in `~/.pi/agent` (sessions included; nothing in the
 project). On every switch the repo merges its settings into the files
@@ -38,9 +35,9 @@ there; what it sets wins, and whatever else you add with `/mcp`,
 
 | File | What the repo puts in it |
 | --- | --- |
-| `~/.pi/agent/models.json` | the `local` provider: the [local model server](llama-server.md), `local/ai` (Ornith 1.5 9B) at `http://127.0.0.1:1235/v1` |
+| `~/.pi/agent/models.json` | nothing; it only takes out the `local` provider older versions put there |
 | `~/.pi/agent/mcp.json` | the Blender, Godot and radare2 MCP servers (below) |
-| `~/.pi/agent/settings.json` | `~/.claude/skills` as a skill path, `local/ai` as the startup model, projects never trusted, telemetry off |
+| `~/.pi/agent/settings.json` | `~/.claude/skills` as a skill path, projects never trusted, telemetry off; it takes out the `local/ai` startup model older versions set |
 | `~/.pi/agent/extensions/agents-dir.ts` | the `.agents/` extension (below), a link into the Nix store |
 
 omo (oh-my-openagent), which this replaced, kept its state in `~/.omo`;

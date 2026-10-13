@@ -32,7 +32,7 @@ harmonia, cadmus and Dionysus all import [`hosts/base.nix`](../hosts/base.nix).
 | `fonts.nix` | DepartureMono Nerd Font as the system default |
 | `flatpak.nix` | Flathub, the `harmonia.apps` list (each app's sandbox and Super+o key), `harmonia.launchers` (Super+o keys for native programs), [Firefox](firefox.md) in a tightened sandbox |
 | `element.nix` | [Element](element.md) (Matrix) from Flathub in a locked-down sandbox |
-| `podman.nix` | Rootless podman, podman-compose and buildah |
+| `podman.nix` | Rootless podman, podman-compose and buildah; lets the bar list root's containers without a password (read-only) |
 | `git-lfs.nix` | Git with LFS |
 | `editorconfig.nix` | A system-wide `/.editorconfig` ([Editing](editing.md)) |
 | `sudo.nix` | Asterisks at the sudo password prompt |

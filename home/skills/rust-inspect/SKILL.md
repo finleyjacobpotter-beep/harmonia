@@ -21,5 +21,3 @@ These are installed here; call them by name.
 | Command examples | `tldr <command>` (run `tldr --update` once) |
 
 `watchexec -e rs,toml -- cargo test` reruns on changes, and `btm` is an interactive monitor. Both run until stopped, so only start them in the background or in a tmux window the user can see, never as a blocking command.
-
-The local model server (Ornith as `ai`, OpenAI-compatible) is at `http://127.0.0.1:1235/v1`, e.g. `xh :1235/v1/models`, while it runs (it is started from the bar).

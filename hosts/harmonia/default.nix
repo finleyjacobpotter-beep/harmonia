@@ -6,8 +6,6 @@
     ../common.nix
     # The AMD GPU's fan curve (LACT). cadmus has its own (thinkpad.nix).
     ../../modules/nixos/fans.nix
-    # Ornith 1.5 9B on llama.cpp's server, in podman, on the GPU.
-    ../../modules/nixos/llama-server.nix
   ];
 
   # Python, for uv and uvx (home/default.nix), which use it: a Python uv
@@ -23,9 +21,9 @@
     UV_PYTHON_DOWNLOADS = "never";
   };
 
-  # AI agents and game dev, on the desktop only: pi on the local model
-  # (llama-server.nix above; home/ai.nix) and Claude Code, with Blender,
-  # Godot and radare2 over MCP (home/gamedev.nix; docs/pi.md, docs/gamedev.md).
+  # AI agents and game dev, on the desktop only: pi (home/ai.nix) and Claude
+  # Code, with Blender, Godot and radare2 over MCP (home/gamedev.nix;
+  # docs/pi.md, docs/gamedev.md).
   home-manager.users.${username}.imports = [
     ../../home/ai.nix
     ../../home/gamedev.nix

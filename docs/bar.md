@@ -18,12 +18,12 @@ they're open.
 |---|---|
 |  logo (top left) | opens the session panel: **Lock** (swaylock), **Log out** (exits sway) and **Power off**. `Super+Shift+e` has the same actions from the keyboard, plus suspend and reboot |
 | **CAPS** / **NUM** | shown while Caps Lock or Num Lock is on |
+| 󰡨 **00** containers | how many podman containers run, yours and root's: a grey `00` while none do, a green block like CAPS/NUM while some do; opens the containers panel (below) |
 | GameMode, Steam | shown while running; Steam opens a panel with **Close** |
-| 󰚩 local model | harmonia only: grey while stopped, yellow while it starts or loads, pink while it serves `ai`; opens a panel with **Start** or **Stop** ([llama-server.md](llama-server.md)) |
 | Nike | always shown: running or not, and the firewall mode; opens its VM panel (below) |
 | 󰍹 **2** | how many displays there are; opens the display settings window (below) |
 | CPU, memory | |
-| 󰢮 GPU | load and temperature from `rocm-smi`; the tooltip adds VRAM use |
+| 󰢮 GPU | the main GPU's load and temperature from `rocm-smi`, then two thin meters per GPU (load, then VRAM; the main GPU's in red and purple, the others grey, orange above 90%); opens the GPU panel (below) |
 | 󰈀 / 󰖩 network | the shown interface with its download and upload rate, switching between bps, kbps, Mbps and Gbps, and a stack of coloured asterisks beside the icon, one per kind of VPN that is up ([vpn.md](vpn.md)); opens a panel listing the VPNs with **Connect** / **Disconnect**, then every interface's rates, where **Show** picks the one on the bar (**Automatic** follows the default route) |
 | caffeine | stops the lock and blank timers until clicked again |
 | 󰕾 volume | opens a panel with a slider, **− 5%**, **Mute** and **+ 5%**; scrolling on the icon changes the volume too |
@@ -44,19 +44,27 @@ fuzzel as **Displays**, or `display-settings`; the button closes it again):
   it; on release it snaps beside the others, lining up with their edges
   when close, so the pointer can always cross from one to the next. Click
   a display to change it in the form below.
+- Under each display's form, and on its box in the layout, the GPU it is
+  plugged into (by its connector, e.g. `card1-DP-1`), so with two cards you
+  can see which one drives which monitor.
 - **On** turns the selected display on or off (the primary one stays on).
 - **Resolution** lists every mode the monitor offers, biggest and fastest
   first.
+- **Rotation** turns a display for a vertical monitor: **Portrait (90°
+  clockwise)** or **(90° counter-clockwise)**, whichever way the monitor is
+  turned, or upside down. The layout redraws it on its side, so place it
+  next to the others after rotating.
 - **Primary** moves the bar, and its panels, to that display.
 
 Nothing changes until **Apply**, which sets every display in one go.
-After a new resolution, or a display turned on or off, a dialog asks to
+After a new resolution or rotation, or a display turned on or off, a dialog asks to
 keep it and reverts by itself after 15 seconds, in case the picture is
 gone. **Reset** drops what hasn't been applied yet.
 
 What you apply is remembered per monitor (by make, model and serial, so it
 follows the monitor to another port): resolutions in
-`~/.local/state/eww/display-modes.json`, positions in
+`~/.local/state/eww/display-modes.json`, rotations in
+`~/.local/state/eww/display-rotation.json`, positions in
 `~/.local/state/eww/display-layout.json`, and the primary display in
 `~/.local/state/eww/primary-display`. They are applied again whenever that
 monitor is connected and when sway starts. If the primary display is
@@ -65,8 +73,43 @@ returns.
 
 `Super+Shift+b` hides and shows the bar on the primary display. Sway itself
 has no primary display, so this only decides where the bar goes; the
-resolutions and positions are ordinary `swaymsg output` settings, and anything set in
+resolutions, rotations and positions are ordinary `swaymsg output` settings, and anything set in
 `home/sway.nix` still applies first.
+
+## GPUs
+
+The GPU button opens a panel with every AMD GPU `rocm-smi` sees, read
+every 3 seconds (`home/eww/gpu.py`):
+
+- **Automatic** puts the GPU with the most VRAM on the bar (the RX 9070 on
+  harmonia). **Set main** on a GPU puts that one there instead; it is
+  remembered in `~/.local/state/eww/gpu-main` (by PCI address), and if that
+  GPU goes away the bar falls back to Automatic.
+- Each GPU: its name (from hwdata's `pci.ids`), chip, PCI address and link,
+  then meters for **Load**, **VRAM** (used/total) and **Memory bus**
+  activity, its edge, hotspot and memory temperatures, power draw against
+  its cap, fan speed, core and memory clocks, and the displays plugged into
+  it.
+
+The main GPU only decides what the bar shows; which card renders the desktop
+is up to sway.
+
+## Containers
+
+The 󰡨 button counts the running podman containers and opens a panel with
+each one, read every 5 seconds (`home/eww/pods.py`): its name and pod (if
+it is in one), whether it is yours or the system's (root's), its image name
+and ID, its container ID, status and restarts, CPU and memory use, network
+and disk I/O, PIDs, published ports and mounted volumes. Stopped ones are
+only counted, in the panel's title.
+
+Your own containers come from rootless `podman`. Root's (from
+`virtualisation.oci-containers`) come through `sudo -n`, which
+`modules/nixos/podman.nix` allows without a password for exactly
+`podman ps -a --format json` and `podman stats --no-stream --format json`.
+Not `podman inspect`, which would also print the containers' environment
+variables; so root's containers show where volumes are mounted inside, but
+not which host folder they come from.
 
 ## Nike
 

@@ -11,7 +11,7 @@ layout; docs/ is the documentation site (mkdocs).
   comment), packages and servers to a release. docs/versions.md lists the
   pins.
 - Comments say why, in plain sentences, and name the file that holds the
-  other half (`home/gamedev.nix`, `modules/nixos/llama-server.nix`).
+  other half (`home/gamedev.nix`, `modules/nixos/podman.nix`).
 - Before committing: `nix fmt`, then
   `nix eval .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath`
   for each host you touched, and `nix build .#docs` when docs changed.

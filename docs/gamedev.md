@@ -8,10 +8,9 @@ gets game dev rules globally: each game carries its own context, which
 
 ## Set up once
 
-1. **The model**: pi runs on the local model. Click the robot
-   icon on the bar, then **Start**. The first start
-   downloads the image and the model (~6 GB); it's ready when the icon
-   turns pink ([llama-server.md](llama-server.md)).
+1. **The model**: `/login` in Claude Code, and in pi `/login` to a
+   provider (or set its API key) and pick a model with `/model`
+   ([pi.md](pi.md#pi)).
 2. **Blender and Godot**: open them. The Blender MCP add-on is already
    enabled; in each Godot project install and enable the Godot AI 4.3.0
    plugin ([pi.md](pi.md#mcp-servers)). The `godot-ai` service already
