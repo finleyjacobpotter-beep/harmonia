@@ -1,5 +1,5 @@
 # What every host shares: boot, networking, locale, the user, nix settings
-# and the base CLI tools, plus the Sway desktop, fonts, Element, secrets and
+# and the base CLI tools, plus the Sway desktop, fonts, secrets and
 # VPNs. hosts/common.nix adds harmonia's and cadmus's apps and microVMs on
 # top; Dionysus imports this directly.
 {
@@ -19,7 +19,6 @@
     ../modules/nixos/podman.nix
     ../modules/nixos/git-lfs.nix
     ../modules/nixos/sudo.nix
-    ../modules/nixos/element.nix
     ../modules/nixos/secrets.nix
     ../modules/nixos/vpn.nix
   ];

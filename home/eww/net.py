@@ -1,7 +1,7 @@
-"""Network rates for the bar and its interface panel.
+"""Network rates for the dash's network tile.
 
 Usage: eww-net              JSON: {"shown": {...}, "auto": bool, "ifaces": [...]}
-       eww-net show IFACE   show IFACE on the bar ("auto" = the default route's)
+       eww-net show IFACE   show IFACE in the tile's summary ("auto" = the default route's)
 
 Rates come from /sys/class/net/*/statistics, against the previous sample
 kept in $XDG_RUNTIME_DIR.
@@ -33,7 +33,7 @@ def ip_json(*args: str) -> list:
 def rate(bytes_per_second: float) -> str:
     """Bits per second, scaled to bps, kbps, Mbps or Gbps and padded to a
     fixed width: the number is "0.0" to "999.9", padded to five characters
-    ("  0.0 bps " to "999.9 Gbps") so the bar stays put."""
+    ("  0.0 bps " to "999.9 Gbps") so the tile stays put."""
     v, units = bytes_per_second * 8, ["bps", "kbps", "Mbps", "Gbps"]
     i = 0
     while v >= 999.95 and i < len(units) - 1:

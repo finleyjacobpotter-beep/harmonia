@@ -17,7 +17,7 @@
     ./ranger.nix
     ./neovim.nix
     ./gtk.nix
-    ./element.nix
+    ./iamb.nix
     ./tui.nix
     ./keymap.nix
     ./secrets.nix

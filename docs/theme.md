@@ -30,7 +30,9 @@ picker are drawn on the host and use Tulasi anyway.
 
 ## Wallpaper
 
-`assets/wallpaper.png` is scaled to fit and centred on the background colour `#1e1e2e`.
+`assets/wallpaper.png` is drawn by the [dash](bar.md#layout), centred in the half of the
+display beside its tiles (the lower half of a vertical display) and scaled to fit, on the
+background colour `#1e1e2e`. Every other workspace has that colour alone.
 It was recoloured to the Miami Wind palette with
 [lutgen](https://github.com/ozwaldorf/lutgen-rs), using every colour in
 `theme/miami-wind.nix`:

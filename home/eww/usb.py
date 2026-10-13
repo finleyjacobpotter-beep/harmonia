@@ -1,5 +1,5 @@
-"""Connected USB devices from sysfs (world-readable), for the bar button and
-its panel. Names come from the device's own strings, else from usb.ids.
+"""Connected USB devices from sysfs (world-readable), for the dash's devices
+tile. Names come from the device's own strings, else from usb.ids.
 
 Usage: eww-usb        print once: {"count": N (hubs left out), "devices": [...]}
        eww-usb watch  print, then again whenever a USB device comes or goes
@@ -122,7 +122,7 @@ def devices() -> list:
 
 def listing() -> str:
     found = devices()
-    # Hubs are listed in the panel, but the bar counts what's plugged into them.
+    # Hubs are listed on the dash, but its count is of what's plugged into them.
     count = sum(d["kind"] != "Hub" for d in found)
     return json.dumps({"count": count, "devices": found},
                       separators=(",", ":"), ensure_ascii=False)

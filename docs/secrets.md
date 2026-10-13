@@ -3,6 +3,11 @@
 Local secrets tooling lives in `home/secrets.nix` (user side) and
 `modules/nixos/secrets.nix` (pcscd and the YubiKey udev rules).
 
+The dash's secrets tile (`u`, [the dash](bar.md#tiles)) shows what is
+unlocked or loaded right now (the Bitwarden session, ssh-agent's keys,
+passphrases gpg-agent has cached, a YubiKey) with buttons to lock or forget
+each, and when `secrets-backup` last ran.
+
 | Tool | Command | Notes |
 | --- | --- | --- |
 | KeePassXC CLI | `keepassxc-cli` | the local database, at `$KEEPASSXC_DB` (`~/.local/share/keepassxc/passwords.kdbx`) |

@@ -1,10 +1,11 @@
 # Calendar
 
-Clicking the clock on the bar opens a month calendar. Buttons at the top
-switch the bar's time zone between **Eastern** (`America/New_York`),
-**Pacific** (`America/Los_Angeles`) and **UTC**; the choice is kept in
+The time tile on the dash (`t`, or click the time on the bar) opens a
+month calendar. Buttons at the top switch the clock's time zone between
+**Local** (the system's), **Eastern** (`America/New_York`), **Pacific**
+(`America/Los_Angeles`) and **UTC**; the choice is kept in
 `~/.local/state/eww/timezone` and also decides which day an event falls on.
-Until you pick one, the bar uses the system time zone.
+Until you pick one, the clock uses the system time zone.
 
 Days with events get a coloured dot per calendar under the date. Click a
 day to list its events under the grid; `‹` `›` change month and **Today**
@@ -15,7 +16,7 @@ goes back.
 The events come from [vdirsyncer](https://vdirsyncer.pimutils.org/), which
 copies your calendars into `~/.local/share/calendars` as `.ics` files. A
 user timer (`vdirsyncer.timer`) syncs every 15 minutes, then refreshes the
-calendar panel. It does nothing until you write the config below, which is
+calendar. It does nothing until you write the config below, which is
 not part of the repo, so your server and user name stay out of it.
 
 1. Store the password in Bitwarden (an app password if your provider has
@@ -99,5 +100,5 @@ colour into that file, for example
 A single `.ics` file copied straight into `~/.local/share/calendars/` is
 shown as a calendar of its own, with no sync needed.
 
-The panel is `home/eww/cal.py`: it reads every `.ics` file, expands
+The calendar is `home/eww/cal.py`: it reads every `.ics` file, expands
 repeating events, and marks each day an event touches.

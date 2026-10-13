@@ -1,14 +1,45 @@
-; The eww bar. home/eww.nix fills in the names between @ signs: the bar
-; scripts' bin directory (home/eww/*.py), the programs' store paths, and the
-; widgets generated from the host's microVMs (modules/nixos/microvms.nix)
-; and VPN asterisks.
+; The top bar and the dash. home/eww.nix fills in the names between @ signs:
+; the bar scripts' bin directory (home/eww/*.py), the programs' store paths,
+; the dash's key hint, and the widgets generated from the host's microVMs
+; (modules/nixos/microvms.nix) and VPN asterisks.
+;
+; The bar shows the workspaces, the focused window's title and the fuzzy
+; time. Everything else is on the dash, workspace 10: home/eww/dash.py opens
+; it while that workspace is on screen and closes the bar there.
 
 (deflisten workspaces :initial "[]" "@bin@/eww-sway-workspaces")
 (deflisten title :initial "" "@bin@/eww-sway-title")
 (deflisten mode :initial "{\"name\":\"default\",\"hint\":\"\"}" "@bin@/eww-sway-mode")
+(defpoll time :interval "10s"
+  :initial "{\"text\":\"\",\"clock\":\"\",\"date\":\"\",\"fuzzy\":\"\",\"abbr\":\"\",\"zone\":\"local\"}"
+  "@bin@/eww-clock")
+
+; eww only runs a poll while an open window uses it, so these run only
+; while the dash is on screen.
 (defpoll volume :interval "2s" :initial "{\"pct\":0,\"muted\":false,\"sink\":\"\",\"text\":\"\"}"
   "@bin@/eww-volume")
-(defpoll cpuinfo :interval "5s" :initial "{\"model\":\"\",\"temp\":\"\",\"load\":\"\"}" "@bin@/eww-cpu")
+(defpoll cpuinfo :interval "2s"
+  :initial "{\"model\":\"\",\"temp\":0,\"temp_text\":\"\",\"temps\":[],\"load\":\"\",\"uptime\":\"\",\"tasks\":\"\",\"top\":[],\"freq\":\"\",\"freq_max\":\"\",\"governor\":\"\"}"
+  "@bin@/eww-cpu")
+(defpoll meminfo :interval "2s"
+  :initial "{\"total\":\"\",\"used\":{\"text\":\"\",\"pct\":0},\"cache\":{\"text\":\"\",\"pct\":0},\"shared\":{\"text\":\"\",\"pct\":0},\"free\":{\"text\":\"\",\"pct\":0},\"available\":{\"text\":\"\",\"pct\":0},\"swap\":{\"text\":\"\",\"pct\":0,\"total\":\"\",\"on\":false},\"zswap\":\"\",\"dirty\":\"\",\"top\":[]}"
+  "@bin@/eww-mem")
+(defpoll mic :interval "3s"
+  :initial "{\"present\":false,\"pct\":0,\"muted\":false,\"name\":\"\",\"recording\":[],\"recording_text\":\"\",\"cameras\":[],\"camera_users\":[],\"camera_text\":\"\"}"
+  "@bin@/eww-mic")
+(defpoll bt :interval "10s" :initial "{\"present\":false,\"powered\":false,\"connected\":0,\"devices\":[]}"
+  "@bin@/eww-bt")
+(defpoll notify :interval "3s" :initial "{\"focus\":false,\"count\":0,\"urgent\":0,\"history\":0,\"list\":[]}"
+  "@bin@/eww-notify")
+(defpoll secrets :interval "10s"
+  :initial "{\"bw\":false,\"ssh\":[],\"gpg\":0,\"yubikeys\":[],\"keepass\":{\"exists\":false,\"path\":\"\",\"changed\":\"\"},\"age\":false,\"backup\":\"\",\"locked\":true}"
+  "@bin@/eww-secrets")
+(defpoll system :interval "30s"
+  :initial "{\"failed\":[],\"errors\":0,\"recent\":[],\"generation\":{\"number\":\"\",\"built\":\"\",\"version\":\"\",\"kernel\":\"\",\"reboot\":false},\"pins\":[],\"store\":{\"free\":\"\",\"pct\":0,\"gc\":\"\",\"running\":false}}"
+  "@bin@/eww-system")
+(defpoll disk :interval "2s"
+  :initial "{\"root\":{\"pct\":0,\"text\":\"\",\"free\":\"\"},\"filesystems\":[],\"disks\":[],\"io\":\"\",\"busy\":0}"
+  "@bin@/eww-disk")
 (defpoll gpu :interval "3s"
   :initial "{\"ok\":false,\"auto\":true,\"use\":0,\"temp\":0,\"vram\":0,\"vram_text\":\"\",\"name\":\"\",\"text\":\"\",\"gpus\":[]}"
   "@bin@/eww-gpu")
@@ -16,6 +47,12 @@
   :initial "{\"auto\":true,\"default\":\"\",\"shown\":{\"name\":\"\",\"state\":\"down\",\"wireless\":false,\"down\":\"\",\"up\":\"\",\"address\":\"\"},\"ifaces\":[]}"
   "@bin@/eww-net")
 (deflisten displays :initial "{\"primary\":\"\",\"outputs\":[]}" "@bin@/eww-display watch")
+; The display settings' draft (home/eww/display-edit.py); its buttons
+; update it at once, this only picks up changes made elsewhere.
+(defpoll display_edit :interval "3s"
+  :initial "{\"boxes\":[],\"map_w\":360,\"map_h\":150,\"selected\":\"\",\"align\":\"start\",\"dirty\":false,\"confirm\":0,\"names\":[],\"form\":{}}"
+  "@bin@/eww-display-edit")
+(defvar display_modes_open false)
 (defpoll vpn :interval "5s"
   :initial "{\"up\":{\"wireguard\":false,\"openvpn\":false,\"forti\":false,\"other\":false},\"active\":0,\"connections\":[]}"
   "@bin@/eww-vpn")
@@ -27,187 +64,199 @@
 (defpoll locks :interval "500ms" :initial "{\"caps\":false,\"num\":false}" "@bin@/eww-locks")
 (defpoll caffeine :interval "10s" "@bin@/eww-caffeine")
 (defpoll battery :interval "30s" "@bin@/eww-battery")
-(defpoll time :interval "10s" :initial "{\"text\":\"\",\"abbr\":\"\",\"zone\":\"local\"}"
-  "@bin@/eww-clock")
 (defpoll cal :interval "60s"
   :initial "{\"title\":\"\",\"zone\":\"\",\"calendars\":[],\"weeks\":[],\"selected\":{\"label\":\"\",\"events\":[]}}"
   "@bin@/eww-cal")
+
+; The dash's state, set by home/eww/dash.py: the selected tile, the open one
+; and its row (-1 while none is open), the display it is pinned to (if
+; any), whether the bar is on, and its size on its display.
+(defvar dash "{\"sel\":\"cpu\",\"open\":\"\",\"row\":-1,\"pinned\":\"\",\"bar\":true}")
+(defvar dash_layout "{\"orient\":\"h\",\"split\":true,\"w\":640,\"h\":640}")
+
+;; ---------------------------------------------------------------- the bar
 
 (defwidget workspaces []
   (box :class "workspaces" :orientation "h" :space-evenly false :spacing 2
     (for ws in workspaces
       (button
         :class "ws ${ws.focused ? "focused" : ""} ${ws.urgent ? "urgent" : ""}"
-        :onclick "@swaymsg@ workspace ${ws.name}"
-        "${ws.name}"))))
-
-(defwidget left []
-  (box :orientation "h" :space-evenly false :halign "start" :spacing 12
-    (button :class "logo-button" :tooltip "Lock, log out or power off"
-      :onclick "@bin@/eww-display menu power-menu"
-      (label :class "logo" :text ""))
-    (workspaces)
-    (box :class "mode" :visible {mode.name != "default"} :orientation "h" :space-evenly false :spacing 8
-      (label :class "mode-name" :text "${mode.name}")
-      (label :class "mode-hint" :text "${mode.hint}"))))
-
-(defwidget center []
-  (label :class "title" :limit-width 80 :text title))
-
-(defwidget module [icon text ?class ?visible ?tooltip]
-  (box :class "module ${class}" :visible {visible ?: true} :tooltip {tooltip ?: ""}
-    :orientation "h" :space-evenly false :spacing 6
-    (label :class "icon" :text icon)
-    ; unindent would strip the padding that keeps widths fixed.
-    (label :unindent false :text text)))
-
-; A percentage padded to "100%" so the bar doesn't shift (the font is monospace).
-(defwidget module-pct [icon value ?class ?tooltip]
-  (module :class class :icon icon :tooltip tooltip
-    :text "${value < 10 ? "  " : (value < 100 ? " " : "")}${value}%"))
-
-(defwidget right []
-  (box :orientation "h" :space-evenly false :halign "end" :spacing 4
-    (label :class "lock caps" :visible {locks.caps} :text "CAPS")
-    (label :class "lock num" :visible {locks.num} :text "NUM")
-    ; Running podman containers (home/eww/pods.py): a grey 00 while none
-    ; run, a green block with the count like CAPS/NUM while some do.
-    (button :class "pods ${pods.count > 0 ? "on" : ""}"
-      :tooltip "${pods.count} container${pods.count == 1 ? "" : "s"} running${pods.stopped > 0 ? ", ${pods.stopped} stopped" : ""}: click for details"
-      :onclick "@bin@/eww-display menu pods-menu"
-      (label :text "󰡨 ${pods.text}"))
-    (box :class "module gamemode" :visible {activity.gamemode} :tooltip "GameMode is on"
-      (label :class "icon" :text "󰊗"))
-    (button :class "module steam" :visible {activity.steam}
-      :tooltip "Steam is running: click for options"
-      :onclick "@bin@/eww-display menu steam-menu"
-      (label :class "icon" :text "󰓓"))
-    ; The microVMs (generated in home/eww.nix): grey while stopped, in the
-    ; VM's own colour while running, with the firewall mode.
-    @vmBadges@
-    (button :class "module usb ${usb.count > 0 ? "on" : ""}"
-      :tooltip "${usb.count} USB device${usb.count == 1 ? "" : "s"}: click for the list"
-      :onclick "@bin@/eww-display menu usb-menu"
-      (box :orientation "h" :space-evenly false :spacing 6
-        (label :class "icon" :text "󰕓")
-        (label :text "${usb.count}")))
-    ; The display settings window opens in the background: eww kills an
-    ; onclick command still running after 200ms, which closed it on a slow VM.
-    (button :class "module display"
-      :tooltip "${arraylength(displays.outputs)} display${arraylength(displays.outputs) == 1 ? "" : "s"}, primary ${displays.primary}. Click for display settings"
-      :onclick "@bin@/display-settings --toggle &"
-      (box :orientation "h" :space-evenly false :spacing 4
-        (label :class "icon" :text "󰍹")
-        (label :text "${arraylength(displays.outputs)}")))
-    (module-pct :class "cpu" :icon "" :value {round(EWW_CPU.avg, 0)}
-      :tooltip "CPU ${round(EWW_CPU.avg, 0)}%${cpuinfo.temp} · ${arraylength(EWW_CPU.cores)} threads · ${round(EWW_CPU.cores[0].freq / 1000, 1)} GHz · load ${cpuinfo.load}
-    ${cpuinfo.model}")
-    (module-pct :class "mem" :icon "" :value {round(EWW_RAM.used_mem_perc, 0)}
-      :tooltip "RAM ${round(EWW_RAM.used_mem / 1073741824, 1)}/${round(EWW_RAM.total_mem / 1073741824, 1)} GiB (${round(EWW_RAM.used_mem_perc, 0)}%) · ${round(EWW_RAM.available_mem / 1073741824, 1)} GiB available · swap ${round((EWW_RAM.total_swap - EWW_RAM.free_swap) / 1073741824, 1)}/${round(EWW_RAM.total_swap / 1073741824, 1)} GiB")
-    ; The main GPU's load and temperature, then a pair of small meters per
-    ; GPU (home/eww/gpu.py): load, then VRAM, the main GPU's brighter.
-    (button :class "module gpu" :visible {gpu.ok}
-      :tooltip "${gpu.name}: ${gpu.use}% · ${gpu.temp}°C · VRAM ${gpu.vram_text} (${gpu.vram}%). Click for every GPU"
-      :onclick "@bin@/eww-display menu gpu-menu"
-      (box :orientation "h" :space-evenly false :spacing 6
-        (label :class "icon" :text "󰢮")
-        (label :unindent false :text "${gpu.text}")
-        (box :class "gpu-bars" :orientation "h" :space-evenly false :spacing 4
-          (for g in {gpu.gpus}
-            (box :class "gpu-pair ${g.main ? "main" : ""}" :orientation "h" :space-evenly false :spacing 1
-              (progress :class "gpu-bar use ${g.use >= 90 ? "high" : ""}" :orientation "v" :flipped true :value {g.use})
-              (progress :class "gpu-bar vram ${g.vram >= 90 ? "high" : ""}" :orientation "v" :flipped true :value {g.vram}))))))
-    ; Network, with an asterisk per VPN that is up beside the icon,
-    ; stacked and coloured by VPN (vpnStars).
-    (button :class "module net ${net.shown.state == "up" ? "" : "down"}"
-      :tooltip "${net.shown.name} ${net.shown.address}@vpnTooltip@: click for interfaces and VPNs"
-      :onclick "@bin@/eww-display menu net-menu"
-      (box :orientation "h" :space-evenly false :spacing 2
-        (label :class "icon" :text {net.shown.wireless ? "󰖩" : "󰈀"})
-        ; A space between the icon and the asterisks.
-        (label :unindent false :text " ")
-        (box :class "vpn-stars" :orientation "v" :valign "center" :space-evenly false
-          @vpnStars@)
-        (label :class "net-text" :text "${net.shown.name} ↓${net.shown.down} ↑${net.shown.up}")))
-    (button
-      :class "module caffeine ${caffeine}"
-      :tooltip "Caffeine ${caffeine}: click to ${caffeine == "on" ? "allow" : "stop"} locking and screen blanking"
-      :onclick "@bin@/eww-caffeine toggle"
-      (label :class "icon" :text {caffeine == "on" ? "󰅶" : "󰛊"}))
-    (eventbox :class "module vol ${volume.muted ? "muted" : ""}"
-      :tooltip "${volume.sink}: click for volume, scroll to change"
-      :onclick "@bin@/eww-display menu vol-menu"
-      :onscroll "@bin@/eww-volume {}"
-      (box :orientation "h" :space-evenly false :spacing 6
-        (label :class "icon" :text {volume.muted ? "󰖁" : "󰕾"})
-        (label :unindent false :text "${volume.text}")))
-    (module :class "bat" :icon "󰁹" :text "${battery}%" :visible {battery != ""})
-    (button :class "module clock" :tooltip "${time.zone}: click for the calendar and time zones"
-      :onclick "@bin@/eww-cal today; @bin@/eww-display menu cal-menu"
-      (box :orientation "h" :space-evenly false :spacing 6
-        (label :class "icon" :text "󰥔")
-        (label :text "${time.text}")
-        (label :class "tz" :text "${time.abbr}")))))
+        :onclick "@swaymsg@ workspace \"${ws.name}\""
+        "${ws.label}"))))
 
 (defwidget bar []
   (centerbox :class "bar" :orientation "h"
-    (left)
-    (center)
-    (right)))
+    (box :orientation "h" :space-evenly false :halign "start" :spacing 12
+      (workspaces)
+      (box :class "mode" :visible {mode.name != "default" && mode.name != "dash"}
+        :orientation "h" :space-evenly false :spacing 8
+        (label :class "mode-name" :text "${mode.name}")
+        (label :class "mode-hint" :text "${mode.hint}")))
+    (label :class "title" :limit-width 80 :text title)
+    (button :class "fuzzy" :halign "end"
+      :tooltip "${time.text} ${time.abbr}: click for the calendar on the dash"
+      :onclick "@bin@/eww-dash show time"
+      "${time.fuzzy}")))
 
-; Session: opened by the logo at the top left.
-(defwidget power-action [icon name onclick]
-  (button :class "wg-toggle power-action" :onclick "@eww@ close power-menu; ${onclick}"
-    (box :orientation "h" :space-evenly false :spacing 10
-      (label :class "icon" :text icon)
-      (label :halign "start" :text name))))
+;; ---------------------------------------------------------------- the dash
 
-(defwidget power-panel []
-  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
-    (box :orientation "h" :space-evenly false
-      (label :class "wg-title" :hexpand true :halign "start" :text "Session")
-      (button :class "wg-close" :onclick "@eww@ close power-menu" "✕"))
-    (power-action :icon "󰌾" :name "Lock" :onclick "@swaylock@ -f")
-    (power-action :icon "󰍃" :name "Log out" :onclick "@swaymsg@ exit")
-    (power-action :icon "󰐥" :name "Power off" :onclick "@systemctl@ poweroff")))
-
-; The panel opened by the Steam button, laid out like the network panel;
-; with :down true, the app shows as stopped.
-(defwidget app-panel [title name status action onclose onaction ?down]
-  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
-    (box :orientation "h" :space-evenly false
-      (label :class "wg-title" :hexpand true :halign "start" :text title)
-      (button :class "wg-close" :onclick onclose "✕"))
-    (box :class "wg-tunnel ${down == "true" ? "" : "up"}" :orientation "h" :space-evenly false :spacing 16
-      (box :orientation "v" :space-evenly false :hexpand true :spacing 2
-        (label :class "wg-name" :halign "start" :text "${down == "true" ? "○" : "●"} ${name}")
-        (label :class "wg-detail" :halign "start" :wrap true :text status))
-      (button :class "wg-toggle" :valign "center" :onclick onaction action))))
-
-(defwidget steam-menu []
-  (app-panel
-    :title "Steam"
-    :name "Steam"
-    :status "Running"
-    :action "Close"
-    :onclose "@eww@ close steam-menu"
-    :onaction "@eww@ close steam-menu; @bin@/eww-steam-close"))
-
-; A meter in a VM's panel (vmPanel) and the GPU panel.
-(defwidget vm-meter [name value text]
+; A labelled meter, in the tiles and the microVM panels (home/eww.nix).
+(defwidget meter [name value text]
   (box :orientation "v" :space-evenly false :spacing 2
     (box :orientation "h" :space-evenly false
       (label :class "wg-detail" :hexpand true :halign "start" :text name)
       (label :class "wg-detail" :text text))
-    (progress :class "vm-meter ${value >= 90 ? "high" : ""}" :orientation "h" :value value)))
+    (progress :class "meter ${value >= 90 ? "high" : ""}" :orientation "h" :value value)))
 
-; GPUs: every one's load, VRAM, temperatures, power, fan, clocks and
-; displays, and which one the bar shows (Automatic: the most VRAM).
-(defwidget gpu-panel []
-  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
-    (box :orientation "h" :space-evenly false
-      (label :class "wg-title" :hexpand true :halign "start" :text "GPUs")
-      (button :class "wg-close" :onclick "@eww@ close gpu-menu" "✕"))
+; The busiest processes (home/eww/procs.py).
+(defwidget procs [title list]
+  (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 6
+    (label :class "wg-name" :halign "start" :text title)
+    (for p in list
+      (box :orientation "v" :space-evenly false :spacing 1
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "proc-name" :hexpand true :halign "start" :limit-width 30 :text "${p.name}")
+          (label :class "wg-detail" :text "${p.pid}")
+          (label :class "proc-value" :text "${p.text}"))
+        (progress :class "meter ${p.pct >= 90 ? "high" : ""}" :orientation "h" :value {p.pct})))))
+
+; A tile: its key, title and headline number, then a summary, which open
+; it on a click; then the details, while it is open. While another tile in
+; its row is open it narrows to its header; while one in another row is, it
+; flattens to its header. The open tile takes the room they give up, so the
+; dash keeps its shape.
+(defwidget tile [name key title value row]
+  (box :class "tile ${dash.sel == name ? "sel" : ""} ${dash.open == name ? "open" : ""}"
+    :orientation "v" :space-evenly false
+    :hexpand {dash.row != row || dash.open == name}
+    :vexpand true
+    (button :class "tile-head" :onclick "@bin@/eww-dash open ${name}"
+      (box :orientation "v" :space-evenly false
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "tile-key" :text key)
+          (label :class "tile-title" :text title)
+          (label :class "tile-value" :hexpand true :halign "end" :unindent false :text value))
+        (revealer :reveal {dash.row != row || dash.open == name} :transition "slideright" :duration "200ms"
+          (revealer :reveal {dash.row == -1 || dash.row == row} :transition "slideup" :duration "200ms"
+            (box :class "tile-summary" :orientation "v" :space-evenly false
+              (children :nth 0))))))
+    ; A hidden revealer still asks for its child's width across its
+    ; transition, so the details sit in a sideways one as well.
+    (revealer :reveal {dash.open == name} :transition "slideright" :duration "200ms"
+      :vexpand {dash.open == name}
+      (revealer :reveal {dash.open == name} :transition "slidedown" :duration "200ms"
+        (scroll :class "tile-detail" :vscroll true :hscroll false :vexpand true
+          (box :class "tile-body" :orientation "v" :space-evenly false
+            (children :nth 1)))))))
+
+(defwidget dash-row [row]
+  (box :class "dash-row" :orientation "h" :space-evenly false :spacing 8
+    :vexpand {dash.row == -1 || dash.row == row}
+    (children)))
+
+;; CPU: usage per thread from eww (EWW_CPU), the rest from home/eww/cpu.py.
+
+(defwidget cpu-summary []
+  (box :orientation "v" :space-evenly false :spacing 6
+    (label :class "wg-detail" :halign "start"
+      :text "${cpuinfo.temp_text != "" ? "${cpuinfo.temp_text} · " : ""}${cpuinfo.freq} · load ${cpuinfo.load}")
+    (box :class "threads" :orientation "h" :space-evenly true :spacing 2
+      (for c in {EWW_CPU.cores}
+        (progress :class "thread ${c.usage >= 90 ? "high" : ""}" :orientation "v" :flipped true
+          :tooltip "${c.core}: ${c.usage}% at ${round(c.freq / 1000, 1)} GHz" :value {c.usage})))))
+
+(defwidget cpu-detail []
+  (box :orientation "v" :space-evenly false :spacing 10
+    (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 4
+      (label :class "wg-name" :halign "start" :wrap true :text "${cpuinfo.model}")
+      (label :class "wg-detail" :halign "start"
+        :text "${arraylength(EWW_CPU.cores)} threads · ${cpuinfo.freq} now, ${cpuinfo.freq_max} top · ${cpuinfo.governor}")
+      (label :class "wg-detail" :halign "start" :text "Load ${cpuinfo.load} · up ${cpuinfo.uptime}")
+      (label :class "wg-detail" :halign "start" :text "${cpuinfo.tasks}"))
+    (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 6
+      (meter :name "All threads" :value {round(EWW_CPU.avg, 0)} :text "${round(EWW_CPU.avg, 0)}%")
+      (box :class "threads big" :orientation "h" :space-evenly true :spacing 2
+        (for c in {EWW_CPU.cores}
+          (box :orientation "v" :space-evenly false :spacing 2
+            (progress :class "thread ${c.usage >= 90 ? "high" : ""}" :orientation "v" :flipped true
+              :tooltip "${c.core}: ${c.usage}% at ${round(c.freq / 1000, 1)} GHz" :value {c.usage})
+            (label :class "thread-num" :text "${replace(c.core, "cpu", "")}")))))
+    (box :class "wg-tunnel" :visible {arraylength(cpuinfo.temps) > 0}
+      :orientation "v" :space-evenly false :spacing 2
+      (label :class "wg-name" :halign "start" :text "Temperatures")
+      (for t in {cpuinfo.temps}
+        (box :orientation "h" :space-evenly false
+          (label :class "wg-detail" :hexpand true :halign "start" :text "${t.label}")
+          (label :text "${t.text}"))))
+    (procs :title "Busiest processes (100% = one thread)" :list {cpuinfo.top})))
+
+;; Memory: home/eww/mem.py.
+
+(defwidget mem-summary []
+  (box :orientation "v" :space-evenly false :spacing 6
+    (meter :name "${meminfo.used.text} of ${meminfo.total}" :value {meminfo.used.pct} :text "")
+    (meter :name "Swap" :value {meminfo.swap.pct}
+      :text "${meminfo.swap.on ? "${meminfo.swap.text} of ${meminfo.swap.total}" : "none"}")))
+
+(defwidget mem-detail []
+  (box :orientation "v" :space-evenly false :spacing 10
+    (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 6
+      (label :class "wg-name" :halign "start" :text "${meminfo.total} of memory")
+      (meter :name "Used by programs" :value {meminfo.used.pct} :text "${meminfo.used.text} (${meminfo.used.pct}%)")
+      (meter :name "Cache and buffers" :value {meminfo.cache.pct} :text "${meminfo.cache.text} (${meminfo.cache.pct}%)")
+      (meter :name "Shared (tmpfs, shm)" :value {meminfo.shared.pct} :text "${meminfo.shared.text}")
+      (meter :name "Free" :value {meminfo.free.pct} :text "${meminfo.free.text}")
+      (meter :name "Available (free + what the cache gives back)" :value {meminfo.available.pct}
+        :text "${meminfo.available.text}"))
+    (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 6
+      (meter :name "Swap" :value {meminfo.swap.pct}
+        :text "${meminfo.swap.on ? "${meminfo.swap.text} of ${meminfo.swap.total}" : "none"}")
+      (label :class "wg-detail" :halign "start"
+        :text "zswap pool ${meminfo.zswap} · waiting to be written to disk ${meminfo.dirty}"))
+    (procs :title "Most resident memory" :list {meminfo.top})))
+
+;; Disks: space on each filesystem and each disk's I/O (home/eww/disk.py).
+
+(defwidget disk-summary []
+  (box :orientation "v" :space-evenly false :spacing 6
+    (meter :name "/ ${disk.root.text}" :value {disk.root.pct} :text "")
+    (label :class "wg-detail" :halign "start" :text "I/O ${disk.io} · busy ${disk.busy}%")))
+
+(defwidget disk-detail []
+  (box :orientation "v" :space-evenly false :spacing 10
+    (for d in {disk.disks}
+      (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 6
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "wg-name" :hexpand true :halign "start" :limit-width 34 :text "${d.model}")
+          (label :class "wg-detail" :text "${d.name} · ${d.size}${d.temp != "" ? " · ${d.temp}" : ""}"))
+        (meter :name "Busy" :value {d.busy} :text "${d.busy}%")
+        (label :class "wg-detail" :halign "start" :text "Read ${d.read} · write ${d.write}")))
+    (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 6
+      (label :class "wg-name" :halign "start" :text "Filesystems")
+      (for f in {disk.filesystems}
+        (meter :name "${f.mount} (${f.device}, ${f.type}) · ${f.free}" :value {f.pct} :text "${f.text}")))))
+
+;; GPUs: home/eww/gpu.py. The main GPU's load, temperature and VRAM, then a
+;; pair of small meters per GPU (load, then VRAM, the main GPU's brighter).
+
+(defwidget gpu-summary []
+  (box :orientation "v" :space-evenly false :spacing 6
+    (label :class "wg-detail" :visible {!gpu.ok} :halign "start" :text "No GPU rocm-smi can read")
+    (label :class "wg-detail" :visible {gpu.ok} :halign "start" :limit-width 34 :text "${gpu.name}")
+    (box :visible {gpu.ok} :orientation "h" :space-evenly false :spacing 8
+      (label :unindent false :text "${gpu.text}")
+      (box :class "gpu-bars" :orientation "h" :space-evenly false :spacing 4
+        (for g in {gpu.gpus}
+          (box :class "gpu-pair ${g.main ? "main" : ""}" :orientation "h" :space-evenly false :spacing 1
+            (progress :class "gpu-bar use ${g.use >= 90 ? "high" : ""}" :orientation "v" :flipped true :value {g.use})
+            (progress :class "gpu-bar vram ${g.vram >= 90 ? "high" : ""}" :orientation "v" :flipped true :value {g.vram})))))
+    (box :visible {gpu.ok} :orientation "v"
+      (meter :name "VRAM" :value {gpu.vram} :text "${gpu.vram_text}"))))
+
+; Every GPU's load, VRAM, temperatures, power, fan, clocks and displays,
+; and which one the summary shows (Automatic: the most VRAM).
+(defwidget gpu-detail []
+  (box :orientation "v" :space-evenly false :spacing 10
     (box :class "wg-tunnel ${gpu.auto ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
       (box :orientation "v" :space-evenly false :hexpand true :spacing 2
         (label :class "wg-name" :halign "start" :text "${gpu.auto ? "●" : "○"} Automatic")
@@ -224,67 +273,33 @@
           (button :class "wg-toggle ${g.main && !gpu.auto ? "active" : ""}" :valign "center"
             :onclick "@bin@/eww-gpu main ${g.bus}"
             "${g.main && !gpu.auto ? "Main" : "Set main"}"))
-        (vm-meter :name "Load" :value {g.use} :text "${g.use}%")
-        (vm-meter :name "VRAM" :value {g.vram} :text "${g.vram_text} (${g.vram}%)")
-        (vm-meter :name "Memory bus" :value {g.mem_busy} :text "${g.mem_busy}%")
+        (meter :name "Load" :value {g.use} :text "${g.use}%")
+        (meter :name "VRAM" :value {g.vram} :text "${g.vram_text} (${g.vram}%)")
+        (meter :name "Memory bus" :value {g.mem_busy} :text "${g.mem_busy}%")
         (label :class "wg-detail" :halign "start"
           :text "Temp ${g.temp}°C · hotspot ${g.hotspot}°C · memory ${g.mem_temp}°C")
         (label :class "wg-detail" :halign "start" :text "Power ${g.power_text} · fan ${g.fan_text}")
         (label :class "wg-detail" :halign "start" :text "Core ${g.sclk} · memory ${g.mclk}")
         (label :class "wg-detail" :halign "start" :text "Displays: ${g.displays}")))))
 
-; Pods: every running container, yours and root's, at a glance.
-(defwidget pods-panel []
-  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
-    (box :orientation "h" :space-evenly false
-      (label :class "wg-title" :hexpand true :halign "start"
-        :text "Containers: ${pods.count} running${pods.stopped > 0 ? ", ${pods.stopped} stopped" : ""}")
-      (button :class "wg-close" :onclick "@eww@ close pods-menu" "✕"))
-    (label :class "wg-detail" :visible {pods.count == 0} :halign "start" :text "No containers running")
-    (for c in {pods.containers}
-      (box :class "wg-tunnel up pod" :orientation "v" :space-evenly false :spacing 2
-        (box :orientation "h" :space-evenly false :spacing 8
-          (label :class "wg-name" :hexpand true :halign "start" :limit-width 34 :text "● ${c.name}")
-          (label :class "wg-detail" :text "${c.owner}"))
-        (label :class "wg-detail" :visible {c.pod != ""} :halign "start" :text "Pod ${c.pod}")
-        (label :class "pod-image" :halign "start" :limit-width 48 :text "${c.image}")
-        (label :class "wg-detail" :halign "start" :text "Container ${c.id} · image ${c.image_id}")
-        (label :class "wg-detail" :halign "start"
-          :text "${c.status}${c.restarts > 0 ? " · ${c.restarts} restarts" : ""} · ${c.pids} PIDs")
-        (label :class "wg-detail" :halign "start" :text "CPU ${c.cpu} · memory ${c.mem} (${c.mem_pct})")
-        (label :class "wg-detail" :halign "start" :text "Net ↓↑ ${c.net} · disk r/w ${c.block}")
-        (label :class "wg-detail" :halign "start" :wrap true :text "Ports ${c.ports}")
-        (for m in {c.mounts}
-          (label :class "wg-detail" :halign "start" :limit-width 52 :text "Mount ${m}"))))))
+;; Network: home/eww/net.py and vpn.py. An asterisk per VPN that is up,
+;; coloured by VPN (vpnStars in home/eww.nix).
 
-; Each microVM's panel (generated in home/eww.nix).
-@vmPanels@
+(defwidget net-summary []
+  (box :orientation "v" :space-evenly false :spacing 4
+    (box :orientation "h" :space-evenly false :spacing 6
+      (label :class "net-icon" :text {net.shown.wireless ? "󰖩" : "󰈀"})
+      (box :class "vpn-stars" :orientation "v" :valign "center" :space-evenly false
+        @vpnStars@)
+      (label :class "wg-detail" :limit-width 30 :text "${net.shown.address}"))
+    (label :halign "start" :unindent false :text "↓${net.shown.down} ↑${net.shown.up}")
+    (label :class "wg-detail" :halign "start" :visible {vpn.active > 0}
+      :text "VPN@vpnTooltip@")))
 
-; USB: every connected device, hubs included, in port order.
-(defwidget usb-panel []
-  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
-    (box :orientation "h" :space-evenly false
-      (label :class "wg-title" :hexpand true :halign "start" :text "USB")
-      (button :class "wg-close" :onclick "@eww@ close usb-menu" "✕"))
-    (label :class "wg-detail" :visible {arraylength(usb.devices) == 0} :halign "start"
-      :text "No USB devices connected")
-    (for d in {usb.devices}
-      (box :class "wg-tunnel usb-device ${d.kind == "Hub" ? "hub" : ""}" :orientation "h" :space-evenly false :spacing 12
-        (label :class "usb-icon" :valign "start" :text "${d.icon}")
-        (box :orientation "v" :space-evenly false :hexpand true :spacing 2
-          (label :class "wg-name" :halign "start" :limit-width 34 :text "${d.name}")
-          (label :class "wg-detail" :visible {d.vendor != ""} :halign "start" :limit-width 34 :text "${d.vendor}")
-          (label :class "wg-detail" :halign "start"
-            :text "${d.kind}${d.speed != "" ? " · ${d.speed}" : ""}")
-          (label :class "wg-detail" :halign "start" :text "ID ${d.id} · port ${d.port}"))))))
-
-; Network: the VPNs with Connect/Disconnect, then every interface's
-; rates and which one the bar shows.
-(defwidget net-panel []
-  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
-    (box :orientation "h" :space-evenly false
-      (label :class "wg-title" :hexpand true :halign "start" :text "Network")
-      (button :class "wg-close" :onclick "@eww@ close net-menu" "✕"))
+; The VPNs with Connect/Disconnect, then every interface's rates and which
+; one the tile shows.
+(defwidget net-detail []
+  (box :orientation "v" :space-evenly false :spacing 10
     (label :class "wg-name" :halign "start" :text "VPN")
     (label :class "wg-detail" :visible {arraylength(vpn.connections) == 0} :halign "start" :wrap true
       :text "No VPNs yet. docs/vpn.md shows how to add WireGuard, OpenVPN and openfortivpn ones.")
@@ -322,15 +337,184 @@
           :onclick "@bin@/eww-net show ${i.name}"
           "${i.shown && !net.auto ? "Shown" : "Show"}")))))
 
-; Volume of the default output: slider, ±5% and mute.
-(defwidget vol-panel []
-  (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
-    (box :orientation "h" :space-evenly false
-      (label :class "wg-title" :hexpand true :halign "start" :text "Volume")
-      (button :class "wg-close" :onclick "@eww@ close vol-menu" "✕"))
+;; Containers: every running one, yours and root's (home/eww/pods.py).
+
+(defwidget pods-summary []
+  (box :orientation "v" :space-evenly false :spacing 2
+    (label :class "wg-detail" :halign "start"
+      :text "${pods.count} running${pods.stopped > 0 ? ", ${pods.stopped} stopped" : ""}")
+    (for c in {pods.containers}
+      (label :class "pod-name" :halign "start" :limit-width 30 :text "● ${c.name}"))))
+
+(defwidget pods-detail []
+  (box :orientation "v" :space-evenly false :spacing 10
+    (label :class "wg-detail" :visible {pods.count == 0} :halign "start" :text "No containers running")
+    (for c in {pods.containers}
+      (box :class "wg-tunnel up pod" :orientation "v" :space-evenly false :spacing 2
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "wg-name" :hexpand true :halign "start" :limit-width 34 :text "● ${c.name}")
+          (label :class "wg-detail" :text "${c.owner}"))
+        (label :class "wg-detail" :visible {c.pod != ""} :halign "start" :text "Pod ${c.pod}")
+        (label :class "pod-image" :halign "start" :limit-width 48 :text "${c.image}")
+        (label :class "wg-detail" :halign "start" :text "Container ${c.id} · image ${c.image_id}")
+        (label :class "wg-detail" :halign "start"
+          :text "${c.status}${c.restarts > 0 ? " · ${c.restarts} restarts" : ""} · ${c.pids} PIDs")
+        (label :class "wg-detail" :halign "start" :text "CPU ${c.cpu} · memory ${c.mem} (${c.mem_pct})")
+        (label :class "wg-detail" :halign "start" :text "Net ↓↑ ${c.net} · disk r/w ${c.block}")
+        (label :class "wg-detail" :halign "start" :wrap true :text "Ports ${c.ports}")
+        (for m in {c.mounts}
+          (label :class "wg-detail" :halign "start" :limit-width 52 :text "Mount ${m}"))))))
+
+;; microVMs: each one's badge and panel are generated in home/eww.nix.
+
+@vmPanels@
+
+(defwidget vms-summary []
+  (box :orientation "v" :space-evenly false :spacing 4
+    (label :class "wg-detail" :visible {@vmTotal@ == 0} :halign "start" :text "No microVMs on this host")
+    @vmBadges@))
+
+(defwidget vms-detail []
+  (box :orientation "v" :space-evenly false :spacing 16
+    (label :class "wg-detail" :visible {@vmTotal@ == 0} :halign "start" :wrap true
+      :text "This host runs no microVMs (modules/nixos/microvms.nix).")
+    @vmBodies@))
+
+;; Devices: displays (home/eww/display.py) and USB (home/eww/usb.py).
+
+(defwidget devices-summary []
+  (box :orientation "v" :space-evenly false :spacing 2
+    (for o in {displays.outputs}
+      (label :class "wg-detail ${o.primary ? "primary" : ""}" :halign "start" :limit-width 34
+        :text "${o.active ? "●" : "○"} ${o.name} ${o.current}${o.primary ? " ★" : ""}"))
+    (label :class "wg-detail" :halign "start" :text "${usb.count} USB device${usb.count == 1 ? "" : "s"}")))
+
+;; The display settings (home/eww/display-edit.py): a map of the displays
+;; that are on (click one to pick it), the picked one's form, and Apply.
+;; Every button runs in the background: eww kills an onclick command still
+;; running after 200ms.
+
+(defwidget display-option [label active onclick]
+  (button :class "wg-toggle ${active ? "active" : ""}" :onclick onclick label))
+
+(defwidget display-editor []
+  (box :orientation "v" :space-evenly false :spacing 8
+    (box :orientation "h" :space-evenly false :spacing 6
+      (label :class "wg-name" :hexpand true :halign "start" :text "Displays")
+      (button :class "wg-toggle" :visible {display_edit.dirty}
+        :onclick "@bin@/eww-display-edit reset &" "Reset")
+      (button :class "wg-toggle ${display_edit.dirty ? "apply" : ""}" :active {display_edit.dirty}
+        :onclick "@bin@/eww-display-edit apply &" "Apply"))
+    (box :class "wg-tunnel warn" :visible {display_edit.confirm > 0}
+      :orientation "h" :space-evenly false :spacing 8
+      (label :class "wg-name" :hexpand true :halign "start" :wrap true
+        :text "Keep these settings? Reverting in ${display_edit.confirm} s")
+      (button :class "wg-toggle" :onclick "@bin@/eww-display-edit keep &" "Keep")
+      (button :class "wg-toggle" :onclick "@bin@/eww-display-edit revert &" "Revert"))
+    ; The boxes sit in a row, each margin measured from the end of the one
+    ; before it, so they land where the displays are.
+    (box :class "display-map" :halign "start" :width {display_edit.map_w} :height {display_edit.map_h}
+      (box :orientation "h" :space-evenly false :valign "start" :halign "start"
+        (for m in {display_edit.boxes}
+          (button :class "map-display ${m.selected ? "selected" : ""} ${m.primary ? "primary" : ""}"
+            :valign "start"
+            :style "margin-left: ${m.ml}px; margin-top: ${m.mt}px; min-width: ${m.w}px; min-height: ${m.h}px;"
+            :tooltip "${m.name}${m.primary ? " (primary)" : ""}"
+            :onclick "@bin@/eww-display-edit select ${m.name} &"
+            (label :text "${m.number}")))))
+    (box :orientation "h" :space-evenly false :spacing 6
+      (for n in {display_edit.names}
+        (display-option :label "${n.number} ${n.name}" :active {n.selected}
+          :onclick "@bin@/eww-display-edit select ${n.name} &")))
+    (box :class "wg-tunnel" :visible {display_edit.form?.name != ""} :orientation "v" :space-evenly false :spacing 8
+      (label :class "wg-name" :halign "start" :limit-width 48
+        :text "${display_edit.form.name}${display_edit.form.title != "" ? " · ${display_edit.form.title}" : ""}")
+      (label :class "wg-detail" :visible {display_edit.form.gpu != ""} :halign "start" :limit-width 52
+        :text "${display_edit.form.gpu}")
+      (label :class "wg-detail" :halign "start" :text "${display_edit.form.where}")
+      (box :orientation "h" :space-evenly true :spacing 6
+        (display-option :label {display_edit.form.enabled ? "On" : "Off"} :active {display_edit.form.enabled}
+          :onclick "@bin@/eww-display-edit power ${display_edit.form.name} &")
+        (display-option :label {display_edit.form.primary ? "Primary" : "Make primary"} :active {display_edit.form.primary}
+          :onclick "@bin@/eww-display-edit primary ${display_edit.form.name} &"))
+      (box :orientation "v" :visible {display_edit.form.enabled} :space-evenly false :spacing 8
+        (label :class "wg-detail" :halign "start" :text "Resolution")
+        (button :class "wg-toggle" :onclick "@eww@ update display_modes_open=${!display_modes_open}"
+          "${display_edit.form.mode_label} ${display_modes_open ? "▴" : "▾"}")
+        (revealer :reveal display_modes_open :transition "slidedown" :duration "150ms"
+          (box :orientation "v" :space-evenly false :spacing 2
+            (for m in {display_edit.form.modes}
+              (button :class "vm-fw-item ${m.current ? "active" : ""}"
+                :onclick "@eww@ update display_modes_open=false; @bin@/eww-display-edit mode ${display_edit.form.name} ${m.id} &"
+                (label :halign "start" :text "${m.label}")))))
+        (label :class "wg-detail" :halign "start" :text "Rotation")
+        (box :orientation "h" :space-evenly true :spacing 6
+          (for r in {display_edit.form.rotations}
+            (display-option :label "${r.label}" :active {r.current}
+              :onclick "@bin@/eww-display-edit rotate ${display_edit.form.name} ${r.id} &")))
+        (box :orientation "v" :visible {arraylength(display_edit.form.others) > 0} :space-evenly false :spacing 6
+          (label :class "wg-detail" :halign "start" :text "Place")
+          (for o in {display_edit.form.others}
+            (box :orientation "h" :space-evenly false :spacing 6
+              (display-option :label "← left of ${o}" :active false
+                :onclick "@bin@/eww-display-edit place ${display_edit.form.name} left ${o} &")
+              (display-option :label "right →" :active false
+                :onclick "@bin@/eww-display-edit place ${display_edit.form.name} right ${o} &")
+              (display-option :label "↑ above" :active false
+                :onclick "@bin@/eww-display-edit place ${display_edit.form.name} above ${o} &")
+              (display-option :label "↓ below" :active false
+                :onclick "@bin@/eww-display-edit place ${display_edit.form.name} below ${o} &")))
+          (box :orientation "h" :space-evenly false :spacing 6
+            (label :class "wg-detail" :text "Line up edges at the")
+            (display-option :label "start" :active {display_edit.align == "start"}
+              :onclick "@bin@/eww-display-edit align start &")
+            (display-option :label "centre" :active {display_edit.align == "center"}
+              :onclick "@bin@/eww-display-edit align center &")
+            (display-option :label "end" :active {display_edit.align == "end"}
+              :onclick "@bin@/eww-display-edit align end &")))))))
+
+(defwidget devices-detail []
+  (box :orientation "v" :space-evenly false :spacing 10
+    (display-editor)
+    (label :class "wg-name" :halign "start" :text "USB")
+    (label :class "wg-detail" :visible {arraylength(usb.devices) == 0} :halign "start"
+      :text "No USB devices connected")
+    (for d in {usb.devices}
+      (box :class "wg-tunnel usb-device ${d.kind == "Hub" ? "hub" : ""}" :orientation "h" :space-evenly false :spacing 12
+        (label :class "usb-icon" :valign "start" :text "${d.icon}")
+        (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+          (label :class "wg-name" :halign "start" :limit-width 34 :text "${d.name}")
+          (label :class "wg-detail" :visible {d.vendor != ""} :halign "start" :limit-width 34 :text "${d.vendor}")
+          (label :class "wg-detail" :halign "start"
+            :text "${d.kind}${d.speed != "" ? " · ${d.speed}" : ""}")
+          (label :class "wg-detail" :halign "start" :text "ID ${d.id} · port ${d.port}"))))))
+
+;; Sound: the default output (home/eww/volume.py).
+
+;; Sound: the default output (home/eww/volume.py), the microphone and
+;; cameras (home/eww/mic.py), and Bluetooth (home/eww/bt.py). Whatever is
+;; recording, from the microphone or a camera, shows in red.
+
+(defwidget sound-summary []
+  (eventbox :onscroll "@bin@/eww-volume {}"
+    (box :orientation "v" :space-evenly false :spacing 4
+      (label :class "wg-detail" :halign "start" :limit-width 34
+        :text "${volume.muted ? "󰖁" : "󰕾"} ${volume.sink != "" ? volume.sink : "Default output"}")
+      (progress :class "meter ${volume.muted ? "muted" : ""}" :orientation "h" :value {volume.pct})
+      (label :class "wg-detail ${arraylength(mic.recording) > 0 ? "live" : ""}" :halign "start" :limit-width 34
+        :text {!mic.present ? "󰍭 no microphone"
+          : "${mic.muted ? "󰍭" : "󰍬"} ${mic.pct}%${arraylength(mic.recording) > 0 ? " · recording" : ""}"})
+      (label :class "wg-detail live" :visible {arraylength(mic.camera_users) > 0} :halign "start"
+        :text "󰄀 camera in use")
+      (label :class "wg-detail" :halign "start"
+        :text {!bt.present ? "󰂲 no Bluetooth"
+          : (!bt.powered ? "󰂲 Bluetooth off" : "󰂯 ${bt.connected} connected")}))))
+
+(defwidget sound-detail []
+  (box :orientation "v" :space-evenly false :spacing 10
     (box :class "wg-tunnel ${volume.muted ? "down" : "up"}" :orientation "v" :space-evenly false :spacing 10
       (box :orientation "h" :space-evenly false :spacing 8
-        (label :class "wg-name" :hexpand true :halign "start" :limit-width 28
+        (label :class "wg-name" :hexpand true :halign "start" :limit-width 34
           :text "${volume.muted ? "○" : "●"} ${volume.sink != "" ? volume.sink : "Default output"}")
         (label :class "wg-detail" :text "${volume.text}"))
       (scale :class "vol-scale" :min 0 :max 101 :value {volume.pct}
@@ -339,20 +523,188 @@
         (button :class "wg-toggle" :onclick "@bin@/eww-volume down" "− 5%")
         (button :class "wg-toggle" :onclick "@bin@/eww-volume mute"
           "${volume.muted ? "Unmute" : "Mute"}")
-        (button :class "wg-toggle" :onclick "@bin@/eww-volume up" "+ 5%")))))
+        (button :class "wg-toggle" :onclick "@bin@/eww-volume up" "+ 5%")))
+    (box :class "wg-tunnel ${mic.present && !mic.muted ? "up" : "down"}" :orientation "v" :space-evenly false :spacing 10
+      (box :orientation "h" :space-evenly false :spacing 8
+        (label :class "wg-name" :hexpand true :halign "start" :limit-width 34
+          :text {mic.present ? "${mic.muted ? "○" : "●"} ${mic.name != "" ? mic.name : "Microphone"}" : "○ No microphone"})
+        (label :class "wg-detail" :visible {mic.present} :text "${mic.muted ? "muted" : "${mic.pct}%"}"))
+      (scale :class "vol-scale" :visible {mic.present} :min 0 :max 101 :value {mic.pct}
+        :onchange "@bin@/eww-mic set {}")
+      (button :class "wg-toggle" :visible {mic.present} :onclick "@bin@/eww-mic mute &"
+        "${mic.muted ? "Unmute microphone" : "Mute microphone"}")
+      (label :class "wg-detail ${arraylength(mic.recording) > 0 ? "live" : ""}" :halign "start" :wrap true
+        :text {arraylength(mic.recording) > 0 ? "Recording: ${mic.recording_text}" : "Nothing is recording"}))
+    (box :class "wg-tunnel ${arraylength(mic.camera_users) > 0 ? "warn" : "down"}" :orientation "v" :space-evenly false :spacing 4
+      (label :class "wg-name" :halign "start"
+        :text {arraylength(mic.cameras) == 0 ? "○ No camera" : "${arraylength(mic.camera_users) > 0 ? "●" : "○"} Camera"})
+      (for c in {mic.cameras}
+        (label :class "wg-detail" :halign "start" :limit-width 48 :text "${c}"))
+      (label :class "wg-detail ${arraylength(mic.camera_users) > 0 ? "live" : ""}" :visible {arraylength(mic.cameras) > 0}
+        :halign "start" :wrap true
+        :text {arraylength(mic.camera_users) > 0 ? "In use by ${mic.camera_text}" : "Not in use"}))
+    (box :class "wg-tunnel ${bt.powered ? "up" : "down"}" :orientation "v" :space-evenly false :spacing 6
+      (box :orientation "h" :space-evenly false :spacing 8
+        (label :class "wg-name" :hexpand true :halign "start"
+          :text {!bt.present ? "○ No Bluetooth adapter" : "${bt.powered ? "●" : "○"} Bluetooth"})
+        (button :class "wg-toggle ${bt.powered ? "active" : ""}" :visible {bt.present}
+          :onclick "@bin@/eww-bt power ${bt.powered ? "off" : "on"} &"
+          "${bt.powered ? "Turn off" : "Turn on"}"))
+      (label :class "wg-detail" :visible {bt.present && bt.powered && arraylength(bt.devices) == 0} :halign "start"
+        :wrap true :text "No paired devices: pair one in bluetuith (Super+o u).")
+      (for d in {bt.devices}
+        (box :orientation "h" :space-evenly false :spacing 8 :visible {bt.powered}
+          (label :class "wg-name" :hexpand true :halign "start" :limit-width 30
+            :text "${d.connected ? "●" : "○"} ${d.name}")
+          (label :class "wg-detail" :visible {d.battery != ""} :text "󰁹 ${d.battery}")
+          (button :class "wg-toggle"
+            :onclick "@bin@/eww-bt ${d.connected ? "disconnect" : "connect"} ${d.mac} &"
+            "${d.connected ? "Disconnect" : "Connect"}"))))))
 
-; Calendar: time zone, month grid with a dot per calendar with events
-; that day (docs/calendar.md), and the picked day's events.
+;; System: failed units, journal errors, the NixOS generation, the flake's
+;; pins and the Nix store (home/eww/system.py).
+
+(defwidget system-summary []
+  (box :orientation "v" :space-evenly false :spacing 2
+    (label :class "wg-detail ${arraylength(system.failed) > 0 ? "live" : ""}" :halign "start"
+      :text {arraylength(system.failed) > 0 ? "${arraylength(system.failed)} failed unit${arraylength(system.failed) == 1 ? "" : "s"}" : "No failed units"})
+    (label :class "wg-detail" :halign "start" :text "${system.errors} errors in the last hour")
+    (label :class "wg-detail" :halign "start"
+      :text "Generation ${system.generation.number}, built ${system.generation.built} ago")
+    (label :class "wg-detail warn" :visible {system.generation.reboot} :halign "start" :text "Reboot to finish the update")))
+
+(defwidget system-detail []
+  (box :orientation "v" :space-evenly false :spacing 10
+    (box :class "wg-tunnel ${arraylength(system.failed) > 0 ? "warn" : "up"}" :orientation "v" :space-evenly false :spacing 4
+      (label :class "wg-name" :halign "start"
+        :text "${arraylength(system.failed) > 0 ? "●" : "○"} Failed units")
+      (label :class "wg-detail" :visible {arraylength(system.failed) == 0} :halign "start" :text "None")
+      (for u in {system.failed}
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :hexpand true :halign "start" :limit-width 40 :text "${u.unit}")
+          (label :class "wg-detail" :visible {u.scope == "system"} :text "sudo systemctl status")
+          (button :class "wg-toggle" :visible {u.scope == "user"}
+            :onclick "@bin@/eww-system restart ${u.unit} &" "Restart"))))
+    (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 4
+      (label :class "wg-name" :halign "start" :text "Journal errors, last hour: ${system.errors}")
+      (for e in {system.recent}
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "wg-detail" :valign "start" :text "${e.time}")
+          (label :class "proc-name" :valign "start" :limit-width 16 :text "${e.who}")
+          (label :class "wg-detail" :halign "start" :hexpand true :xalign 0 :wrap true :limit-width 160 :text "${e.message}"))))
+    (box :class "wg-tunnel ${system.generation.reboot ? "warn" : "up"}" :orientation "v" :space-evenly false :spacing 4
+      (label :class "wg-name" :halign "start" :text "NixOS ${system.generation.version}")
+      (label :class "wg-detail" :halign "start"
+        :text "Generation ${system.generation.number}, built ${system.generation.built} ago · kernel ${system.generation.kernel}")
+      (label :class "wg-detail" :visible {system.generation.reboot} :halign "start" :wrap true
+        :text "A new kernel or initrd is waiting: reboot to use it.")
+      (label :class "wg-detail" :halign "start" :text "Flake pins (age of each commit):")
+      (for p in {system.pins}
+        (box :orientation "h" :space-evenly false
+          (label :class "${p.old ? "proc-value old" : "wg-detail"}" :hexpand true :halign "start" :text "${p.name}")
+          (label :class "${p.old ? "proc-value old" : "wg-detail"}" :text "${p.age}"))))
+    (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 6
+      (meter :name "Nix store disk · ${system.store.free} free" :value {system.store.pct} :text "${system.store.pct}%")
+      (box :orientation "h" :space-evenly false :spacing 8
+        (label :class "wg-detail" :hexpand true :halign "start" :wrap true
+          :text {system.store.gc != "" ? system.store.gc : "Removes what nothing uses; old generations stay"})
+        (button :class "wg-toggle" :active {!system.store.running}
+          :onclick "@bin@/eww-system gc &" "Collect garbage")))))
+
+;; Secrets: what is unlocked or loaded right now (home/eww/secrets.py,
+;; home/secrets.nix). Unlocking and adding keys ask in a small terminal.
+
+(defwidget secrets-summary []
+  (box :orientation "v" :space-evenly false :spacing 2
+    (label :class "wg-detail ${secrets.bw ? "live" : ""}" :halign "start"
+      :text "Bitwarden ${secrets.bw ? "unlocked" : "locked"}")
+    (label :class "wg-detail ${arraylength(secrets.ssh) > 0 ? "live" : ""}" :halign "start"
+      :text "${arraylength(secrets.ssh)} SSH key${arraylength(secrets.ssh) == 1 ? "" : "s"} loaded")
+    (label :class "wg-detail" :halign "start"
+      :text {arraylength(secrets.yubikeys) > 0 ? "󰌋 YubiKey plugged in" : "No YubiKey"})))
+
+(defwidget secrets-detail []
+  (box :orientation "v" :space-evenly false :spacing 10
+    (box :class "wg-tunnel ${secrets.bw ? "warn" : "down"}" :orientation "h" :space-evenly false :spacing 8
+      (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+        (label :class "wg-name" :halign "start" :text "${secrets.bw ? "●" : "○"} Bitwarden")
+        (label :class "wg-detail" :halign "start" :wrap true
+          :text {secrets.bw ? "Unlocked for new shells and the calendar sync" : "Locked"}))
+      (button :class "wg-toggle" :valign "center"
+        :onclick {secrets.bw ? "@bin@/eww-secrets bw-lock &"
+          : "alacritty --class secrets-prompt -e bash -ic 'bw-unlock && echo Unlocked; sleep 1' &"}
+        "${secrets.bw ? "Lock" : "Unlock"}"))
+    (box :class "wg-tunnel ${arraylength(secrets.ssh) > 0 ? "warn" : "down"}" :orientation "v" :space-evenly false :spacing 4
+      (box :orientation "h" :space-evenly false :spacing 8
+        (label :class "wg-name" :hexpand true :halign "start"
+          :text "${arraylength(secrets.ssh) > 0 ? "●" : "○"} ssh-agent")
+        (button :class "wg-toggle" :onclick "alacritty --class secrets-prompt -e ssh-add &" "Add keys")
+        (button :class "wg-toggle" :visible {arraylength(secrets.ssh) > 0}
+          :onclick "@bin@/eww-secrets ssh-forget &" "Forget all"))
+      (label :class "wg-detail" :visible {arraylength(secrets.ssh) == 0} :halign "start" :text "No keys loaded")
+      (for k in {secrets.ssh}
+        (label :class "wg-detail" :halign "start" :limit-width 48 :text "${k.name} (${k.type})")))
+    (box :class "wg-tunnel ${secrets.gpg > 0 ? "warn" : "down"}" :orientation "h" :space-evenly false :spacing 8
+      (label :class "wg-name" :hexpand true :halign "start"
+        :text "${secrets.gpg > 0 ? "●" : "○"} gpg-agent: ${secrets.gpg} passphrase${secrets.gpg == 1 ? "" : "s"} cached")
+      (button :class "wg-toggle" :visible {secrets.gpg > 0}
+        :onclick "@bin@/eww-secrets gpg-forget &" "Forget"))
+    (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 4
+      (label :class "wg-name" :halign "start"
+        :text {arraylength(secrets.yubikeys) > 0 ? "● ${secrets.yubikeys[0]}" : "○ No YubiKey plugged in"})
+      (label :class "wg-detail" :halign "start" :limit-width 52
+        :text {secrets.keepass.exists ? "KeePassXC ${secrets.keepass.path}, changed ${secrets.keepass.changed}"
+          : "No KeePassXC database at ${secrets.keepass.path}"})
+      (label :class "wg-detail" :halign "start"
+        :text "sops age key ${secrets.age ? "present" : "missing"} · last secrets-backup ${secrets.backup != "" ? secrets.backup : "never (in ~)"}"))))
+
+;; Notifications: mako's (home/eww/notify.py). Focus is mako's
+;; do-not-disturb mode: nothing pops up, but notifications still collect here.
+
+(defwidget notify-summary []
+  (box :orientation "v" :space-evenly false :spacing 2
+    (label :class "wg-detail ${notify.focus ? "live" : ""}" :halign "start"
+      :text "${notify.focus ? "󰂛 Focus: popups off" : "󰂚 Popups on"}")
+    (label :class "wg-detail" :halign "start"
+      :text "${notify.count} waiting${notify.urgent > 0 ? ", ${notify.urgent} urgent" : ""}")
+    (for n in {notify.list}
+      (label :class "pod-name ${n.urgency}" :halign "start" :limit-width 30 :text "${n.summary}"))))
+
+(defwidget notify-detail []
+  (box :orientation "v" :space-evenly false :spacing 10
+    (box :orientation "h" :space-evenly true :spacing 6
+      (button :class "wg-toggle ${notify.focus ? "active" : ""}" :onclick "@bin@/eww-notify focus &"
+        "${notify.focus ? "Focus on" : "Focus"}")
+      (button :class "wg-toggle" :onclick "@bin@/eww-notify clear-calm &" "Clear not urgent")
+      (button :class "wg-toggle" :onclick "@bin@/eww-notify clear &" "Clear all")
+      (button :class "wg-toggle" :visible {notify.history > 0} :onclick "@bin@/eww-notify restore &" "Restore last"))
+    (label :class "wg-detail" :visible {notify.count == 0} :halign "start" :text "No notifications")
+    (for n in {notify.list}
+      (box :class "wg-tunnel notification ${n.urgency}" :orientation "h" :space-evenly false :spacing 8
+        (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+          (label :class "wg-name" :halign "start" :limit-width 44 :text "${n.summary}")
+          (label :class "wg-detail" :visible {n.body != ""} :halign "start" :xalign 0 :wrap true :limit-width 200
+            :text "${n.body}")
+          (label :class "wg-detail" :halign "start" :text "${n.app}${n.urgency == "critical" ? " · urgent" : ""}"))
+        (button :class "wg-toggle" :valign "start" :onclick "@bin@/eww-notify dismiss ${n.id} &" "✕")))))
+
+;; Time: the clock (home/eww/clock.py) and the calendar (home/eww/cal.py):
+;; time zone, a month grid with a dot per calendar with events that day
+;; (docs/calendar.md), and the picked day's events.
+
+(defwidget time-summary []
+  (box :orientation "v" :space-evenly false :spacing 2
+    (label :class "clock-big" :halign "start" :text "${time.text}")
+    (label :class "wg-detail" :halign "start" :text "${time.zone == "local" ? "Local time" : time.zone} · ${time.abbr}")))
+
 (defwidget tz-button [zone name]
   (button :class "wg-toggle ${time.zone == zone ? "active" : ""}"
     :onclick "@bin@/eww-clock tz ${zone}" name))
 
-(defwidget cal-panel []
-  (box :class "wg-panel cal-panel" :orientation "v" :space-evenly false :spacing 10
-    (box :orientation "h" :space-evenly false
-      (label :class "wg-title" :hexpand true :halign "start" :text "${time.text} ${time.abbr}")
-      (button :class "wg-close" :onclick "@eww@ close cal-menu" "✕"))
+(defwidget time-detail []
+  (box :class "cal-panel" :orientation "v" :space-evenly false :spacing 10
     (box :orientation "h" :space-evenly true :spacing 6
+      (tz-button :zone "local" :name "Local")
       (tz-button :zone "America/New_York" :name "Eastern")
       (tz-button :zone "America/Los_Angeles" :name "Pacific")
       (tz-button :zone "UTC" :name "UTC"))
@@ -387,63 +739,112 @@
         (label :class "wg-detail" :text "${e.time}")
         (label :hexpand true :halign "start" :limit-width 36 :text "${e.summary}")))))
 
-(defwindow power-menu
-  :monitor 0
-  :stacking "overlay"
-  :namespace "eww-menu"
-  :geometry (geometry :x "8px" :y "34px" :width "220px" :anchor "top left")
-  (power-panel))
+;; The dash's frame: status chips and the session buttons above the tiles,
+;; the active sway mode's keys (Super+r, Super+o, … on the dash) and the
+;; dash's own keys below them.
 
-(defwindow net-menu
-  :monitor 0
-  :stacking "overlay"
-  :namespace "eww-menu"
-  :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-  (net-panel))
+(defwidget session-button [icon name onclick]
+  (button :class "chip session" :tooltip name :onclick onclick icon))
 
-(defwindow vol-menu
-  :monitor 0
-  :stacking "overlay"
-  :namespace "eww-menu"
-  :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-  (vol-panel))
+(defwidget dash-head []
+  (box :class "dash-head" :orientation "h" :space-evenly false :spacing 6
+    (label :class "logo" :text "")
+    (label :class "dash-name" :text "dash")
+    (label :class "lock caps" :visible {locks.caps} :text "CAPS")
+    (label :class "lock num" :visible {locks.num} :text "NUM")
+    (label :class "chip gamemode" :visible {activity.gamemode} :tooltip "GameMode is on" :text "󰊗 GameMode")
+    (box :class "chip steam" :visible {activity.steam} :orientation "h" :space-evenly false :spacing 6
+      (label :text "󰓓 Steam")
+      (button :class "chip-close" :tooltip "Close Steam" :onclick "@bin@/eww-steam-close &" "✕"))
+    (label :class "chip bat" :visible {battery != ""} :text "󰁹 ${battery}%")
+    (box :hexpand true)
+    (button :class "chip bar-toggle ${dash.bar ? "on" : ""}"
+      :tooltip {dash.bar ? "The bar is on: click to turn it off (Super+Shift+b)" : "The bar is off: click to turn it on (Super+Shift+b)"}
+      :onclick "@bin@/eww-dash toggle-bar &"
+      (label :text "󰕮 bar ${dash.bar ? "on" : "off"}"))
+    (button :class "chip pin ${dash.pinned != "" ? "on" : ""}"
+      :tooltip {dash.pinned != ""
+        ? "Pinned to ${dash.pinned}: other workspaces open on the other displays. Click to unpin"
+        : "Pin the dash to this display, so other workspaces open on the other displays"}
+      :onclick "@bin@/eww-dash pin &"
+      (label :text "󰐃${dash.pinned != "" ? " ${dash.pinned}" : ""}"))
+    (button :class "chip caffeine ${caffeine}"
+      :tooltip "Caffeine ${caffeine}: click to ${caffeine == "on" ? "allow" : "stop"} locking and screen blanking"
+      :onclick "@bin@/eww-caffeine toggle"
+      (label :text {caffeine == "on" ? "󰅶" : "󰛊"}))
+    (session-button :icon "󰌾" :name "Lock" :onclick "@swaylock@ -f")
+    (session-button :icon "󰍃" :name "Log out" :onclick "@swaymsg@ exit")
+    (session-button :icon "󰐥" :name "Power off" :onclick "@systemctl@ poweroff")))
 
-(defwindow cal-menu
-  :monitor 0
-  :stacking "overlay"
-  :namespace "eww-menu"
-  :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-  (cal-panel))
+; Every workspace with its display, the ones on screen bright, the focused
+; one pink; a click goes there.
+(defwidget dash-workspaces []
+  (box :class "dash-workspaces" :orientation "h" :space-evenly false :spacing 4
+    (label :class "wg-detail" :text "workspaces")
+    (for ws in workspaces
+      (button
+        :class "ws ${ws.focused ? "focused" : ""} ${ws.visible ? "visible" : ""} ${ws.urgent ? "urgent" : ""}"
+        :tooltip "${ws.name} on ${ws.output}${ws.visible ? ", on screen" : ""}"
+        :onclick "@swaymsg@ workspace \"${ws.name}\""
+        "${ws.label}"))))
 
-(defwindow usb-menu
-  :monitor 0
-  :stacking "overlay"
-  :namespace "eww-menu"
-  :geometry (geometry :x "8px" :y "34px" :width "440px" :anchor "top right")
-  (usb-panel))
+(defwidget dash []
+  (box :class "dash" :orientation "v" :space-evenly false :spacing 8
+    :width {dash_layout.w} :height {dash_layout.h}
+    (dash-head)
+    (dash-workspaces)
+    (box :class "dash-grid" :orientation "v" :space-evenly false :spacing 8 :vexpand true
+      (dash-row :row 0
+        (tile :name "cpu" :key "c" :title "cpu" :value "${round(EWW_CPU.avg, 0)}%" :row 0
+          (cpu-summary) (cpu-detail))
+        (tile :name "mem" :key "m" :title "memory" :value "${round(EWW_RAM.used_mem_perc, 0)}%" :row 0
+          (mem-summary) (mem-detail))
+        (tile :name "disk" :key "f" :title "disk" :value "${disk.root.pct}%" :row 0
+          (disk-summary) (disk-detail))
+        (tile :name "gpu" :key "g" :title "gpu" :value "${gpu.ok ? "${gpu.use}%" : "–"}" :row 0
+          (gpu-summary) (gpu-detail)))
+      (dash-row :row 1
+        (tile :name "net" :key "n" :title "network" :value "${net.shown.name}" :row 1
+          (net-summary) (net-detail))
+        (tile :name "pods" :key "p" :title "containers" :value "${pods.text}" :row 1
+          (pods-summary) (pods-detail))
+        (tile :name "vms" :key "v" :title "microvms" :value "${@vmRunning@}/@vmTotal@" :row 1
+          (vms-summary) (vms-detail)))
+      (dash-row :row 2
+        (tile :name "system" :key "y" :title "system"
+          :value {arraylength(system.failed) > 0 ? "${arraylength(system.failed)} failed" : "ok"} :row 2
+          (system-summary) (system-detail))
+        (tile :name "secrets" :key "u" :title "secrets" :value {secrets.locked ? "locked" : "open"} :row 2
+          (secrets-summary) (secrets-detail))
+        (tile :name "notify" :key "a" :title "notifications"
+          :value "${notify.focus ? "󰂛 " : ""}${notify.count}" :row 2
+          (notify-summary) (notify-detail)))
+      (dash-row :row 3
+        (tile :name "devices" :key "d" :title "devices" :value "󰍹 ${arraylength(displays.outputs)} 󰕓 ${usb.count}" :row 3
+          (devices-summary) (devices-detail))
+        (tile :name "sound" :key "s" :title "sound" :value "${volume.text}" :row 3
+          (sound-summary) (sound-detail))
+        (tile :name "time" :key "t" :title "time" :value "${time.clock}" :row 3
+          (time-summary) (time-detail))))
+    (box :class "mode" :visible {mode.name != "default" && mode.name != "dash"}
+      :orientation "h" :space-evenly false :spacing 8
+      (label :class "mode-name" :text "${mode.name}")
+      (label :class "mode-hint" :halign "start" :wrap true :text "${mode.hint}"))
+    (label :class "dash-hint" :halign "start" :wrap true :text "@dashHint@")
+    ; Reminders of sway's, tmux's and neovim's main keys (home/eww.nix).
+    (box :class "key-hints" :orientation "h" :space-evenly true :spacing 12
+      @keyHints@)))
 
-@vmWindows@
+; The dash's half of the display and the wallpaper's (home/eww/dash.py
+; sizes it), or the dash alone, scrolling if the display is too small.
+(defwidget dash-screen []
+  (box :class "dash-screen" :orientation {dash_layout.orient} :space-evenly true
+    (scroll :hscroll true :vscroll true :hexpand true :vexpand true
+      (box :halign "center" :valign "center"
+        (dash)))
+    (box :class "dash-wallpaper" :visible {dash_layout.split} :hexpand true :vexpand true)))
 
-(defwindow steam-menu
-  :monitor 0
-  :stacking "overlay"
-  :namespace "eww-menu"
-  :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-  (steam-menu))
-
-(defwindow pods-menu
-  :monitor 0
-  :stacking "overlay"
-  :namespace "eww-menu"
-  :geometry (geometry :x "8px" :y "34px" :width "440px" :anchor "top right")
-  (pods-panel))
-
-(defwindow gpu-menu
-  :monitor 0
-  :stacking "overlay"
-  :namespace "eww-menu"
-  :geometry (geometry :x "8px" :y "34px" :width "380px" :anchor "top right")
-  (gpu-panel))
+;; ---------------------------------------------------------------- windows
 
 ;; The overlay layer, the highest one: sway draws fullscreen windows (games,
 ;; video) and X11 popups over the "fg" (top) layer but under this one, so
@@ -455,3 +856,12 @@
   :namespace "eww-bar"
   :geometry (geometry :x "0%" :y "0px" :width "100%" :height "28px" :anchor "top center")
   (bar))
+
+;; The whole display, on the bottom layer: above sway's solid background,
+;; under any window (none stays on the dash, but a sticky one may show).
+(defwindow dash
+  :monitor 0
+  :stacking "bottom"
+  :namespace "eww-dash"
+  :geometry (geometry :x "0px" :y "0px" :width "100%" :height "100%" :anchor "center")
+  (dash-screen))

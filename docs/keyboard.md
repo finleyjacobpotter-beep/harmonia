@@ -22,7 +22,8 @@ alacritty binding outside Ctrl+Shift fails `nixos-rebuild`.
 | `h` `j` `k` `l` | focus left/down/up/right |
 | `Shift` + `h` `j` `k` `l` | move window |
 | `Ctrl` + `h` / `l` | focus output left/right (`Ctrl+Shift`: move workspace there) |
-| `1`…`0` / `Shift` + `1`…`0` | go to / move to workspace |
+| `1`…`9` / `Shift` + `1`…`9` | go to / move to workspace |
+| `0` | the [dash](bar.md#the-dash) (nothing can be moved there) |
 | `Tab`, `[`, `]` | last / previous / next workspace |
 | `s` / `v` | split below / beside (like vim `:split` / `:vsplit`) |
 | `t` / `Shift+t` / `e` | tabbed / stacking / toggle split layout |
@@ -35,18 +36,19 @@ alacritty binding outside Ctrl+Shift fails `nixos-rebuild`.
 | `d` | fuzzel launcher (`Ctrl+j`/`Ctrl+k` to move) |
 | `n` / `Shift+n` / `Ctrl+n` / `i` | dismiss / dismiss all / restore / act on notification |
 | `Shift+s` / `Ctrl+s` | screenshot region / screen to clipboard |
-| `Shift+b` | toggle eww bar |
+| `Shift+b` | turn the eww bar off or on (remembered; also a button on the dash) |
 | `Shift+x` | lock |
 | `Shift+c` | reload sway |
 
-**Modes** (Esc or Return leaves; the eww bar shows the active mode and its keys):
+**Modes** (Esc or Return leaves; the eww bar, or the dash, shows the active mode and its keys):
 
 | Enter | Mode | Keys |
 | --- | --- | --- |
 | `Super+r` | resize | `h` `j` `k` `l` (`Shift` = bigger steps) |
-| `Super+o` | open | `b` Firefox · `f` ranger · `e` nvim · `t` tmux · `s` btop · `a` pulsemixer · `u` bluetuith · `n` nmtui · `v` Nike (ssh) · `g` Lutris · `Shift+g` Steam · `c` Element · `Shift+b` Blender · `d` Godot |
+| `Super+o` | open | `b` Firefox · `f` ranger · `e` nvim · `t` tmux · `s` btop · `a` pulsemixer · `u` bluetuith · `n` nmtui · `v` Nike (ssh) · `g` Lutris · `Shift+g` Steam · `c` Matrix (iamb) · `Shift+b` Blender · `d` Godot |
 | `Super+m` | media | `j`/`k` volume · `m` mute · `Shift+m` mic · `h`/`l` prev/next · `p` play/pause · `Shift+j`/`Shift+k` brightness |
 | `Super+Shift+e` | system | `l` lock · `e` exit sway · `s` suspend · `r` reboot · `Shift+p` power off |
+| `Super+0` | dash (while the dash is focused; leaving it ends the mode, and every `Super` key still works) | `h` `j` `k` `l` / arrows select a tile · `e` / `Return` / `Space` open or close it · `Esc` close · `c` cpu · `m` memory · `f` disk · `g` gpu · `n` network · `p` containers · `v` microvms · `y` system · `u` secrets · `a` notifications · `d` devices · `s` sound · `t` time |
 
 Hardware keys (volume, media, brightness, Print) work as usual.
 

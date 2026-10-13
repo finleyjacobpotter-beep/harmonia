@@ -31,8 +31,7 @@ harmonia, cadmus and Dionysus all import [`hosts/base.nix`](../hosts/base.nix).
 | `desktop.nix` | Sway, greetd/tuigreet login, PipeWire audio, portals, Bluetooth, console colours |
 | `fonts.nix` | DepartureMono Nerd Font as the system default |
 | `flatpak.nix` | Flathub, the `harmonia.apps` list (each app's sandbox and Super+o key), `harmonia.launchers` (Super+o keys for native programs), [Firefox](firefox.md) in a tightened sandbox |
-| `element.nix` | [Element](element.md) (Matrix) from Flathub in a locked-down sandbox |
-| `podman.nix` | Rootless podman, podman-compose and buildah; lets the bar list root's containers without a password (read-only) |
+| `podman.nix` | Rootless podman, podman-compose and buildah; lets the dash list root's containers without a password (read-only) |
 | `git-lfs.nix` | Git with LFS |
 | `editorconfig.nix` | A system-wide `/.editorconfig` ([Editing](editing.md)) |
 | `sudo.nix` | Asterisks at the sudo password prompt |
@@ -45,11 +44,11 @@ Every host's user gets [`home/base.nix`](../home/base.nix), one home-manager
 file per program:
 
 - **Desktop**: Sway with the fuzzel launcher, mako notifications, swaylock and
-  swayidle; the [eww bar](bar.md); GTK theming; the
+  swayidle; the [eww bar and dash](bar.md); GTK theming; the
   [keyboard contract](keyboard.md) and its build-time checks.
 - **Terminal**: alacritty, tmux, bash and its prompt, ranger, neovim
   (with the [JSON/YAML commands](editing.md)), btop, pulsemixer and bluetuith.
-- **Apps**: Firefox's add-ons and theme, Element's theme, Calibre, and
+- **Apps**: Firefox's add-ons and theme, [iamb](matrix.md) for Matrix, Calibre, and
   `flatpak-miami-wind`, which copies themes and configs into the Flatpak
   sandboxes.
 - **Secrets**: KeePassXC (`keepassxc-cli` and the app), the Bitwarden CLI
@@ -77,7 +76,7 @@ harmonia and cadmus also import [`hosts/common.nix`](../hosts/common.nix) and
 | `gaming.nix`, `steam.nix` | [Lutris and Steam](gaming.md) from Flathub in jails sharing only `~/Games`, controller rules, GameMode |
 | `studio.nix` | Blender and Godot from nixpkgs, opened with Super+o Shift+b and Super+o d, working in `~/Projects` |
 | `virtualisation.nix` | Plain QEMU (no libvirt) and `/dev/kvm` access |
-| `microvms.nix`, `vm-firewall.nix` | The `harmonia.microvms` option and per-VM firewall modes switched from the bar |
+| `microvms.nix`, `vm-firewall.nix` | The `harmonia.microvms` option and per-VM firewall modes switched from the dash |
 | `nike.nix` | The [Nike](nike.md) microVM |
 | `lib/root-cas.nix` | Your own root CAs from `certs/all` and `certs/<hostname>` |
 | `home/default.nix` | The Flatpak GTK theme sync, the [Rust tools](rust-tools.md), [Blender add-ons](blender.md) and `uv` |
@@ -94,10 +93,10 @@ Every microVM (only Nike now) uses [`lib/microvm-guest.nix`](../lib/microvm-gues
 - `~/<name>-share` on the host is `~/share` in the guest.
 - One user (uid 1000, so shared files belong to you on both sides), openssh,
   and `ssh <name>` from the host.
-- A status service the host's bar reads for its badge and panel.
+- A status service the host's dash reads for its microvms tile.
 - The host's bash, tmux, ranger, neovim, Rust tools, EditorConfig, sudo and
   Git LFS settings, in the VM's own colours, and the root CAs from
   `certs/all` and `certs/<name>`.
 
-None of them starts at boot: use the bar's panel or
+None of them starts at boot: use the dash's microvms tile or
 `sudo systemctl start microvm@<name>`.

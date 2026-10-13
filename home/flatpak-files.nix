@@ -4,7 +4,7 @@
 # (~/.var/app/<id>, which GTK in the sandbox uses as XDG_DATA_HOME and
 # XDG_CONFIG_HOME). Modules list what they need:
 #
-#   harmonia.flatpakFiles.".var/app/im.riot.Riot/config/Element/config.json" = configFile;
+#   harmonia.flatpakFiles.".var/app/net.lutris.Lutris/config/lutris/lutris.conf" = configFile;
 #   harmonia.firefoxProfileFiles."user.js" = userJs;   # into every Firefox profile
 #
 # One command, `flatpak-miami-wind` (home/flatpak-files.py), copies them all;

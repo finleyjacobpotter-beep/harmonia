@@ -24,7 +24,7 @@ IOMMU in software mode, which amdgpu needs on BIOS versions before 1.13.
 - Redistributable firmware and the wireless regulatory database, so Wi-Fi
   and Bluetooth chips come up and use the channels allowed where you are.
 - Join a Wi-Fi network with `Super+o n` (`nmtui`, on every host) or
-  `nmcli device wifi connect <SSID> --ask`. The bar shows a Wi-Fi icon when
+  `nmcli device wifi connect <SSID> --ask`. The dash's network tile shows a Wi-Fi icon when
   the default route is wireless.
 - Closing the lid suspends, on battery and on mains; docked with an external
   display, it keeps running. swayidle locks the screen first.
@@ -51,8 +51,8 @@ IOMMU in software mode, which amdgpu needs on BIOS versions before 1.13.
 
 Everything in [hosts/common.nix](common.md#desktop-and-laptop-hostscommonnix):
 Lutris and Steam, native Blender and Godot, QEMU, and the
-[Nike](nike.md) microVM. The bar adds a battery module
-when there is a battery to show.
+[Nike](nike.md) microVM. The dash shows the battery
+when there is one.
 
 ## Hardware
 

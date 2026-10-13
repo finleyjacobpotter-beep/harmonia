@@ -10,7 +10,7 @@ Apple-silicon machine as much as on an x86 one.
 ## What it is
 
 - The same Miami Wind Sway environment as harmonia: `modules/nixos/desktop.nix`
-  plus the shared `home/*.nix` modules (sway, eww bar, alacritty, tmux, bash,
+  plus the shared `home/*.nix` modules (sway, eww bar and dash, alacritty, tmux, bash,
   ranger, neovim, GTK theme, the TUI tools, the keymap contract and the local
   secrets tools).
 - Nike's pentesting toolset, native ([`nike/tools.nix`](../nike/tools.nix)
@@ -26,12 +26,10 @@ Apple-silicon machine as much as on an x86 one.
 - No AI coding agents: Claude Code and pi are not on Dionysus, so it
   allows no unfree packages beyond the Tulasi icons.
 - A git identity of its own: `Dionysus <dionysus@localhost.local>`.
-- Flatpak apps (`modules/nixos/flatpak.nix` and `element.nix`, the same
-  tightened sandboxes as harmonia):
-  - **Element** (Matrix), on both architectures (Flathub ships x86_64 and
-    aarch64 builds);
-  - **Firefox**, on both architectures, with the same vertical tabs,
-    uBlock Origin, Vimium, Bitwarden and theming as harmonia.
+- **Firefox** from Flathub (`modules/nixos/flatpak.nix`, the same
+  tightened sandbox as harmonia), on both architectures, with the same
+  vertical tabs, uBlock Origin, Vimium, Bitwarden and theming as harmonia.
+- **iamb** for Matrix, as on every host ([matrix.md](matrix.md)).
 - Guest tools for both hypervisors, on both architectures, side by side:
   - **SPICE** (virt-manager/QEMU): `spice-vdagentd` for clipboard and display
     resizing, `spice-webdavd` for the shared folder;

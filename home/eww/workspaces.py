@@ -1,4 +1,6 @@
-"""The sway workspace list as JSON, again on every workspace or output event."""
+"""The sway workspace list as JSON, again on every workspace or output event.
+A workspace's label is its name after the number, so "10:dash" (dash.py)
+shows as "dash"."""
 
 import json
 import subprocess
@@ -11,7 +13,17 @@ def emit() -> None:
     except ValueError:
         workspaces = []
     workspaces.sort(key=lambda w: w.get("num") if w.get("num") is not None else -1)
-    rows = [{"name": w.get("name"), "focused": w.get("focused"), "urgent": w.get("urgent")} for w in workspaces]
+    rows = [
+        {
+            "name": w.get("name"),
+            "label": (w.get("name") or "").split(":", 1)[-1],
+            "focused": w.get("focused"),
+            "visible": w.get("visible"),
+            "output": w.get("output"),
+            "urgent": w.get("urgent"),
+        }
+        for w in workspaces
+    ]
     print(json.dumps(rows, separators=(",", ":"), ensure_ascii=False), flush=True)
 
 

@@ -1,8 +1,9 @@
-# Elkowar's Wacky Widgets — top bar for sway. The layout is home/eww/eww.yuck
-# and the styles home/eww/eww.scss; the scripts behind the widgets are
-# home/eww/*.py, packaged together as harmonia-bar. This file fills in what
-# depends on the host: store paths, the palette, the key hints, and the
-# microVMs' widgets (modules/nixos/microvms.nix).
+# Elkowar's Wacky Widgets — the top bar and the dash (workspace 10) for sway.
+# The layout is home/eww/eww.yuck and the styles home/eww/eww.scss; the
+# scripts behind the widgets are home/eww/*.py, packaged together as
+# harmonia-bar. This file fills in what depends on the host: store paths, the
+# palette, the wallpaper, the key hints, and the microVMs' widgets
+# (modules/nixos/microvms.nix).
 {
   config,
   osConfig,
@@ -15,8 +16,164 @@ let
   p = palette;
   pyApp = import ../lib/python-app.nix { inherit pkgs lib; };
 
+  # The dash's own keys, in sway's dash mode (home/sway.nix, home/eww/dash.py).
+  dashHint = "h/j/k/l move · e expand · Esc collapse · c m f g n p v y u a d s t open a tile · Super+Tab back";
+
+  # The dash shows the wallpaper beside its tiles; sway's background is a
+  # solid colour (home/sway.nix).
+  wallpaper = ../assets/wallpaper.png;
+
+  # Reminders of the main keys, under the dash: sway's (home/sway.nix),
+  # tmux's (home/tmux.nix) and neovim's (home/neovim.nix). docs/keyboard.md
+  # has them all.
+  keyHintColumns = [
+    {
+      title = "sway  Super+…";
+      keys = [
+        [
+          "Return / d"
+          "terminal / launcher"
+        ]
+        [
+          "q"
+          "close window"
+        ]
+        [
+          "h j k l"
+          "focus (Shift: move)"
+        ]
+        [
+          "1…9"
+          "workspace (Shift: send)"
+        ]
+        [
+          "Ctrl+h / l"
+          "other display"
+        ]
+        [
+          "s / v"
+          "split below / beside"
+        ]
+        [
+          "t / e"
+          "tabbed / toggle split"
+        ]
+        [
+          "f"
+          "fullscreen"
+        ]
+        [
+          "Shift+space"
+          "float"
+        ]
+        [
+          "r o m"
+          "resize · open · media"
+        ]
+        [
+          "Shift+e"
+          "lock, exit, power"
+        ]
+      ];
+    }
+    {
+      title = "tmux  Ctrl+Space, then";
+      keys = [
+        [
+          "s / v"
+          "split below / beside"
+        ]
+        [
+          "h j k l"
+          "pane (H J K L resize)"
+        ]
+        [
+          "z"
+          "zoom pane"
+        ]
+        [
+          "c / n / p"
+          "new / next / prev window"
+        ]
+        [
+          "q / Q"
+          "kill pane / window"
+        ]
+        [
+          "w / S"
+          "pick window / session"
+        ]
+        [
+          "Esc"
+          "copy: v select, y yank"
+        ]
+        [
+          "P"
+          "paste"
+        ]
+        [
+          "d"
+          "detach"
+        ]
+      ];
+    }
+    {
+      title = "neovim  Space = leader";
+      keys = [
+        [
+          "Space ff / fg"
+          "find files / grep"
+        ]
+        [
+          "Space fb"
+          "buffers"
+        ]
+        [
+          "Space e"
+          "file explorer"
+        ]
+        [
+          "Space s / v"
+          "split below / beside"
+        ]
+        [
+          "Ctrl+w h j k l"
+          "between windows"
+        ]
+        [
+          "Space q"
+          "close window"
+        ]
+        [
+          "[b / ]b"
+          "prev / next buffer"
+        ]
+        [
+          "Space j"
+          "JSON / YAML"
+        ]
+        [
+          "Space fk"
+          "every key"
+        ]
+      ];
+    }
+  ];
+  keyHints = lib.concatMapStrings (c: ''
+    (box :class "hint-col" :orientation "v" :space-evenly false :spacing 1
+      (label :class "hint-title" :halign "start" :text "${c.title}")
+      ${
+        lib.concatMapStrings (k: ''
+          (box :orientation "h" :space-evenly false :spacing 6
+            (label :class "hint-key" :text "${lib.elemAt k 0}")
+            (label :class "hint-what" :halign "start" :limit-width 24 :text "${lib.elemAt k 1}"))
+        '') c.keys
+      })
+  '') keyHintColumns;
+
   # Key hints for sway's modes (home/sway.nix), shown while a mode is active.
   modeHints = {
+    dash = dashHint;
     resize = "h/j/k/l resize · Shift = ×5 · Esc done";
     open = lib.concatMapStringsSep " · " (k: "${k.hint} ${k.name}") (
       import ./open-mode.nix { inherit lib osConfig; }
@@ -26,9 +183,19 @@ let
   };
 
   # What the scripts read through home/eww/common.py.
+  # The flake's direct inputs and when each pinned commit was made, for the
+  # system tile (home/eww/system.py), read from flake.lock at build time.
+  flakeLock = builtins.fromJSON (builtins.readFile ../flake.lock);
+  pins = lib.mapAttrsToList (input: node: {
+    name = input;
+    # An input that follows another one names a path instead of a node.
+    modified = if builtins.isString node then flakeLock.nodes.${node}.locked.lastModified or 0 else 0;
+  }) flakeLock.nodes.${flakeLock.root}.inputs;
+
   barConfig = pkgs.writeText "harmonia-bar.json" (
     builtins.toJSON {
       hints = modeHints;
+      inherit pins;
       # The calendars' dots (cal.py), one colour per calendar in turn.
       calColors = with p; [
         pink
@@ -39,17 +206,6 @@ let
         orange
         blue
       ];
-      # The display settings window (display-settings.py).
-      colors = {
-        bg = p.bgAlt;
-        inherit (p)
-          surface
-          fg
-          muted
-          pink
-          cyan
-          ;
-      };
       usbIds = "${pkgs.hwdata}/share/hwdata/usb.ids";
       # The GPUs' names in the GPU panel (gpu.py).
       pciIds = "${pkgs.hwdata}/share/hwdata/pci.ids";
@@ -60,9 +216,9 @@ let
     }
   );
 
-  # Every bar script, under the command name the bar runs it by. eww-display
-  # is also run by sway at startup (home/sway.nix), and display-settings
-  # from fuzzel (the entry below).
+  # Every bar script, under the command name the bar runs it by. eww-dash
+  # is also run by sway at startup and by the dash's keys (home/sway.nix),
+  # and from fuzzel (the Displays entry below).
   bar = pyApp {
     name = "harmonia-bar";
     src = ./eww;
@@ -72,12 +228,20 @@ let
       eww-sway-mode = "mode";
       eww-volume = "volume";
       eww-cpu = "cpu";
+      eww-mem = "mem";
+      eww-disk = "disk";
+      eww-notify = "notify";
+      eww-secrets = "secrets";
+      eww-mic = "mic";
+      eww-bt = "bt";
+      eww-system = "system";
+      eww-dash = "dash";
       eww-gpu = "gpu";
       eww-net = "net";
       eww-cal = "cal";
       eww-clock = "clock";
       eww-display = "display";
-      display-settings = "display-settings";
+      eww-display-edit = "display-edit";
       eww-caffeine = "caffeine";
       eww-vpn = "vpn";
       eww-locks = "locks";
@@ -91,7 +255,6 @@ let
     libraries = with pkgs.python3Packages; [
       icalendar
       recurring-ical-events
-      pygobject3
     ];
     runtimeInputs =
       with pkgs;
@@ -105,6 +268,17 @@ let
         flatpak
         gamemode
         procps
+        # The sound tile's microphone, cameras and Bluetooth (mic.py, bt.py).
+        pipewire
+        bluez
+        # The notifications tile (notify.py).
+        mako
+        # The secrets tile (secrets.py, home/secrets.nix).
+        openssh
+        gnupg
+        bitwarden-cli
+        # The system tile's garbage collection (system.py).
+        nix
       ]
       # GPU load, temperature and VRAM (modules/nixos/fans.nix). ROCm is
       # x86_64 only; elsewhere (e.g. an aarch64 Dionysus VM) the widget just
@@ -114,28 +288,6 @@ let
       "--set"
       "HARMONIA_BAR_CONFIG"
       "${barConfig}"
-      # The display settings window is GTK 3.
-      "--prefix"
-      "GI_TYPELIB_PATH"
-      ":"
-      (lib.makeSearchPath "lib/girepository-1.0" (
-        map lib.getLib (
-          with pkgs;
-          [
-            gtk3
-            pango
-            gdk-pixbuf
-            atk
-            harfbuzz
-            glib
-            gobject-introspection
-          ]
-        )
-      ))
-      # Image loaders for the GTK theme's icons.
-      "--set-default"
-      "GDK_PIXBUF_MODULE_FILE"
-      "${pkgs.librsvg}/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache"
     ];
   };
   bin = "${bar}/bin";
@@ -169,14 +321,14 @@ let
       vmModes vm
     );
 
-  # A VM's bar badge: the same server icon for each, in the VM's own colour
-  # while it runs, and the firewall mode. Every part keeps its width, so the
-  # bar never moves. Its VPN shows as an asterisk on the network button.
+  # A VM's line in the dash's microVM tile: the same server icon for each,
+  # in the VM's own colour while it runs, its name and the firewall mode.
+  # Its VPN shows as an asterisk on the network tile.
   vmBadge =
     vm:
     let
       v = vms.${vm};
-      firewall = "firewall: \${${modeText vm "label"}} (click for details)";
+      firewall = "firewall: \${${modeText vm "label"}}";
       # Whether it runs and, with panel.vpn (Nike), where its traffic leaves.
       tooltip =
         if v.panel.vpn then
@@ -190,12 +342,11 @@ let
           ''"${v.title} is ''${${vm}.running ? (${vm}.fresh ? "running" : "starting") : "stopped"}''${${vm}.running && ${vm}.fresh && ${vm}.vpn.up ? " · VPN up" : ""} · ${firewall}"'';
     in
     ''
-      (button :class "module vm ${vm} ''${${vm}.running ? "running" : "stopped"}"
-        :tooltip ${tooltip}
-        :onclick "${bin}/eww-display menu ${vm}-menu"
-        (box :orientation "h" :space-evenly false :spacing 6
-          (label :class "icon" :text "󰒋")
-          (label :class "vm-mode mode-''${${vm}.mode}" :xalign 0 :text "''${${shortText vm}}")))
+      (box :class "module vm ${vm} ''${${vm}.running ? "running" : "stopped"}" :tooltip ${tooltip}
+        :orientation "h" :space-evenly false :spacing 6
+        (label :class "icon" :text "󰒋")
+        (label :text "${v.title}")
+        (label :class "vm-mode mode-''${${vm}.mode}" :xalign 0 :text "''${${shortText vm}}"))
     '';
 
   # A VM panel's start/stop button: Start while it is stopped, Stop while it
@@ -253,9 +404,9 @@ let
         :text "Tunnel down ''${${vm}.vpn.rx_text} · up ''${${vm}.vpn.tx_text}"))
   '';
 
-  # A VM's panel, opened from its badge: start/stop, its CPU, memory and disk
-  # as its status service reports them from inside the VM, the firewall
-  # dropdown and how to reach it.
+  # A VM's part of the open microVM tile: start/stop, its CPU, memory and
+  # disk as its status service reports them from inside the VM, the
+  # firewall dropdown and how to reach it.
   vmPanel =
     vm:
     let
@@ -265,11 +416,10 @@ let
       ${powerButton vm}
       ${firewallDropdown vm}
       (defwidget ${vm}-panel []
-        (box :class "wg-panel" :orientation "v" :space-evenly false :spacing 10
+        (box :orientation "v" :space-evenly false :spacing 10
           (box :orientation "h" :space-evenly false
             (label :class "wg-title ${vm}" :hexpand true :halign "start" :text "${info.title}")
-            (${vm}-power)
-            (button :class "wg-close" :onclick "${eww} close ${vm}-menu" "✕"))
+            (${vm}-power))
           (label :class "wg-detail" :visible {!${vm}.running} :halign "start" :wrap true
             :text "${info.title} is stopped.")
           (label :class "wg-detail" :visible {${vm}.running && !${vm}.fresh} :halign "start" :wrap true
@@ -278,26 +428,16 @@ let
             ${lib.optionalString info.panel.vpn (vpnBlock vm)}
             (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 6
               (label :class "wg-name" :halign "start" :text "System")
-              (vm-meter :name "CPU" :value {${vm}.cpu} :text "''${${vm}.cpu_text}")
-              (vm-meter :name "Memory" :value {${vm}.mem} :text "''${${vm}.mem_text}")
-              (vm-meter :name "Disk (/home)" :value {${vm}.disk} :text "''${${vm}.disk_text}")
+              (meter :name "CPU" :value {${vm}.cpu} :text "''${${vm}.cpu_text}")
+              (meter :name "Memory" :value {${vm}.mem} :text "''${${vm}.mem_text}")
+              (meter :name "Disk (/home)" :value {${vm}.disk} :text "''${${vm}.disk_text}")
               (label :class "wg-detail" :halign "start" :text "Load ''${${vm}.load} · up ''${${vm}.uptime_text}")))
           (${vm}-firewall)
           (label :class "wg-detail" :halign "start" :wrap true
             :text "${info.panel.footer}")))
     '';
 
-  # A VM panel's popup under the bar, opened by its badge.
-  vmWindow = vm: ''
-    (defwindow ${vm}-menu
-      :monitor 0
-      :stacking "overlay"
-      :namespace "eww-menu"
-      :geometry (geometry :x "8px" :y "34px" :width "360px" :anchor "top right")
-      (${vm}-panel))
-  '';
-
-  # The VPNs the network button can show an asterisk for, top to bottom:
+  # The VPNs the network tile can show an asterisk for, top to bottom:
   # kind is its CSS class (and colour), up a yuck condition, text its name in
   # the tooltip. The microVMs' come from their status (nike/status.py), and
   # only on hosts that run them.
@@ -330,8 +470,8 @@ let
   }) vmNames;
 
   # The stack's labels, one per VPN, shown while it is up. At most four fit
-  # the bar, so one shows only while fewer than four above it do; the
-  # tooltip and the panel still name them all.
+  # beside the icon, so one shows only while fewer than four above it do;
+  # the tile's VPN line and its details still name them all.
   maxStars = 4;
   vpnStarLabels = lib.concatStringsSep "\n                  " (
     lib.imap0 (
@@ -344,7 +484,7 @@ let
     ) vpnStars
   );
 
-  # The tooltip's list of VPNs that are up, as a yuck string expression.
+  # The list of VPNs that are up, as a yuck string expression.
   vpnTooltip = lib.concatMapStrings (s: ''''${${s.up} ? " · ${s.text}" : ""}'') vpnStars;
 
   # Fill in the @name@ placeholders of a file in home/eww.
@@ -361,10 +501,11 @@ in
     pkgs.vdirsyncer
   ];
 
+  # The display settings are on the dash's devices tile (home/eww/display-edit.py).
   xdg.desktopEntries.display-settings = {
     name = "Displays";
     comment = "Arrange displays, pick resolutions and the primary display";
-    exec = "display-settings";
+    exec = "eww-dash show devices";
     icon = "preferences-desktop-display";
     categories = [ "Settings" ];
   };
@@ -399,7 +540,13 @@ in
   };
 
   xdg.configFile."eww/eww.yuck".text = fill {
-    inherit bin eww vpnTooltip;
+    inherit
+      bin
+      eww
+      vpnTooltip
+      dashHint
+      keyHints
+      ;
     vpnStars = vpnStarLabels;
     swaymsg = "${pkgs.sway}/bin/swaymsg";
     swaylock = "${pkgs.swaylock}/bin/swaylock";
@@ -407,11 +554,21 @@ in
     vmPolls = lib.concatMapStrings vmPoll vmNames;
     vmBadges = lib.concatMapStrings vmBadge vmNames;
     vmPanels = lib.concatMapStrings vmPanel vmNames;
-    vmWindows = lib.concatMapStrings vmWindow vmNames;
+    vmBodies = lib.concatMapStrings (vm: "(${vm}-panel)\n") vmNames;
+    vmTotal = toString (lib.length vmNames);
+    # How many run, as a yuck expression.
+    vmRunning =
+      if vmNames == [ ] then
+        "0"
+      else
+        lib.concatMapStringsSep " + " (vm: "(${vm}.running ? 1 : 0)") vmNames;
   } ./eww/eww.yuck;
 
   xdg.configFile."eww/eww.scss".text = ''
     $bg: ${p.bgDark};
+    // The wallpaper's border colour (assets/wallpaper.png, docs/theme.md),
+    // which sway's background also uses (home/sway.nix).
+    $wall-bg: ${p.bg};
     $bg-alt: ${p.bgAlt};
     $surface: ${p.surface};
     $fg: ${p.fg};
@@ -428,9 +585,10 @@ in
     $font-size: ${toString p.font.size}pt;
 
     ${builtins.readFile ./eww/eww.scss}
+    .dash-wallpaper { background-image: url("${wallpaper}"); }
     ${lib.concatMapStrings (vm: ''
-      // ${vms.${vm}.title}: its badge while running, its VPN asterisk and its panel's title.
-      .module.${vm}.running .icon, .vpn-star.${vm}, .wg-panel .wg-title.${vm} { color: ${vms.${vm}.vm.palette.primary}; }
+      // ${vms.${vm}.title}: its line on the dash while running, its VPN asterisk and its panel's title.
+      .module.${vm}.running .icon, .vpn-star.${vm}, .dash .wg-title.${vm} { color: ${vms.${vm}.vm.palette.primary}; }
     '') vmNames}
   '';
 }

@@ -42,7 +42,7 @@ break without them:
 - **Network.** Games can reach the internet and your LAN.
 - **X11.** Wine and most games are X11 apps under Xwayland. An X11 app can
   read input to and screenshots of other Xwayland windows. Native Wayland apps
-  (alacritty, Firefox, Element, most of the desktop) are invisible to it.
+  (alacritty, Firefox, most of the desktop) are invisible to it.
 - **Devices.** `--device=all` stays so controllers and wheels work. That
   includes webcams and microphones.
 - **`~/.local/share/umu`.** Flathub lets Lutris keep the umu (Proton) runtime

@@ -1,15 +1,15 @@
 """Every AMD GPU's load, temperatures, VRAM, power, fan and clocks from
-rocm-smi (modules/nixos/fans.nix), for the bar's GPU module and its panel.
+rocm-smi (modules/nixos/fans.nix), for the dash's gpu tile.
 
 Usage: eww-gpu              the JSON below
-       eww-gpu main BUS     put the GPU at PCI address BUS on the bar
+       eww-gpu main BUS     put the GPU at PCI address BUS in the tile's summary
                             ("auto" = the one with the most VRAM)
 
 {"ok": bool, "auto": bool, "text": " 37%  52°C", "use": %, "temp": °C,
  "vram": %, "vram_text": "6.1/16 GiB", "name": "…",   (the main GPU)
  "gpus": [{"bus": "0000:03:00.0", "name": …, "use": %, "vram": %, …}]}
 
-The bar shows the main GPU's numbers and a pair of small meters (load and
+The tile's summary shows the main GPU's numbers and a pair of small meters (load and
 VRAM) for every GPU. rocm-smi's card numbers needn't match /sys/class/drm's,
 so GPUs are matched to their DRM card (and its displays) by PCI address.
 """
@@ -185,7 +185,7 @@ def stats(data: dict, choice: str) -> dict:
         "vram": main["vram"],
         "vram_text": main["vram_text"],
         "name": main["name"],
-        # Left-padded for the worst case, "100% 200°C", so the bar stays put.
+        # Left-padded for the worst case, "100% 200°C", so the tile stays put.
         "text": f"{main['use']:>3}% {main['temp']:>3}°C",
         "gpus": gpus,
     }

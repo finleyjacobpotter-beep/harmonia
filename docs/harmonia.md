@@ -35,7 +35,7 @@ that uv downloads itself can't run on NixOS. The host-side MCP servers use it.
 
 Everything in [hosts/common.nix](common.md#desktop-and-laptop-hostscommonnix):
 Lutris and Steam, native Blender and Godot, QEMU, and the
-[Nike](nike.md) microVM with its bar badge and firewall modes. The AI agents
+[Nike](nike.md) microVM with its dash tile and firewall modes. The AI agents
 (Claude Code and pi) are harmonia only.
 
 ## Hardware
@@ -48,7 +48,7 @@ the first switch:
 sudo nixos-generate-config --show-hardware-config > hosts/harmonia/hardware-configuration.nix
 ```
 
-The bar's GPU module reads both AMD cards (the RX 9070 and the RX 5600 XT)
-through `rocm-smi`, with a load and a VRAM meter for each; click it for the
-GPU panel, where you pick which card's numbers the bar shows
-([The bar](bar.md#gpus)). It hides itself when there is no GPU to report.
+The dash's gpu tile reads both AMD cards (the RX 9070 and the RX 5600 XT)
+through `rocm-smi`, with a load and a VRAM meter for each; open it to pick
+which card's numbers the summary shows ([GPUs](bar.md#gpus)). It says so
+when there is no GPU to report.

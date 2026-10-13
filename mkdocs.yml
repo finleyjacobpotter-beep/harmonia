@@ -61,14 +61,14 @@ nav:
       - Pinned versions: versions.md
   - Desktop:
       - Keyboard: keyboard.md
-      - The bar: bar.md
+      - The bar and the dash: bar.md
       - Theme: theme.md
       - Calendar: calendar.md
       - Editing: editing.md
       - Rust tools: rust-tools.md
   - Apps:
       - Firefox: firefox.md
-      - Element: element.md
+      - Matrix: matrix.md
       - Gaming: gaming.md
       - Blender: blender.md
       - Game dev: gamedev.md

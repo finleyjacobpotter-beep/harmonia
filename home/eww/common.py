@@ -1,4 +1,4 @@
-"""What the bar scripts share: where they keep state, reading files and
+"""What the bar and dash scripts share: where they keep state, reading files and
 command output quietly, and the settings home/eww.nix passes in
 ($HARMONIA_BAR_CONFIG, a JSON file)."""
 

@@ -1,4 +1,4 @@
-"""Running podman containers, for the bar's pods button and its panel: your
+"""Running podman containers, for the dash's containers tile: your
 own (rootless) and the system's (root, from virtualisation.oci-containers),
 the latter through the read-only sudo rule in modules/nixos/podman.nix.
 
@@ -91,7 +91,7 @@ def main() -> None:
         json.dumps(
             {
                 "count": len(running),
-                # Two digits, so the button keeps its width.
+                # Two digits, so the dash tile's number keeps its width.
                 "text": f"{min(len(running), 99):02d}",
                 "stopped": mine_stopped + system_stopped,
                 "containers": running,

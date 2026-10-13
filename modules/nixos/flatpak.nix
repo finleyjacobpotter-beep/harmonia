@@ -1,8 +1,8 @@
 # The Flathub apps, each declared once with its sandbox and launcher key:
 #
-#   harmonia.apps."im.riot.Riot" = {
-#     name = "element";  # its word in the open mode's hint on the bar
-#     key = "c";         # Super+o, then c, opens it (home/open-mode.nix)
+#   harmonia.apps."net.lutris.Lutris" = {
+#     name = "lutris";   # its word in the open mode's hint on the bar
+#     key = "g";         # Super+o, then g, opens it (home/open-mode.nix)
 #     wayland = true;    # no X11 socket (Wayland only)
 #     sandbox = { ... }; # flatpak overrides on top; "!" revokes
 #   };

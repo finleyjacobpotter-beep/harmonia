@@ -15,7 +15,7 @@ pieces.
 | Config | `base` + `common` + `hosts/harmonia` | `base` + `common` + `hosts/cadmus` | `base` + `hosts/dionysus` |
 | Home | `home/default.nix` | `home/default.nix` | `home/dionysus/` |
 | Sway, eww bar, terminal tools, Miami Wind | ✓ | ✓ | ✓ (software rendering) |
-| Firefox, Element (Flatpak) | ✓ | ✓ | ✓ |
+| Firefox (Flatpak), iamb (Matrix) | ✓ | ✓ | ✓ |
 | Podman, VPNs, secrets tools | ✓ | ✓ | ✓ |
 | Lutris and Steam | ✓ | ✓ | |
 | Blender and Godot (native) | ✓ | ✓ | |

@@ -19,10 +19,9 @@ modules/nixos/
   flatpak.nix                  Flathub, `harmonia.apps` (each app's sandbox and Super+o key), `harmonia.launchers` (native apps' keys), Firefox with a tightened sandbox
   gaming.nix                   Lutris from Flathub with a tightened sandbox, controller udev rules, GameMode
   steam.nix                    Steam from Flathub, locked down, sharing only ~/Games with Lutris
-  element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   studio.nix                   Blender and Godot from nixpkgs, with their Super+o keys
   fans.nix                     harmonia only: LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
-  podman.nix                   rootless podman, podman-compose, buildah, the bar's read-only sudo for root's containers (all hosts)
+  podman.nix                   rootless podman, podman-compose, buildah, the dash's read-only sudo for root's containers (all hosts)
   virtualisation.nix           plain QEMU (no libvirt)
   microvms.nix                 `harmonia.microvms`: each VM declared once; its network, NAT, folders, `ssh <vm>`, colours and firewall modes follow
   nike.nix                     the Nike microVM: its colours and VPN firewall modes
@@ -30,17 +29,17 @@ modules/nixos/
   laptop.nix                   cadmus only: Wi-Fi firmware + regulatory database, suspend on lid close, power profiles
   thinkpad.nix                 cadmus only: thinkfan fan curve, fwupd for BIOS updates
   secrets.nix                  pcscd + YubiKey udev rules
-  vpn.nix                      WireGuard and OpenVPN via NetworkManager, openfortivpn services, rules for the bar
+  vpn.nix                      WireGuard and OpenVPN via NetworkManager, openfortivpn services, rules for the dash
 nike/                          the Nike microVM guest (microvm.nix)
   default.nix                  packages, user k and its password, volume sizes, the TUN module
   tools.nix                    the OSCP toolset and Penelope
   labs.nix                     podman + the Ligolo-ng and BloodHound compose services
-  status.py                    writes each VM's utilization (and Nike's VPN) for the bar
+  status.py                    writes each VM's utilization (and Nike's VPN) for the dash
 home/                          home-manager, one file per program
   base.nix                     the home every host shares; default.nix (harmonia, cadmus) and dionysus/ add to it
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, caps/num lock, running containers, gamemode/steam, nike with firewall modes, display settings with rotation, cpu, mem, gpus with a panel to pick the main one, network with VPN asterisks, caffeine, volume, battery, clock + calendar)
-  eww/                         the bar's layout (eww.yuck), styles (eww.scss) and scripts, in Python (displays, network, gpu, pods, volume, clock, calendar, …, sharing common.py), and the display settings window
+  eww.nix                      eww: the top bar (workspaces, sway mode, title, fuzzy time) and the dash on workspace 10 (cpu, memory, disks, gpus, network with VPN asterisks, containers, microVMs with firewall modes, system health + NixOS, secrets, notifications with focus, display settings + USB, sound + microphone, cameras and Bluetooth, time + calendar, caps/num lock, gamemode/steam, battery, caffeine, session)
+  eww/                         the bar's and dash's layout (eww.yuck), styles (eww.scss) and scripts, in Python (dash, displays and their settings, cpu, mem, disk, system, secrets, notifications, mic, bluetooth, network, gpu, pods, volume, clock, calendar, …, sharing common.py)
   open-mode.nix                Super+o's keys, for sway and the bar's hint
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
@@ -48,7 +47,7 @@ home/                          home-manager, one file per program
   secrets-backup.py            the `secrets-backup` command
   flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
-  element.nix                  Miami Wind theme for Element
+  iamb.nix                     iamb, the terminal Matrix client (Super+o c), and harmonia.matrix.userId
   ai.nix                       pi on the harmonia desktop: the release build, with the MCP servers, the skills and the .agents/ extension
   gamedev.nix                  game dev on the harmonia desktop: Claude Code (no global prompts), Blender, Godot and radare2 MCP, the godot-ai service, the skills, gamedev-init
   gamedev/                     its skills (Godot 4, Godot and Blender MCP) and the design-doc templates gamedev-init copies
@@ -59,7 +58,7 @@ home/                          home-manager, one file per program
   mcp-servers.nix              the Blender, Godot and radare2 MCP servers for Claude Code and pi on harmonia (home/gamedev.nix, home/ai.nix)
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix firefox.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
-lib/python-app.nix             packages a folder of Python scripts that share modules as several commands (the bar)
+lib/python-app.nix             packages a folder of Python scripts that share modules as several commands (the bar and the dash)
 lib/root-cas.nix               trusts the root CAs in certs/ on the host and Nike
 lib/microvm-guest.nix          what every microVM guest shares: network, shares, volumes, user, openssh, status service, shell configs
 certs/                         your own root CAs: all/ for every machine, harmonia/ or nike/ for one (empty by default, see certs/README.md)

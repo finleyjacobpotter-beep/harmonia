@@ -1,7 +1,7 @@
-"""Month grid for the bar's calendar panel, with a coloured dot per calendar
+"""Month grid for the dash's time tile, with a coloured dot per calendar
 on each day that has events.
 
-Usage: eww-cal                 JSON for the panel
+Usage: eww-cal                 JSON for the dash
        eww-cal prev|next|today move the shown month
        eww-cal day YYYY-MM-DD  show that day's events under the grid
        eww-cal refresh         push fresh JSON to eww (after a sync or a time zone change)
@@ -13,8 +13,8 @@ metasync writes there (falling back to the palette), its name from
 `displayname`. A lone .ics file dropped straight into the root is a
 calendar of its own.
 
-Days are split in the time zone picked in the panel (the same state file
-the bar clock reads).
+Days are split in the time zone picked on the dash (the same state file
+the clock reads).
 """
 
 import calendar

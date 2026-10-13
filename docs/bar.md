@@ -1,65 +1,143 @@
-# The bar
+# The bar and the dash
 
-The eww bar: the layout is `home/eww/eww.yuck`, the styles
-`home/eww/eww.scss`, and the scripts behind the widgets `home/eww/*.py`
+Two eww windows, laid out in `home/eww/eww.yuck`, styled in
+`home/eww/eww.scss`, with the scripts behind them in `home/eww/*.py`
 (packaged together as `harmonia-bar`). `home/eww.nix` fills in the store
-paths, the palette and the widgets for the host's microVMs. Buttons that open a
-panel do so on a left click; each panel has a ✕ to close it, and clicking
-the button again closes it too. Panels open on the primary display.
+paths, the palette, the wallpaper and the widgets for the host's microVMs.
 
-Nothing covers the bar: it sits on the layer-shell overlay layer, above
-fullscreen windows (games, video, a fullscreen browser) and X11 popups, and
-its exclusive zone keeps every other window below it. A fullscreen window
-keeps the full screen, so its top 28 pixels are under the bar. Only menus
-an app opens, the launcher and the lock screen can sit above it while
-they're open.
+- **The bar**, along the top of the primary display on every workspace but
+  the dash: the workspaces (the focused one in pink, an urgent one in red),
+  the sway mode and its keys while one is active, the focused window's
+  title, and the time in words only (`quarter past two`). Hover it for the
+  exact time; click it for the calendar on the dash, which shows the exact
+  time.
+- **The dash**, workspace 10: everything else, as thirteen tiles in four rows.
 
-| On the bar | Click |
+## The dash
+
+`Super+0` goes to the dash, a workspace named `10:dash` (shown as **dash**
+on the bar). It belongs to the primary display, and sway starts on it. No
+window stays there: one opened on the dash (from fuzzel, say) is moved to
+the last workspace you were on, and you follow it. `Super+Shift+0` does
+nothing, since there is nothing to move there.
+
+### Pinning the dash to a display
+
+The 󰐃 button at the top of the dash pins it to the display it is on, and
+shows that display's name while pinned (click again to unpin). A pinned dash
+keeps its display to itself: every other workspace there moves to another
+display, so `Super+1…9` from the dash opens or shows workspaces on the other
+monitor while the dash stays on screen. Unpinned, the dash shares the
+primary display like any workspace, and sway opens a new workspace on the
+display you are focused on, which then covers the dash. The pin is
+remembered per monitor (by make, model and serial) in
+`~/.local/state/eww/dash-display`; with only one display connected it does
+nothing.
+
+### The bar's switch and the workspaces
+
+The **bar on/off** button at the top turns the bar off everywhere, or back
+on (as `Super+Shift+b` does); it is remembered in
+`~/.local/state/eww/bar-hidden`. While the dash covers the primary display,
+the bar moves to another one.
+
+Under it, every workspace: the ones on screen bright, the focused one pink.
+Click one to go there.
+
+### How it works
+
+`home/eww/dash.py` runs from sway's startup and keeps it all in step: it
+opens the dash while its workspace is on screen and closes the bar there,
+sends windows away, and switches sway into the dash's key mode while the
+dash is focused. eww only reads the numbers while the dash is open, so it
+costs nothing on the other workspaces.
+
+### Layout
+
+The dash is a square, and the wallpaper is drawn beside it: on a landscape
+display the dash fills the left half (a square as tall as the display, or
+as wide as the half, whichever is smaller) and the wallpaper is centred in
+the right half; on a vertical display the dash is on the top half and the
+wallpaper below. The other workspaces have a plain background.
+
+If that square would be under 640 pixels a side, the wallpaper is dropped
+and the dash fills the whole display; if the display is under 640 pixels
+even then, the dash scrolls.
+
+### Tiles
+
+Each tile shows a headline number and a summary. Opening one (a click on
+its header, or its key) expands it to show everything about it: the open
+tile's row grows while the others flatten to their headers, and the tiles
+beside it narrow to theirs, so the dash keeps its shape. Long details
+scroll inside the tile.
+
+| Key | Tile | Summary | Open |
+|---|---|---|---|
+| `c` | **cpu** | usage, package temperature, clock, load, a bar per thread | the model, thread count, current and top clock, governor, load and uptime, processes and threads, a tall bar per thread (hover for its clock), every temperature sensor, and the busiest processes since the last reading (100% is one thread) |
+| `m` | **memory** | used of total, swap | used by programs, cache and buffers, shared memory, free, available, swap, zswap's pool, memory waiting to be written to disk, and the processes with the most resident memory |
+| `f` | **disk** | space used on `/`, reads and writes per second across disks, how busy the busiest is | every filesystem on a disk (`/`, `/boot`, …) with its device, type, space used and free; each disk's model, size, temperature, how busy it is, and its reads and writes per second (`home/eww/disk.py`) |
+| `g` | **gpu** | the main GPU's load and temperature, two thin meters per GPU (load, then VRAM; the main GPU's in red and purple) | [GPUs](#gpus) |
+| `n` | **network** | the shown interface, its address and rates (bps to Gbps), and a coloured asterisk per kind of VPN that is up ([vpn.md](vpn.md)) | the VPNs with **Connect** / **Disconnect**, then every interface's rates, where **Show** picks the one in the summary (**Automatic** follows the default route) |
+| `p` | **containers** | how many podman containers run, and their names | [Containers](#containers) |
+| `v` | **microvms** | each microVM, running or not, and its firewall mode | [Nike](#nike) |
+| `y` | **system** | failed units, journal errors in the last hour, the NixOS generation and its age, and a note when a reboot is needed | each failed unit (yours have **Restart**; the system's need `sudo systemctl`), the latest journal errors, the NixOS version, generation, kernel and whether a new kernel or initrd waits for a reboot, how old each flake input's pinned commit is (orange after 60 days, from `flake.lock` at build time), and the Nix store's disk with **Collect garbage**, which removes what nothing uses (old generations stay until removed as root) |
+| `u` | **secrets** | Bitwarden locked or unlocked, SSH keys loaded, YubiKey | Bitwarden with **Unlock** (a small terminal running `bw-unlock`) or **Lock**; ssh-agent's keys with **Add keys** (`ssh-add`) and **Forget all**; passphrases gpg-agent has cached, with **Forget**; the YubiKey, the KeePassXC database, the sops age key and the last `secrets-backup`. Nothing on it reads a secret, only whether one is there ([secrets.md](secrets.md)) |
+| `a` | **notifications** | focus on or off, how many are waiting and how many urgent, their titles | **Focus** (mako's do-not-disturb mode: no popups at all, but notifications still collect here), **Clear not urgent** (all but the critical ones), **Clear all**, **Restore last**, and each notification with its text, app and ✕ |
+| `d` | **devices** | each display and its mode (★ the primary), the USB count | the display settings ([below](#displays)), and every USB device, hubs included, in port order |
+| `s` | **sound** | the default output and its volume (scroll to change it), the microphone, whether a camera is in use, Bluetooth; anything recording shows in red | the output's slider, **− 5%**, **Mute** and **+ 5%**; the microphone's slider and **Mute**, and which programs are recording from it; each camera and which programs use it; Bluetooth on or off, and each paired device with its battery and **Connect** / **Disconnect** (pair new ones in bluetuith, `Super+o u`) |
+| `t` | **time** | the date and exact time, and the time zone | the time zone and the calendar ([calendar.md](calendar.md)) |
+
+Above the tiles: **CAPS** / **NUM** while on, GameMode and Steam while
+running (✕ quits Steam), the battery on laptops, the bar's switch, the
+pin, caffeine (stops the lock and blank timers until clicked again), and
+**Lock**, **Log out** and **Power off**. `Super+Shift+e` has the same actions, plus suspend and reboot.
+
+### Keys
+
+On the dash sway is in its **dash** mode, so bare keys reach the dash and
+not a window (there is none). Every `Super` key works as anywhere else; the
+mode ends as soon as you leave the dash. As in btop, each tile's key is
+shown on it in a block, and the line under the tiles lists them all.
+
+| Key | |
 |---|---|
-|  logo (top left) | opens the session panel: **Lock** (swaylock), **Log out** (exits sway) and **Power off**. `Super+Shift+e` has the same actions from the keyboard, plus suspend and reboot |
-| **CAPS** / **NUM** | shown while Caps Lock or Num Lock is on |
-| 󰡨 **00** containers | how many podman containers run, yours and root's: a grey `00` while none do, a green block like CAPS/NUM while some do; opens the containers panel (below) |
-| GameMode, Steam | shown while running; Steam opens a panel with **Close** |
-| Nike | always shown: running or not, and the firewall mode; opens its VM panel (below) |
-| 󰍹 **2** | how many displays there are; opens the display settings window (below) |
-| CPU, memory | |
-| 󰢮 GPU | the main GPU's load and temperature from `rocm-smi`, then two thin meters per GPU (load, then VRAM; the main GPU's in red and purple, the others grey, orange above 90%); opens the GPU panel (below) |
-| 󰈀 / 󰖩 network | the shown interface with its download and upload rate, switching between bps, kbps, Mbps and Gbps, and a stack of coloured asterisks beside the icon, one per kind of VPN that is up ([vpn.md](vpn.md)); opens a panel listing the VPNs with **Connect** / **Disconnect**, then every interface's rates, where **Show** picks the one on the bar (**Automatic** follows the default route) |
-| caffeine | stops the lock and blank timers until clicked again |
-| 󰕾 volume | opens a panel with a slider, **− 5%**, **Mute** and **+ 5%**; scrolling on the icon changes the volume too |
-| battery | laptops only |
-| 󰥔 clock | `Wed Sep 30 14:16` and the time zone; opens the calendar ([calendar.md](calendar.md)) |
+| `h` `j` `k` `l` (or the arrows) | select the tile left, below, above, right; with one open, open that one instead |
+| `e`, `Return` or `Space` | open or close the selected tile |
+| `Esc` | close the open tile |
+| `c` `m` `f` `g` `n` `p` `v` `y` `u` `a` `d` `s` `t` | open that tile (again: close it) |
 
-CPU, memory, GPU, network and volume each take a fixed width, sized for
-their widest value (`100%`, `100% 200°C`, `999.9 kbps`), so the bar doesn't
-shift as the numbers change. Shorter values are padded with spaces, which
-works because the bar font is monospace.
+The selected tile has a pink border, the open one a cyan one.
+
+Under the tiles are reminders of the main keys of sway, tmux and neovim
+(set in `home/eww.nix`; [keyboard.md](keyboard.md) has them all).
 
 ## Displays
 
-The display button on the bar opens one window for all of them (also in
-fuzzel as **Displays**, or `display-settings`; the button closes it again):
+The display settings are part of the devices tile (`d`, or **Displays** in
+fuzzel, which opens it), worked by `home/eww/display-edit.py`:
 
-- **Layout**: every display that is on, drawn to scale. Drag one to move
-  it; on release it snaps beside the others, lining up with their edges
-  when close, so the pointer can always cross from one to the next. Click
-  a display to change it in the form below.
-- Under each display's form, and on its box in the layout, the GPU it is
-  plugged into (by its connector, e.g. `card1-DP-1`), so with two cards you
-  can see which one drives which monitor.
-- **On** turns the selected display on or off (the primary one stays on).
+- **The map**: every display that is on, drawn to scale where it sits, the
+  picked one with a pink border and the primary one's number in cyan. Click
+  one, or its name under the map, to pick it; a display that is off is only
+  under the map.
+- **On / Off** turns the picked display on or off (the primary one, and the
+  last one on, stay on). **Make primary** moves the bar and the dash there.
 - **Resolution** lists every mode the monitor offers, biggest and fastest
   first.
-- **Rotation** turns a display for a vertical monitor: **Portrait (90°
-  clockwise)** or **(90° counter-clockwise)**, whichever way the monitor is
-  turned, or upside down. The layout redraws it on its side, so place it
-  next to the others after rotating.
-- **Primary** moves the bar, and its panels, to that display.
+- **Rotation**: **Landscape**, **Portrait ↻** (90° clockwise),
+  **Upside down** or **Portrait ↺** (90° counter-clockwise), whichever way
+  the monitor is turned. Displays right of or below it move with its new
+  edge. On its side, the dash sits above the wallpaper.
+- **Place** puts the picked display left of, right of, above or below
+  another one, with their shared edges lined up at the **start** (top or
+  left), **centre** or **end**. Anything it would overlap moves aside, and
+  the layout starts at 0,0 again.
 
-Nothing changes until **Apply**, which sets every display in one go.
-After a new resolution or rotation, or a display turned on or off, a dialog asks to
-keep it and reverts by itself after 15 seconds, in case the picture is
-gone. **Reset** drops what hasn't been applied yet.
+Changes are a draft until **Apply**, which sets every display in one go;
+**Reset** drops the draft. After a new resolution or rotation, or a display
+turned on or off, the dash asks to **Keep** them and puts the old ones back
+by itself after 15 seconds, in case the picture is gone.
 
 What you apply is remembered per monitor (by make, model and serial, so it
 follows the monitor to another port): resolutions in
@@ -69,39 +147,39 @@ follows the monitor to another port): resolutions in
 `~/.local/state/eww/primary-display`. They are applied again whenever that
 monitor is connected and when sway starts. If the primary display is
 unplugged, the bar moves to the first one left and comes back when it
-returns.
+returns; the dash moves the next time you open it.
 
-`Super+Shift+b` hides and shows the bar on the primary display. Sway itself
-has no primary display, so this only decides where the bar goes; the
+Sway itself has no primary display, so this only decides where the bar and
+the dash go; the
 resolutions, rotations and positions are ordinary `swaymsg output` settings, and anything set in
 `home/sway.nix` still applies first.
 
 ## GPUs
 
-The GPU button opens a panel with every AMD GPU `rocm-smi` sees, read
-every 3 seconds (`home/eww/gpu.py`):
+The open gpu tile lists every AMD GPU `rocm-smi` sees, read every 3
+seconds (`home/eww/gpu.py`):
 
-- **Automatic** puts the GPU with the most VRAM on the bar (the RX 9070 on
-  harmonia). **Set main** on a GPU puts that one there instead; it is
+- **Automatic** puts the GPU with the most VRAM in the summary (the RX 9070
+  on harmonia). **Set main** on a GPU puts that one there instead; it is
   remembered in `~/.local/state/eww/gpu-main` (by PCI address), and if that
-  GPU goes away the bar falls back to Automatic.
+  GPU goes away the dash falls back to Automatic.
 - Each GPU: its name (from hwdata's `pci.ids`), chip, PCI address and link,
   then meters for **Load**, **VRAM** (used/total) and **Memory bus**
   activity, its edge, hotspot and memory temperatures, power draw against
   its cap, fan speed, core and memory clocks, and the displays plugged into
   it.
 
-The main GPU only decides what the bar shows; which card renders the desktop
-is up to sway.
+The main GPU only decides what the summary shows; which card renders the
+desktop is up to sway.
 
 ## Containers
 
-The 󰡨 button counts the running podman containers and opens a panel with
+The containers tile counts the running podman containers; open, it shows
 each one, read every 5 seconds (`home/eww/pods.py`): its name and pod (if
 it is in one), whether it is yours or the system's (root's), its image name
 and ID, its container ID, status and restarts, CPU and memory use, network
 and disk I/O, PIDs, published ports and mounted volumes. Stopped ones are
-only counted, in the panel's title.
+only counted.
 
 Your own containers come from rootless `podman`. Root's (from
 `virtualisation.oci-containers`) come through `sudo -n`, which
@@ -113,16 +191,15 @@ not which host folder they come from.
 
 ## Nike
 
-Each microVM has a 󰒋 badge; Nike ([nike.md](nike.md)) is the only one.
-The icon is grey while the VM is stopped and in the VM's colour (orange for
-Nike) while it runs, and the badge ends with the VM's firewall mode: **open**
-(permissive), **lock** in red, or **oscp** or **htb** in purple.
-The mode keeps its space when it changes, so the bar doesn't shift. While a
-VM's VPN is up, the network button shows an asterisk in the VM's colour
-([vpn.md](vpn.md)). Hover the badge to see whether Nike's traffic actually
-leaves through the tunnel.
+Each microVM has a line on the microvms tile; Nike ([nike.md](nike.md)) is
+the only one. The 󰒋 icon is grey while the VM is stopped and in the VM's
+colour (orange for Nike) while it runs, and the line ends with the VM's
+firewall mode: **open** (permissive), **lock** in red, or **oscp** or
+**htb** in purple. While a VM's VPN is up, the network tile shows an
+asterisk in the VM's colour ([vpn.md](vpn.md)). Hover the line to see
+whether Nike's traffic actually leaves through the tunnel.
 
-Clicking a badge opens the VM's panel:
+Open, the tile has a part for each VM:
 
 - **Start / Stop** (top right): starts or stops `microvm@<vm>`, allowed
   without a password. It reads **Starting…** or **Stopping…** until
@@ -136,6 +213,6 @@ Clicking a badge opens the VM's panel:
   one to switch to it (`vm-firewall`, allowed without a password).
 
 Each VM measures its own numbers (`nike/status.py`, every 2 seconds) and
-writes them to `/var/lib/<vm>/status` on the host; the bar reads them every 3
-seconds (`home/eww/microvm.py`). While a VM is still booting, its panel says it
+writes them to `/var/lib/<vm>/status` on the host; the dash reads them every 3
+seconds (`home/eww/microvm.py`). While a VM is still booting, it says it
 is starting.

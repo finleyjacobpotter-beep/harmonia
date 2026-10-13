@@ -157,13 +157,13 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | Vimium add-on | 2.4.2 |
 | Bitwarden add-on | 2026.9.3 |
 
-## Lutris and Element
+## Lutris, Steam and iamb
 
 | Package | Version |
 | --- | --- |
 | Lutris (Flathub `net.lutris.Lutris`) | follows Flathub |
 | Steam (Flathub `com.valvesoftware.Steam`) | follows Flathub; the client also updates itself |
-| Element (Flathub `im.riot.Riot`) | follows Flathub |
+| iamb (Matrix, `home/iamb.nix`) | 0.0.12 |
 | Flatpak Mesa, 32-bit (`org.freedesktop.Platform.GL32.default`) | branch 25.08, follows Flathub |
 | GameMode | from the pinned nixpkgs |
 | steam-devices-udev-rules | from the pinned nixpkgs |

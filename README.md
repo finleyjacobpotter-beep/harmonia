@@ -3,8 +3,8 @@
 *Named for Harmonia, goddess of harmony and concord: one palette, one font and one
 icon theme, shared by every program on the desktop.*
 
-NixOS flake: **sway** + **eww** bar, **alacritty**, **tmux**, **bash**, **ranger**,
-**neovim**, a **microVM** (Nike), **podman**, and **Firefox** (vertical tabs, uBlock Origin, Vimium, Bitwarden), **Lutris**, **Steam** and **Element** jailed in Flatpak, native **Blender** and **Godot** —
+NixOS flake: **sway** + an **eww** bar and dash, **alacritty**, **tmux**, **bash**, **ranger**,
+**neovim**, a **microVM** (Nike), **podman**, and **Firefox** (vertical tabs, uBlock Origin, Vimium, Bitwarden), **Lutris** and **Steam** jailed in Flatpak, **iamb** for Matrix, native **Blender** and **Godot** —
 all using the [Miami Wind](https://marketplace.visualstudio.com/items?itemName=hanakin.miami-wind)
 colour scheme, **DepartureMono Nerd Font** and the pixel-art
 [**Tulasi**](https://github.com/ShringarStudio/Tulasi) icon theme.
@@ -27,10 +27,9 @@ modules/nixos/
   flatpak.nix                  Flathub, `harmonia.apps` (each app's sandbox and Super+o key), `harmonia.launchers` (native apps' keys), Firefox with a tightened sandbox
   gaming.nix                   Lutris from Flathub with a tightened sandbox, controller udev rules, GameMode
   steam.nix                    Steam from Flathub, locked down, sharing only ~/Games with Lutris
-  element.nix                  Element (Matrix) from Flathub with a locked-down sandbox
   studio.nix                   Blender and Godot from nixpkgs, with their Super+o keys
   fans.nix                     harmonia only: LACT daemon + Flatpak GUI for the AMD GPU fan curve, amdgpu overdrive, lm_sensors, rocm-smi
-  podman.nix                   rootless podman, podman-compose, buildah, the bar's read-only sudo for root's containers (all hosts)
+  podman.nix                   rootless podman, podman-compose, buildah, the dash's read-only sudo for root's containers (all hosts)
   virtualisation.nix           plain QEMU (no libvirt)
   microvms.nix                 `harmonia.microvms`: each VM declared once; its network, NAT, folders, `ssh <vm>`, colours and firewall modes follow
   nike.nix                     the Nike microVM: its colours and VPN firewall modes
@@ -38,17 +37,17 @@ modules/nixos/
   laptop.nix                   cadmus only: Wi-Fi firmware + regulatory database, suspend on lid close, power profiles
   thinkpad.nix                 cadmus only: thinkfan fan curve, fwupd for BIOS updates
   secrets.nix                  pcscd + YubiKey udev rules
-  vpn.nix                      WireGuard and OpenVPN via NetworkManager, openfortivpn services, rules for the bar
+  vpn.nix                      WireGuard and OpenVPN via NetworkManager, openfortivpn services, rules for the dash
 nike/                          the Nike microVM guest (microvm.nix)
   default.nix                  packages, user k and its password, volume sizes, the TUN module
   tools.nix                    the OSCP toolset and Penelope
   labs.nix                     podman + the Ligolo-ng and BloodHound compose services
-  status.py                    writes each VM's utilization (and Nike's VPN) for the bar
+  status.py                    writes each VM's utilization (and Nike's VPN) for the dash
 home/                          home-manager, one file per program
   base.nix                     the home every host shares; default.nix (harmonia, cadmus) and dionysus/ add to it
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww bar (workspaces, title, caps/num lock, running containers, gamemode/steam, nike with firewall modes, display settings with rotation, cpu, mem, gpus with a panel to pick the main one, network with VPN asterisks, caffeine, volume, battery, clock + calendar)
-  eww/                         the bar's layout (eww.yuck), styles (eww.scss) and scripts, in Python (displays, network, gpu, pods, volume, clock, calendar, …, sharing common.py), and the display settings window
+  eww.nix                      eww: the top bar (workspaces, sway mode, title, fuzzy time) and the dash on workspace 10 (cpu, memory, disks, gpus, network with VPN asterisks, containers, microVMs with firewall modes, system health + NixOS, secrets, notifications with focus, display settings + USB, sound + microphone, cameras and Bluetooth, time + calendar, caps/num lock, gamemode/steam, battery, caffeine, session)
+  eww/                         the bar's and dash's layout (eww.yuck), styles (eww.scss) and scripts, in Python (dash, displays and their settings, cpu, mem, disk, system, secrets, notifications, mic, bluetooth, network, gpu, pods, volume, clock, calendar, …, sharing common.py)
   open-mode.nix                Super+o's keys, for sway and the bar's hint
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
@@ -56,7 +55,7 @@ home/                          home-manager, one file per program
   secrets-backup.py            the `secrets-backup` command
   flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
-  element.nix                  Miami Wind theme for Element
+  iamb.nix                     iamb, the terminal Matrix client (Super+o c), and harmonia.matrix.userId
   ai.nix                       pi on the harmonia desktop: the release build, with the MCP servers, the skills and the .agents/ extension
   gamedev.nix                  game dev on the harmonia desktop: Claude Code (no global prompts), Blender, Godot and radare2 MCP, the godot-ai service, the skills, gamedev-init
   gamedev/                     its skills (Godot 4, Godot and Blender MCP) and the design-doc templates gamedev-init copies
@@ -67,13 +66,13 @@ home/                          home-manager, one file per program
   mcp-servers.nix              the Blender, Godot and radare2 MCP servers for Claude Code and pi on harmonia (home/gamedev.nix, home/ai.nix)
   alacritty.nix tmux.nix bash.nix ranger.nix neovim.nix gtk.nix firefox.nix
 lib/python-script.nix          packages a Python script as a command (flake8-checked, deps on PATH)
-lib/python-app.nix             packages a folder of Python scripts that share modules as several commands (the bar)
+lib/python-app.nix             packages a folder of Python scripts that share modules as several commands (the bar and the dash)
 lib/root-cas.nix               trusts the root CAs in certs/ on the host and Nike
 lib/microvm-guest.nix          what every microVM guest shares: network, shares, volumes, user, openssh, status service, shell configs
 certs/                         your own root CAs: all/ for every machine, harmonia/ or nike/ for one (empty by default, see certs/README.md)
 pkgs/tulasi-icon-theme.nix     Tulasi icon theme (not in nixpkgs) with Tulasi-only fallbacks
 pkgs/pi.nix                    pi, the coding agent: the pinned release build (with MCP), patched for NixOS
-assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
+assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind (shown beside the dash)
 docs/                          the rest of the documentation (linked below), also built as a site by mkdocs.yml
 mkdocs.yml                     the documentation site: theme, navigation (`nix build .#docs`)
 scripts/mkdocs-hooks.py        points the docs' links to repository files at GitHub
@@ -128,14 +127,14 @@ the right one for the machine.
 - [Keyboard](docs/keyboard.md): the modifier contract and every binding
 - [Firefox jail](docs/firefox.md): the Flatpak sandbox, add-ons and theming
 - [Gaming](docs/gaming.md): Lutris and Steam in Flatpak jails, launching Steam games from Lutris, drivers
-- [Element](docs/element.md): the Matrix client's Flatpak jail and theme
+- [Matrix](docs/matrix.md): iamb in the terminal, Element Call in Firefox, moving over from Element
 - [Game dev](docs/gamedev.md): Blender, Godot and radare2 over MCP for the agents on harmonia, and per-game context
 - [Blender](docs/blender.md): free models from Poly Haven and Poly Pizza inside Blender
 - [pi](docs/pi.md): pi and Claude Code on harmonia, what the repo configures for them, the MCP servers, the godot-ai service
 - [Fans](docs/fans.md): the GPU fan curve in LACT, case fans in the BIOS
 - [Nike and containers](docs/nike.md): the Nike microVM (VPN work, OSCP lab, firewall modes, shared folder, bar panel), podman
 - [Rust tools](docs/rust-tools.md): ripgrep, fd, bat, eza and friends, and the aliases from grep, find, cat, ls … on every machine
-- [The bar](docs/bar.md): what each part of the eww bar shows, its panels, and the display settings window
+- [The bar and the dash](docs/bar.md): the eww bar, the dash on workspace 10 with its tiles, keys and display settings
 - [Calendar](docs/calendar.md): the clock's calendar, time zones and CalDAV sync with vdirsyncer
 - [VPNs](docs/vpn.md): WireGuard, OpenVPN and openfortivpn, and their asterisks on the bar
 - [Secrets](docs/secrets.md): KeePassXC, Bitwarden, ssh-agent, gpg, YubiKey, OpenBao and `secrets-backup`
@@ -180,8 +179,10 @@ harmonia stands on other people's work:
   recoloured here with the Miami Wind palette.
 - **[Departure Mono](https://departuremono.com/)** via
   [Nerd Fonts](https://www.nerdfonts.com/): the font.
+- **[iamb](https://github.com/ulyssa/iamb)** (Apache-2.0): Matrix in the
+  terminal.
 - **[nix-flatpak](https://github.com/gmodena/nix-flatpak)**: the declarative
-  Flatpak setup for Firefox, Lutris, Steam and Element.
+  Flatpak setup for Firefox, Lutris and Steam.
 - **[microvm.nix](https://github.com/microvm-nix/microvm.nix)**: the Nike
   microVM.
 - **[Poly Haven](https://polyhaven.com/)** ([add-on](https://github.com/Poly-Haven/polyhavenassets), GPL-3.0)

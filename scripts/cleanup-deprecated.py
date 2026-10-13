@@ -33,6 +33,9 @@ removes it. Everything it knows about:
   harmonia, cadmus: the Blender and Godot flatpaks; their settings, recent
                      projects and export templates move to the native apps'
                      ~/.config and ~/.local/share first (native from nixpkgs)
+  Element            im.riot.Riot and its override; its ~/.var/app data (your
+                     Matrix session and message keys) only with --user-files
+                     (replaced by iamb, and Element Call in Firefox)
   unused flatpak runtimes left behind by the apps above
 
 It only reports, never deletes, the pass entry opencode/anthropic-api-key.
@@ -47,7 +50,7 @@ Every host has it on its PATH (hosts/base.nix); before the first rebuild
 that adds it, run this file directly: sudo ./scripts/cleanup-deprecated.py
 
 Things that hold your own files (a non-empty ~/Downloads/zen,
-~/vms/kali-shared or ~/zelus-share, Zelus's disk images, LM Studio's models and chats, Dionysus's old ~/.mozilla profile, home-manager's
+~/vms/kali-shared or ~/zelus-share, Zelus's disk images, LM Studio's models and chats, Element's session and keys, Dionysus's old ~/.mozilla profile, home-manager's
 *.hm-backup copies of your pre-harmonia dotfiles) are only removed with
 --user-files. Run it with sudo: system state (/var/lib/libvirt, system
 flatpaks) needs root; without it those steps are listed as skipped. The
@@ -72,6 +75,7 @@ DEFAULT_USERS = {"harmonia": "u", "cadmus": "u", "dionysus": "d"}
 ZEN = "app.zen_browser.zen"
 OPENCODE = "ai.opencode.opencode"
 LMSTUDIO = "ai.lmstudio.lm-studio"
+ELEMENT = "im.riot.Riot"
 LACT = "io.github.ilya_zlobintsev.LACT"
 BLENDER = "org.blender.Blender"
 GODOT = "org.godotengine.Godot"
@@ -273,6 +277,13 @@ class Cleanup:
         if (store / "opencode/anthropic-api-key.gpg").exists():
             self.note("pass entry opencode/anthropic-api-key is no longer used; remove it yourself with `pass rm` if you like")
 
+    def element(self) -> None:
+        self.section("Element (replaced by iamb and Element Call in Firefox)")
+        # Its data holds the session and the keys to old encrypted messages:
+        # export them in Element first (Settings, Security, Export E2E room keys).
+        self.flatpak(ELEMENT, "Element: Matrix session and message keys", mine=True)
+        self.mimeapps([f"{ELEMENT}.desktop"])
+
     def lmstudio(self) -> None:
         self.section("LM Studio")
         self.flatpak(LMSTUDIO, "LM Studio: downloaded models and chats", mine=True)
@@ -400,6 +411,7 @@ class Cleanup:
         self.zen()
         self.opencode()
         self.lmstudio()
+        self.element()
         self.libvirt()
         self.proton()
         self.vagrant()

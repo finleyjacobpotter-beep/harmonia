@@ -1,4 +1,4 @@
-"""What's running, as JSON for the bar's activity badges: GameMode and
+"""What's running, as JSON for the dash's activity chips: GameMode and
 Steam (Flathub or native).
 
 {"gamemode": bool, "steam": bool}

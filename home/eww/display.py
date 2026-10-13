@@ -1,13 +1,10 @@
 """Displays: their saved resolution, rotation and position, which one is primary
-(the one with the bar), and the GPU each is plugged into (gpu.py). The settings window (display-settings.py) changes
-them through `eww-display apply`.
+(the one with the bar and the dash), and the GPU each is plugged into (gpu.py).
+The settings window (display-settings.py) changes them through `eww-display apply`;
+the dash (dash.py) gives displays their saved settings as they connect.
 
 Usage: eww-display              JSON: {"primary": name, "outputs": [...]}
-       eww-display watch        the same on every output change (for deflisten);
-                                also reapplies saved resolutions, rotations and positions to
-                                displays as they connect and moves the bar if the
-                                primary one comes or goes
-       eww-display start        apply saved settings and open the bar (sway startup)
+       eww-display watch        the same on every output change (for deflisten)
        eww-display apply JSON   set and remember every display at once:
                                 {"primary": NAME, "outputs": {NAME: {"enabled": true,
                                  "mode": "2560x1440@143.998Hz", "transform": "90",
@@ -15,10 +12,8 @@ Usage: eww-display              JSON: {"primary": name, "outputs": [...]}
        eww-display mode NAME MODE   set and remember a resolution
        eww-display rotate NAME normal|90|180|270
                                     set and remember a rotation (clockwise)
-       eww-display primary NAME     move the bar (and its panels) to NAME, remembered
+       eww-display primary NAME     move the bar and the dash to NAME, remembered
        eww-display power NAME on|off
-       eww-display menu WINDOW      toggle one of the bar's panels on the primary display
-       eww-display toggle-bar
 """
 
 import json
@@ -36,7 +31,6 @@ MODES_FILE = STATE_DIR / "display-modes.json"
 LAYOUT_FILE = STATE_DIR / "display-layout.json"
 ROTATION_FILE = STATE_DIR / "display-rotation.json"
 SEEN_FILE = RUN_DIR / "eww-display.seen"
-LAST_FILE = RUN_DIR / "eww-display.primary"
 
 
 def eww(*args: str) -> str:
@@ -192,36 +186,17 @@ def apply(wanted: dict) -> None:
     if wanted.get("primary") in names:
         STATE_DIR.mkdir(parents=True, exist_ok=True)
         PRIMARY_FILE.write_text(wanted["primary"] + "\n")
-    follow_primary(outputs())
+    # Move the bar and the dash if the primary display changed.
+    output("eww-dash", "sync")
     eww("update", f"displays={listing()}")
 
 
-def open_bar(screen: str) -> None:
-    eww("open", "bar", *(["--screen", screen] if screen else []))
-    LAST_FILE.write_text(screen + "\n")
-
-
-def follow_primary(outs: list) -> None:
-    """Move the bar when the primary display changes (unplugged, or back again)."""
-    want = primary(outs)
-    if want == read(LAST_FILE):
-        return
-    for line in eww("active-windows").splitlines():
-        window = line.split(":")[0].strip()
-        if window and window != "bar":
-            eww("close", window)
-    open_bar(want)
-
-
 def watch() -> None:
-    apply_saved(outputs())
     print(listing(), flush=True)
     with subprocess.Popen(
         ["swaymsg", "-r", "-t", "subscribe", "-m", '["output"]'], stdout=subprocess.PIPE, text=True
     ) as events:
         for _ in events.stdout or []:
-            apply_saved(outputs())
-            follow_primary(outputs())
             print(listing(), flush=True)
 
 
@@ -229,10 +204,6 @@ def main(args: list[str]) -> None:
     command, rest = (args[0], args[1:]) if args else ("", [])
     if command == "watch":
         watch()
-    elif command == "start":
-        SEEN_FILE.unlink(missing_ok=True)
-        apply_saved(outputs())
-        open_bar(primary(outputs()))
     elif command == "apply" and rest:
         apply(json.loads(rest[0]))
     elif command == "mode" and len(rest) == 2:
@@ -243,13 +214,6 @@ def main(args: list[str]) -> None:
         apply({"primary": rest[0]})
     elif command == "power" and len(rest) == 2:
         apply({"outputs": {rest[0]: {"enabled": rest[1] == "on"}}})
-    elif command == "menu" and rest:
-        eww("open", "--toggle", rest[0], "--screen", primary(outputs()))
-    elif command == "toggle-bar":
-        if any(line.startswith("bar:") for line in eww("active-windows").splitlines()):
-            eww("close", "bar")
-        else:
-            open_bar(primary(outputs()))
     else:
         print(listing())
 

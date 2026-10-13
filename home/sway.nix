@@ -14,15 +14,139 @@ let
   volMute = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
   micMute = "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
 
-  # Already recoloured to Miami Wind (lutgen) with its outer margin filled
-  # with p.bg, so it blends into the background. `fit` scales it to the
-  # screen height and centres it (plain `center` would crop a 1468px-tall
-  # image on a 1080p screen).
-  wallpaper = ../assets/wallpaper.png;
-
   # Super+o's keys: the terminal tools, and the Flathub apps and microVMs
   # this host has (home/open-mode.nix).
   openKeys = import ./open-mode.nix { inherit lib osConfig; };
+
+  # The dash's workspace; home/eww/dash.py uses the same name.
+  dash = "10:dash";
+
+  # Complete keymap (sway's defaults are *replaced*, not merged): every
+  # binding is Super+…, apart from dedicated hardware keys. See keys.nix.
+  keybindings =
+    let
+      ws = n: {
+        "${mod}+${toString n}" = "workspace number ${toString n}";
+        "${mod}+Shift+${toString n}" = "move container to workspace number ${toString n}";
+      };
+      workspaces = lib.foldl' (acc: n: acc // ws n) { } (lib.range 1 9);
+    in
+    workspaces
+    // {
+      # Workspace 10 is the dash (home/eww/dash.py). Nothing moves there:
+      # windows that land on it are sent back.
+      "${mod}+0" = "workspace ${dash}";
+
+      # focus / move — vim directions
+      "${mod}+h" = "focus left";
+      "${mod}+j" = "focus down";
+      "${mod}+k" = "focus up";
+      "${mod}+l" = "focus right";
+      "${mod}+Shift+h" = "move left";
+      "${mod}+Shift+j" = "move down";
+      "${mod}+Shift+k" = "move up";
+      "${mod}+Shift+l" = "move right";
+      "${mod}+a" = "focus parent";
+      "${mod}+Shift+a" = "focus child";
+
+      # outputs
+      "${mod}+Ctrl+h" = "focus output left";
+      "${mod}+Ctrl+l" = "focus output right";
+      "${mod}+Ctrl+Shift+h" = "move workspace to output left";
+      "${mod}+Ctrl+Shift+l" = "move workspace to output right";
+
+      # workspaces
+      "${mod}+Tab" = "workspace back_and_forth";
+      "${mod}+bracketleft" = "workspace prev_on_output";
+      "${mod}+bracketright" = "workspace next_on_output";
+
+      # layout — split names follow vim (:split = below, :vsplit = beside)
+      "${mod}+s" = "splitv";
+      "${mod}+v" = "splith";
+      "${mod}+t" = "layout tabbed";
+      "${mod}+Shift+t" = "layout stacking";
+      "${mod}+e" = "layout toggle split";
+      "${mod}+f" = "fullscreen toggle";
+      "${mod}+Shift+space" = "floating toggle";
+      "${mod}+space" = "focus mode_toggle";
+      "${mod}+minus" = "scratchpad show";
+      "${mod}+Shift+minus" = "move scratchpad";
+
+      # windows / session
+      "${mod}+q" = "kill";
+      "${mod}+Return" = "exec alacritty";
+      "${mod}+d" = "exec fuzzel";
+      "${mod}+Shift+c" = "reload";
+      "${mod}+Shift+x" = "exec swaylock -f";
+      "${mod}+Shift+b" = "exec eww-dash toggle-bar";
+
+      # notifications (mako)
+      "${mod}+n" = "exec makoctl dismiss";
+      "${mod}+Shift+n" = "exec makoctl dismiss --all";
+      "${mod}+Ctrl+n" = "exec makoctl restore";
+      "${mod}+i" = "exec makoctl invoke";
+
+      # screenshots → clipboard
+      "${mod}+Shift+s" = ''exec grim -g "$(slurp)" - | wl-copy'';
+      "${mod}+Ctrl+s" = "exec grim - | wl-copy";
+
+      # modes (vim-style "leader" layers; Escape/Return leave)
+      "${mod}+r" = ''mode "resize"'';
+      "${mod}+o" = ''mode "open"'';
+      "${mod}+m" = ''mode "media"'';
+      "${mod}+Shift+e" = ''mode "system"'';
+
+      # dedicated hardware keys
+      "Print" = ''exec grim -g "$(slurp)" - | wl-copy'';
+      "Shift+Print" = "exec grim - | wl-copy";
+      "XF86AudioRaiseVolume" = "exec ${volUp}";
+      "XF86AudioLowerVolume" = "exec ${volDown}";
+      "XF86AudioMute" = "exec ${volMute}";
+      "XF86AudioMicMute" = "exec ${micMute}";
+      "XF86AudioPlay" = "exec playerctl play-pause";
+      "XF86AudioNext" = "exec playerctl next";
+      "XF86AudioPrev" = "exec playerctl previous";
+      "XF86MonBrightnessUp" = "exec brightnessctl set 5%+";
+      "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
+    };
+
+  # The dash's keys (home/eww/dash.py), in the "dash" mode sway is in while
+  # the dash is focused: bare keys are free there, since no window is. Every
+  # Super key still works.
+  dashKeys =
+    let
+      key = k: "exec eww-dash key ${k}";
+    in
+    keybindings
+    // lib.genAttrs [
+      "h"
+      "j"
+      "k"
+      "l"
+      "e"
+      "c"
+      "m"
+      "f"
+      "g"
+      "n"
+      "p"
+      "v"
+      "y"
+      "u"
+      "a"
+      "d"
+      "s"
+      "t"
+    ] key
+    // {
+      Left = key "h";
+      Down = key "j";
+      Up = key "k";
+      Right = key "l";
+      Return = key "e";
+      space = key "e";
+      Escape = key "esc";
+    };
 in
 {
   wayland.windowManager.sway = {
@@ -99,7 +223,9 @@ in
         };
       };
 
-      output."*".bg = "${wallpaper} fit ${p.bg}";
+      # A plain background: the wallpaper is drawn by the dash, beside its
+      # tiles (home/eww.nix).
+      output."*".bg = "${p.bg} solid_color";
 
       # Hide the pointer as soon as a key is pressed; it comes back when the
       # mouse moves.
@@ -111,95 +237,17 @@ in
       };
 
       startup = [
-        # Reapplies the resolutions picked on the bar and opens the bar on the
-        # primary display (home/eww/display.py); `eww open` starts the daemon.
-        { command = "eww-display start"; }
+        # Starts eww, reapplies the saved display settings (home/eww/display.py),
+        # opens on the dash and keeps the dash and the bar in step with sway
+        # (home/eww/dash.py). Run on every reload too, in case it stopped; a
+        # second one exits at once.
+        {
+          command = "eww-dash watch";
+          always = true;
+        }
       ];
 
-      # Complete keymap (sway's defaults are *replaced*, not merged): every
-      # binding is Super+…, apart from dedicated hardware keys. See keys.nix.
-      keybindings =
-        let
-          ws = n: key: {
-            "${mod}+${key}" = "workspace number ${toString n}";
-            "${mod}+Shift+${key}" = "move container to workspace number ${toString n}";
-          };
-          workspaces = lib.foldl' (acc: n: acc // ws n (toString (lib.mod n 10))) { } (lib.range 1 10);
-        in
-        workspaces
-        // {
-          # focus / move — vim directions
-          "${mod}+h" = "focus left";
-          "${mod}+j" = "focus down";
-          "${mod}+k" = "focus up";
-          "${mod}+l" = "focus right";
-          "${mod}+Shift+h" = "move left";
-          "${mod}+Shift+j" = "move down";
-          "${mod}+Shift+k" = "move up";
-          "${mod}+Shift+l" = "move right";
-          "${mod}+a" = "focus parent";
-          "${mod}+Shift+a" = "focus child";
-
-          # outputs
-          "${mod}+Ctrl+h" = "focus output left";
-          "${mod}+Ctrl+l" = "focus output right";
-          "${mod}+Ctrl+Shift+h" = "move workspace to output left";
-          "${mod}+Ctrl+Shift+l" = "move workspace to output right";
-
-          # workspaces
-          "${mod}+Tab" = "workspace back_and_forth";
-          "${mod}+bracketleft" = "workspace prev_on_output";
-          "${mod}+bracketright" = "workspace next_on_output";
-
-          # layout — split names follow vim (:split = below, :vsplit = beside)
-          "${mod}+s" = "splitv";
-          "${mod}+v" = "splith";
-          "${mod}+t" = "layout tabbed";
-          "${mod}+Shift+t" = "layout stacking";
-          "${mod}+e" = "layout toggle split";
-          "${mod}+f" = "fullscreen toggle";
-          "${mod}+Shift+space" = "floating toggle";
-          "${mod}+space" = "focus mode_toggle";
-          "${mod}+minus" = "scratchpad show";
-          "${mod}+Shift+minus" = "move scratchpad";
-
-          # windows / session
-          "${mod}+q" = "kill";
-          "${mod}+Return" = "exec alacritty";
-          "${mod}+d" = "exec fuzzel";
-          "${mod}+Shift+c" = "reload";
-          "${mod}+Shift+x" = "exec swaylock -f";
-          "${mod}+Shift+b" = "exec eww-display toggle-bar";
-
-          # notifications (mako)
-          "${mod}+n" = "exec makoctl dismiss";
-          "${mod}+Shift+n" = "exec makoctl dismiss --all";
-          "${mod}+Ctrl+n" = "exec makoctl restore";
-          "${mod}+i" = "exec makoctl invoke";
-
-          # screenshots → clipboard
-          "${mod}+Shift+s" = ''exec grim -g "$(slurp)" - | wl-copy'';
-          "${mod}+Ctrl+s" = "exec grim - | wl-copy";
-
-          # modes (vim-style "leader" layers; Escape/Return leave)
-          "${mod}+r" = ''mode "resize"'';
-          "${mod}+o" = ''mode "open"'';
-          "${mod}+m" = ''mode "media"'';
-          "${mod}+Shift+e" = ''mode "system"'';
-
-          # dedicated hardware keys
-          "Print" = ''exec grim -g "$(slurp)" - | wl-copy'';
-          "Shift+Print" = "exec grim - | wl-copy";
-          "XF86AudioRaiseVolume" = "exec ${volUp}";
-          "XF86AudioLowerVolume" = "exec ${volDown}";
-          "XF86AudioMute" = "exec ${volMute}";
-          "XF86AudioMicMute" = "exec ${micMute}";
-          "XF86AudioPlay" = "exec playerctl play-pause";
-          "XF86AudioNext" = "exec playerctl next";
-          "XF86AudioPrev" = "exec playerctl previous";
-          "XF86MonBrightnessUp" = "exec brightnessctl set 5%+";
-          "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
-        };
+      keybindings = keybindings;
 
       # Inside a mode sway grabs the whole keyboard, so bare keys are safe here.
       # The eww bar shows the active mode and its keys.
@@ -235,6 +283,7 @@ in
             "Shift+k" = "exec brightnessctl set 5%+";
             "Shift+j" = "exec brightnessctl set 5%-";
           };
+          dash = dashKeys;
           system = leave // {
             l = run "swaylock -f";
             e = "exit";
@@ -248,7 +297,8 @@ in
     extraConfig = ''
       for_window [app_id="pavucontrol"] floating enable
       for_window [app_id="blueman-manager"] floating enable
-      for_window [app_id="harmonia.display-settings"] floating enable, move position center
+      # The dash's prompts: bw-unlock and ssh-add (home/eww/eww.yuck).
+      for_window [app_id="secrets-prompt"] floating enable, resize set 50 ppt 30 ppt, move position center
       for_window [app_id="^(btop|pulsemixer|bluetuith|nmtui|vpn-connect)$"] floating enable, resize set 60 ppt 60 ppt, move position center
       for_window [app_id="org.mozilla.firefox" title="^Picture-in-Picture$"] floating enable, sticky enable
       for_window [class=".*"] inhibit_idle fullscreen
@@ -307,6 +357,11 @@ in
       border-radius = 0;
       padding = "10";
       default-timeout = 6000;
+      # Focus, from the dash's notifications tile (home/eww/notify.py): no
+      # popups at all; they still collect there.
+      "mode=do-not-disturb" = {
+        invisible = 1;
+      };
       "urgency=high" = {
         border-color = p.redBright;
       };

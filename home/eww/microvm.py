@@ -1,13 +1,13 @@
-"""A microVM for the bar (Nike): whether it is running, its firewall
+"""A microVM for the dash (Nike): whether it is running, its firewall
 mode (modules/nixos/vm-firewall.nix), and the VPN and utilization numbers
 its own status service (nike/status.py) last wrote to its status share. The
 status is "fresh" while it is under STALE seconds old.
 
 Usage: eww-microvm NAME             the JSON below
-       eww-microvm NAME set MODE    switch its firewall mode (the panel's
-                                    dropdown), then refresh the bar
-       eww-microvm NAME start|stop  start or stop the VM (the panel's
-                                    button), then refresh the bar
+       eww-microvm NAME set MODE    switch its firewall mode (the tile's
+                                    dropdown), then refresh the dash
+       eww-microvm NAME start|stop  start or stop the VM (the tile's
+                                    button), then refresh the dash
 
 {"running": bool, "fresh": bool, "mode": "permissive", ...nike/status.py's fields}
 """
@@ -19,7 +19,7 @@ import time
 
 STALE = 10  # seconds
 
-# What the bar sees before the VM has written anything, so every field exists.
+# What the dash sees before the VM has written anything, so every field exists.
 EMPTY = {
     "cpu": 0, "cpu_text": "", "mem": 0, "mem_text": "", "disk": 0, "disk_text": "",
     "load": "", "uptime_text": "",

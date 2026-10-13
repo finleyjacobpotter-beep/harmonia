@@ -5,7 +5,7 @@ one icon theme, shared by every program on the desktop.*
 
 harmonia is a [NixOS flake](https://nixos.wiki/wiki/Flakes) with
 [home-manager](https://github.com/nix-community/home-manager) that builds a
-whole Wayland desktop: **Sway**, an **eww** bar, **alacritty**, **tmux**,
+whole Wayland desktop: **Sway**, an **eww** bar and dash, **alacritty**, **tmux**,
 **bash**, **ranger** and **neovim**, with sandboxed Flatpak apps, native
 Blender and Godot, coding agents, and a microVM
 for VPN work and OSCP practice. Everything is themed with the
@@ -35,7 +35,7 @@ Configuration is layered, so each machine imports only what it needs:
 
 ```
 hosts/base.nix         every host: boot, network, user, locale, nix settings,
-                       Sway desktop, fonts, Firefox, Element, podman, secrets, VPNs
+                       Sway desktop, fonts, Firefox, iamb, podman, secrets, VPNs
  └ hosts/common.nix    harmonia + cadmus: Lutris, Steam, Blender, Godot,
                        QEMU and the Nike microVM
     ├ hosts/harmonia   the desktop: GPU fan control, game dev agents

@@ -1,5 +1,5 @@
 """Caffeine: stopping swayidle (home/sway.nix) turns off the lock and blank
-timers until it is started again. The bar button toggles it.
+timers until it is started again. The dash's caffeine button toggles it.
 
 Usage: eww-caffeine          "on" (swayidle stopped) or "off"
        eww-caffeine toggle

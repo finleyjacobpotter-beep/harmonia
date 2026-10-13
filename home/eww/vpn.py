@@ -1,9 +1,9 @@
-"""VPNs on this host for the bar's network button and its panel (see
+"""VPNs on this host for the dash's network tile (see
 modules/nixos/vpn.nix): WireGuard and OpenVPN connections in NetworkManager,
 openfortivpn configs in /etc/openfortivpn (run as openfortivpn@NAME), and
 any OpenVPN or openfortivpn tunnel started by hand (`sudo openvpn …`).
 
-Usage: eww-vpn                   JSON for the bar, below
+Usage: eww-vpn                   JSON for the dash, below
        eww-vpn toggle KIND NAME  bring a connection up/down
 
 {"up": {"wireguard": bool, "openvpn": bool, "forti": bool, "other": bool},
@@ -224,10 +224,10 @@ def listing() -> str:
         conns.append(forti(name, active, ppp.pop(0) if active and ppp else ""))
     owned = {c["device"] for c in conns if c["device"]}
     conns += [unmanaged(d) for d in wg_devices() + tun_devices() + ppp if d not in owned and is_up(d)]
-    # The bar's asterisks follow the interfaces: a kind is up while one of
+    # The network tile's asterisks follow the interfaces: a kind is up while one of
     # its interfaces is, whatever NetworkManager or systemd say.
     up = {k: any(c["kind"] == k and c["device"] and is_up(c["device"]) for c in conns) for k in KINDS}
-    # Up first, then by kind and name, so the panel lists what's on at the top.
+    # Up first, then by kind and name, so the tile lists what's on at the top.
     conns.sort(key=lambda c: (not c["active"], KINDS.index(c["kind"]), c["name"].lower()))
     return json.dumps(
         {

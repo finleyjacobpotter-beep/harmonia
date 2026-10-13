@@ -69,6 +69,12 @@ map (k: k // { hint = hint k.key; }) (
         name = "network";
         exec = term "nmtui";
       }
+      # Matrix (home/iamb.nix), where Element's Flatpak used to be.
+      {
+        key = "c";
+        name = "matrix";
+        exec = term "iamb";
+      }
     ]
     ++ vmKeys
   )
