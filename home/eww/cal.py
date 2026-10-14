@@ -1,7 +1,7 @@
 """Month grid for the dash's time tile, with a coloured dot per calendar
 on each day that has events.
 
-Usage: eww-cal                 JSON for the dash
+Usage: eww-cal                 JSON for the dash (the month, the selected day's and today's events)
        eww-cal prev|next|today move the shown month
        eww-cal day YYYY-MM-DD  show that day's events under the grid
        eww-cal refresh         push fresh JSON to eww (after a sync or a time zone change)
@@ -169,8 +169,15 @@ def build() -> dict:
                 colors.append(ev["color"])
         return colors[:MAX_DOTS]
 
+    def day_events(day: dt.date) -> list[dict]:
+        listed = by_day.get(day, [])
+        # Today is outside the month on screen after paging away from it.
+        if not weeks[0][0] <= day <= weeks[-1][-1]:
+            listed = events(cals, day, day + dt.timedelta(days=1), tz)
+        return [{k: e[k] for k in ("time", "summary", "calendar", "color")}
+                for e in sorted(listed, key=lambda e: (e["sort"], e["summary"]))]
+
     selected = view["day"]
-    todays = sorted(by_day.get(selected, []), key=lambda e: (e["sort"], e["summary"]))
     return {
         "title": first.strftime("%B %Y"),
         "zone": getattr(tz, "key", "local"),
@@ -185,8 +192,10 @@ def build() -> dict:
         } for d in week] for week in weeks],
         "selected": {
             "label": selected.strftime("%a %b %-d"),
-            "events": [{k: e[k] for k in ("time", "summary", "calendar", "color")} for e in todays],
+            "events": day_events(selected),
         },
+        # The time tile's summary lists today's, whatever day is selected.
+        "today": day_events(today),
     }
 
 

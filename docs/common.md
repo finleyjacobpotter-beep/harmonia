@@ -37,6 +37,7 @@ harmonia, cadmus and Dionysus all import [`hosts/base.nix`](../hosts/base.nix).
 | `sudo.nix` | Asterisks at the sudo password prompt |
 | `secrets.nix` | pcscd and YubiKey udev rules ([Secrets](secrets.md)) |
 | `vpn.nix` | WireGuard, OpenVPN and openfortivpn without root ([VPNs](vpn.md)) |
+| `dash.nix` | What the [dash](bar.md#connectivity) can't measure alone: the CPU's power draw, the connectivity test (DNS and an ICMP traceroute) and nethogs |
 
 ## Every home: `home/base.nix`
 
@@ -51,9 +52,9 @@ file per program:
 - **Apps**: Firefox's add-ons and theme, [iamb](matrix.md) for Matrix, Calibre, and
   `flatpak-miami-wind`, which copies themes and configs into the Flatpak
   sandboxes.
-- **Secrets**: KeePassXC (`keepassxc-cli` and the app), the Bitwarden CLI
-  with `bw-unlock`, OpenSSH's ssh-agent, gpg, ykman, the OpenBao CLI and
-  `secrets-backup` ([Secrets](secrets.md)).
+- **Secrets**: the Bitwarden CLI with `bw-unlock`, OpenSSH's ssh-agent,
+  gpg, ykman, the OpenBao CLI, age and sops, and `secrets-backup`
+  ([Secrets](secrets.md)).
 - The XDG user directories and `~/Projects`, and a `rebuild` alias for
   `sudo nixos-rebuild switch --flake ~/harmonia`.
 
@@ -93,10 +94,10 @@ Every microVM (only Nike now) uses [`lib/microvm-guest.nix`](../lib/microvm-gues
 - `~/<name>-share` on the host is `~/share` in the guest.
 - One user (uid 1000, so shared files belong to you on both sides), openssh,
   and `ssh <name>` from the host.
-- A status service the host's dash reads for its microvms tile.
+- A status service the host's dash reads for its virtualization tile.
 - The host's bash, tmux, ranger, neovim, Rust tools, EditorConfig, sudo and
   Git LFS settings, in the VM's own colours, and the root CAs from
   `certs/all` and `certs/<name>`.
 
-None of them starts at boot: use the dash's microvms tile or
+None of them starts at boot: use the dash's virtualization tile or
 `sudo systemctl start microvm@<name>`.

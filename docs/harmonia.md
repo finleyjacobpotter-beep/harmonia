@@ -18,9 +18,11 @@ GPU's fan curve; amdgpu overdrive is on so RX 7000/9000 cards accept a custom
 curve; `rocm-smi` and lm_sensors report temperatures. Case and CPU fans are
 set in the BIOS. See [Fans](fans.md).
 
-**AI agents** ([`home/ai.nix`](../home/ai.nix), [`home/gamedev.nix`](../home/gamedev.nix)). pi and
-Claude Code run natively on the host with no global prompts, and the
-Blender, Godot and radare2 MCP servers for both. Claude Code's license is
+**AI agents** ([`home/ai.nix`](../home/ai.nix), [`home/gamedev.nix`](../home/gamedev.nix), [`home/agents.nix`](../home/agents.nix)). pi and
+Claude Code each run in a hardened rootless container (Debian with Nix and
+flakes, headless Godot and Blender) that sees only the folder they were
+started in, with no global prompts, and the Blender, Godot and radare2 MCP
+servers for both; the dash's virtualization tile lists them. Claude Code's license is
 why harmonia adds `claude-code` to `harmonia.allowedUnfree`. See [pi](pi.md) and
 [Game dev](gamedev.md).
 

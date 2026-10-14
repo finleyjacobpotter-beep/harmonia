@@ -128,6 +128,7 @@
   .tile.sel .tile-key { background-color: $pink; }
   .tile.open .tile-key { background-color: $cyan; }
   .tile-title { color: $cyan; font-weight: bold; }
+  .tile-names { margin-left: 8px; }
   .tile-value { color: $fg; }
   .tile-summary { padding-top: 8px; }
   .tile-body { padding: 0 10px 10px 10px; }
@@ -149,12 +150,17 @@
     margin: -6px 0;
   }
   .pod-name { color: $green; }
-  // Something recording, unlocked or failed, and pins past their age.
-  .live { color: $red; }
+  // Something recording, unlocked or failed, and pins past their age;
+  // .wg-detail.live outranks the muted .wg-detail rule further down.
+  .live, .wg-detail.live { color: $red; }
   .warn { color: $orange; }
   .old { color: $orange; }
   .pod-name.critical, .notification.critical .wg-name { color: $red; }
   .pod-name.low { color: $muted; }
+  .pod-name.warn { color: $orange; }
+  // An agent's container (home/agents.nix).
+  .pod-name.agent { color: $purple; }
+  .clip-entry { padding: 2px 4px; &:hover { background-color: $surface; } }
   .primary { color: $fg; }
   .proc-name { color: $fg; }
   .proc-value { color: $cyan; min-width: 64px; }

@@ -1,8 +1,9 @@
 # Game dev tooling on harmonia itself (not Cadmus, which doesn't import
-# this; hosts/harmonia/default.nix does): Claude Code with the Blender, Godot
-# and radare2 MCP servers and the skills (pi, which reads them too, is in
-# ./ai.nix), Godot's server running as a user service next to the editor,
-# and `gamedev-init`. See docs/gamedev.md and docs/pi.md.
+# this; hosts/harmonia/default.nix does): Claude Code's configuration, with
+# the Blender, Godot and radare2 MCP servers and the skills (pi, which reads
+# them too, is in ./ai.nix), Godot's server running as a user service next
+# to the editor, and `gamedev-init`. Claude Code itself runs in a container
+# (./agents.nix). See docs/gamedev.md and docs/pi.md.
 { pkgs, lib, ... }:
 let
   mcpServers = import ./mcp-servers.nix { inherit pkgs; };
@@ -48,15 +49,24 @@ in
     gamedev-init
   ];
 
-  # Claude Code (`claude`, then /login or an API key) with the skills (which
-  # pi reads too) and the MCP servers. Neither agent gets global rules: each
-  # project brings its own .agents/AGENTS.md (CLAUDE.md imports it).
-  programs.claude-code = {
-    enable = true;
-    skills =
-      lib.genAttrs skills (name: ./gamedev/skills/${name}/SKILL.md)
-      // lib.genAttrs rustSkills (name: ./skills/${name}/SKILL.md);
-  };
+  # Claude Code's skills (which pi reads too), copied rather than linked:
+  # the agents run in containers with their own Nix store (./agents.nix),
+  # where a link into this one would dangle. Neither agent gets global
+  # rules: each project brings its own .agents/AGENTS.md (CLAUDE.md imports
+  # it).
+  home.activation.claudeSkills = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+    lib.concatStrings (
+      lib.mapAttrsToList
+        (name: src: ''
+          run rm -f "$HOME/.claude/skills/${name}/SKILL.md"
+          run install -D -m 644 ${src} "$HOME/.claude/skills/${name}/SKILL.md"
+        '')
+        (
+          lib.genAttrs skills (name: ./gamedev/skills/${name}/SKILL.md)
+          // lib.genAttrs rustSkills (name: ./skills/${name}/SKILL.md)
+        )
+    )
+  );
 
   # The Godot MCP server, in your session: running before the editor opens,
   # so the plugin adopts it instead of starting its own, and the editor and
@@ -87,8 +97,15 @@ in
     };
   };
 
+  # Claude Code's settings file lives in ~/.claude (the container sets
+  # CLAUDE_CONFIG_DIR there, ./agents.nix), so mounting that one folder
+  # carries everything; an older ~/.claude.json moves in once.
   home.activation.claudeMcpServers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    f="$HOME/.claude.json"
+    run mkdir -p "$HOME/.claude"
+    if [ -e "$HOME/.claude.json" ] && [ ! -e "$HOME/.claude/.claude.json" ]; then
+      run mv "$HOME/.claude.json" "$HOME/.claude/.claude.json"
+    fi
+    f="$HOME/.claude/.claude.json"
     [ -s "$f" ] || echo '{}' > "$f"
     tmp=$(mktemp "$f.XXXXXX")
     ${pkgs.jq}/bin/jq --slurpfile servers ${claudeMcpServers} \

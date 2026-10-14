@@ -63,6 +63,9 @@ def containers(root: bool) -> tuple[list, int]:
         out.append(
             {
                 "name": (c.get("Names") or [cid[:12]])[0],
+                # An agent's container (home/agents.nix) and the folder it works in.
+                "agent": (c.get("Labels") or {}).get("harmonia.agent", ""),
+                "workdir": (c.get("Labels") or {}).get("harmonia.workdir", ""),
                 "pod": c.get("PodName") or "",
                 "owner": "system" if root else "user",
                 "image": c.get("Image", ""),

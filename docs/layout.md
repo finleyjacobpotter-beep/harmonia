@@ -29,6 +29,8 @@ modules/nixos/
   laptop.nix                   cadmus only: Wi-Fi firmware + regulatory database, suspend on lid close, power profiles
   thinkpad.nix                 cadmus only: thinkfan fan curve, fwupd for BIOS updates
   secrets.nix                  pcscd + YubiKey udev rules
+  dash.nix                     the dash's system side: CPU power, the connectivity test (DNS + ICMP traceroute), nethogs (dash/)
+  usb-mount.nix                flash drives at /mnt/<UUID>, mounted and unmounted from the dash without a password
   vpn.nix                      WireGuard and OpenVPN via NetworkManager, openfortivpn services, rules for the dash
 nike/                          the Nike microVM guest (microvm.nix)
   default.nix                  packages, user k and its password, volume sizes, the TUN module
@@ -38,18 +40,19 @@ nike/                          the Nike microVM guest (microvm.nix)
 home/                          home-manager, one file per program
   base.nix                     the home every host shares; default.nix (harmonia, cadmus) and dionysus/ add to it
   sway.nix                     sway, fuzzel launcher, mako, swaylock, swayidle
-  eww.nix                      eww: the top bar (workspaces, sway mode, title, fuzzy time) and the dash on workspace 10 (cpu, memory, disks, gpus, network with VPN asterisks, containers, microVMs with firewall modes, system health + NixOS, secrets, notifications with focus, display settings + USB, sound + microphone, cameras and Bluetooth, time + calendar, caps/num lock, gamemode/steam, battery, caffeine, session)
-  eww/                         the bar's and dash's layout (eww.yuck), styles (eww.scss) and scripts, in Python (dash, displays and their settings, cpu, mem, disk, system, secrets, notifications, mic, bluetooth, network, gpu, pods, volume, clock, calendar, …, sharing common.py)
+  eww.nix                      eww: the top bar (workspaces, sway mode, title, fuzzy time) and the dash on workspace 10 (cpu and gpu with power, memory, disks, network with VPN asterisks, connectivity and per-program traffic, virtualization (containers, microVMs with firewall modes), system health + NixOS + ports and logins, projects, tmux, downloads, clipboard history, games, secrets, notifications with focus, USB devices + flash drives, display settings, sound + now playing, microphone, cameras and Bluetooth, time + calendar, caps/num lock, gamemode/steam, battery, caffeine, session)
+  eww/                         the bar's and dash's layout (eww.yuck), styles (eww.scss) and scripts, in Python (dash, displays and their settings, cpu, mem, disk, system, conn, nettop, projects, tmux, downloads, clip, games, media, secrets, notifications, mic, bluetooth, network, gpu, pods, volume, clock, calendar, …, sharing common.py)
   open-mode.nix                Super+o's keys, for sway and the bar's hint
   keymap.nix                   build-time checks for the keyboard contract
   tui.nix                      btop, pulsemixer, bluetuith
-  secrets.nix                  keepassxc-cli, bw, ssh-agent, gpg, ykman, bao, age, sops
+  secrets.nix                  bw (and harmonia.bitwarden.server), ssh-agent, gpg, ykman, bao, age, sops
   secrets-backup.py            the `secrets-backup` command
   flatpak-files.nix            `flatpak-miami-wind`: copies themes, configs and add-ons into flatpak sandboxes (flatpak-files.py)
   flatpak-theme.nix            the desktop GTK theme for the Lutris and LACT sandboxes
   iamb.nix                     iamb, the terminal Matrix client (Super+o c), and harmonia.matrix.userId
-  ai.nix                       pi on the harmonia desktop: the release build, with the MCP servers, the skills and the .agents/ extension
-  gamedev.nix                  game dev on the harmonia desktop: Claude Code (no global prompts), Blender, Godot and radare2 MCP, the godot-ai service, the skills, gamedev-init
+  ai.nix                       pi's configuration on the harmonia desktop: the MCP servers, the skills and the .agents/ extension (pi runs in a container, agents.nix)
+  agents.nix                   Claude Code and pi in hardened Debian + Nix containers (`claude`, `pi`), with headless Godot and Blender
+  gamedev.nix                  game dev on the harmonia desktop: Claude Code's configuration (no global prompts; it runs in a container, agents.nix), Blender, Godot and radare2 MCP, the godot-ai service, the skills, gamedev-init
   gamedev/                     its skills (Godot 4, Godot and Blender MCP) and the design-doc templates gamedev-init copies
   pi/agents-dir.ts             pi extension (home/ai.nix): a project's instructions from .agents/ only, nothing from its .pi/
   skills/                      Rust tool skills for Claude Code and pi on harmonia (rg/fd/ast-grep, sd/jaq/difft, tokei/hyperfine/xh …)
@@ -68,6 +71,7 @@ assets/wallpaper.png           the wallpaper, pre-recoloured to Miami Wind
 docs/                          these pages
 mkdocs.yml                     the documentation site: theme, navigation (`nix build .#docs`)
 scripts/mkdocs-hooks.py        points the docs' links to repository files at GitHub
-scripts/install.py             base NixOS install from the minimal ISO (docs/install.md)
+scripts/install.py             base NixOS install from the minimal ISO, with LUKS unlocked by passphrase, TPM or TPM and PIN (docs/install.md)
+scripts/tpm-pin.py             switch an installed machine's LUKS root to TPM and PIN, the passphrase kept as fallback (docs/install.md)
 scripts/cleanup-deprecated.py  `sudo harmonia-cleanup`: removes what older harmonia versions left behind (Zen, libvirt VMs, the Zelus microVM, the llama.cpp server's model, ...)
 ```

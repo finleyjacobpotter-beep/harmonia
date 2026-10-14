@@ -8,7 +8,8 @@ Usage: eww-dash watch        keep sway and eww in step (sway startup; one at a t
        eww-dash sync         the same once (after display changes)
        eww-dash key KEY      a key from sway's dash mode: h j k l move,
                              e expand or collapse, esc collapse, a tile's letter opens it
-       eww-dash open TILE    expand TILE, or collapse it if it is open (a click)
+       eww-dash open TILE    expand TILE, or collapse it if it is open (a click,
+                             which also focuses the dash)
        eww-dash show TILE    go to the dash with TILE expanded
        eww-dash toggle-bar   turn the bar off or on (remembered)
        eww-dash pin          keep the dash on the display it is on, which
@@ -24,6 +25,7 @@ serial) in ~/.local/state/eww/dash-display.
 import fcntl
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -38,9 +40,10 @@ DASH = "10:dash"
 # The tiles, as on screen, and the key that opens each (shown on the tile).
 GRID = [
     ["cpu", "mem", "disk", "gpu"],
-    ["net", "pods", "vms"],
-    ["system", "secrets", "notify"],
-    ["devices", "sound", "time"],
+    ["net", "virt", "system"],
+    ["usb", "displays", "sound"],
+    ["projects", "tmux", "downloads", "secrets"],
+    ["time", "games", "notify", "clip"],
 ]
 KEYS = {
     "c": "cpu",
@@ -48,12 +51,17 @@ KEYS = {
     "f": "disk",
     "g": "gpu",
     "n": "net",
-    "p": "pods",
-    "v": "vms",
+    "v": "virt",
     "y": "system",
+    "p": "projects",
+    "x": "tmux",
+    "w": "downloads",
+    "b": "clip",
     "u": "secrets",
     "a": "notify",
-    "d": "devices",
+    "r": "games",
+    "i": "usb",
+    "d": "displays",
     "s": "sound",
     "t": "time",
 }
@@ -106,15 +114,28 @@ def row_of(tile: str) -> int:
 
 def push(state: dict) -> None:
     """Show the selected and expanded tiles; the row lets eww.yuck squeeze
-    the other tiles."""
+    the other tiles, and while the focus is elsewhere it outlines none."""
     sel, opened = state.get("sel", "cpu"), state.get("open", "")
-    value = {"sel": sel, "open": opened, "row": row_of(opened) if opened else -1, "pinned": state.get("pinned", ""), "bar": not NO_BAR.exists()}
+    value = {
+        "sel": sel,
+        "open": opened,
+        "focused": state.get("focused", True),
+        "row": row_of(opened) if opened else -1,
+        "pinned": state.get("pinned", ""),
+        "bar": not NO_BAR.exists(),
+        "hints": state.get("hints", True),
+    }
     eww("update", "dash=" + json.dumps(value, separators=(",", ":")))
 
 
 def key(state: dict, k: str) -> None:
     sel, opened = state.get("sel", "cpu"), state.get("open", "")
-    if k in MOVES:
+    # A tile from an older layout (devices, media) is gone.
+    if not any(sel in row for row in GRID):
+        sel, opened = "cpu", ""
+    if k == "hints":
+        state["hints"] = not state.get("hints", True)
+    elif k in MOVES:
         r, c = row_of(sel), GRID[row_of(sel)].index(sel)
         dr, dc = MOVES[k]
         r = min(max(r + dr, 0), len(GRID) - 1)
@@ -232,6 +253,13 @@ def sync(state: dict) -> None:
     on_dash = focused.get("name") == DASH
     if focused and not on_dash:
         state["last"] = focused["name"]
+    if state.get("focused", True) != on_dash:
+        # Leaving the dash (for another display, while it stays on screen)
+        # closes the open tile, which eww.yuck's revealers animate shut.
+        state["focused"] = on_dash
+        if not on_dash:
+            state["open"] = ""
+        push(state)
     dash = next((w for w in spaces if w.get("name") == DASH), None)
     if dash:
         evict(state.get("last") or "1")
@@ -246,14 +274,52 @@ def sync(state: dict) -> None:
 
 
 def start_eww() -> None:
-    """The eww daemon, started here so it gets sway's environment."""
+    """The eww daemon, started here so it gets sway's environment. It stays in
+    the foreground under systemd-cat, so its log (timeouts, script errors)
+    goes to the journal as eww, beside this watcher's (home/sway.nix):
+    journalctl --user -t eww. Its own session, so it outlives this watcher."""
     if eww("ping").strip() == "pong":
         return
-    subprocess.run(["eww", "daemon"], capture_output=True)
+    subprocess.Popen(
+        ["systemd-cat", "-t", "eww", "eww", "daemon", "--no-daemonize"],
+        stdin=subprocess.DEVNULL,
+        start_new_session=True,
+    )
     for _ in range(50):
         if eww("ping").strip() == "pong":
             return
         time.sleep(0.1)
+
+
+def shape(outs: list) -> list:
+    """What eww's windows are sized and placed by: the displays that are on,
+    their resolution, rotation and scale (not their position)."""
+    return sorted(
+        [o["name"], display.mode_id(o["current_mode"]) if o.get("current_mode") else "", o.get("transform"), o.get("scale")]
+        for o in outs
+        if o.get("active")
+    )
+
+
+def follow_displays(state: dict) -> None:
+    """eww keeps the displays as they were when its daemon started, so after a
+    display comes, goes or changes resolution it would draw the dash at the
+    old size, or not at all. A new daemon sees them as they are; sync opens
+    the windows again."""
+    now = shape(display.outputs())
+    if state.get("displays") not in (None, now):
+        print(f"displays changed to {now}; restarting eww", file=sys.stderr, flush=True)
+        eww("kill")
+        start_eww()
+        state.pop("windows", None)
+        push(state)
+    state["displays"] = now
+
+
+def installed() -> str:
+    """The eww-dash a rebuild last installed, to tell whether this one is it."""
+    found = shutil.which("eww-dash")
+    return os.path.realpath(found) if found else ""
 
 
 def watch() -> None:
@@ -263,26 +329,38 @@ def watch() -> None:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError:
         return
-    start_eww()
     with locked() as state:
-        if state.get("session") != os.environ.get("SWAYSOCK"):
-            # A new sway session: forget the last one's windows, give
-            # displays their saved settings and start on the dash.
+        new_session = state.get("session") != os.environ.get("SWAYSOCK")
+        if new_session:
+            # A new sway session: forget the last one's windows and give
+            # displays their saved settings before eww starts, so it starts
+            # with the displays as they will be.
             state.clear()
             state["session"] = os.environ.get("SWAYSOCK")
             display.SEEN_FILE.unlink(missing_ok=True)
             display.apply_saved(display.outputs())
+    start_eww()
+    with locked() as state:
+        if new_session:
             swaymsg(f"workspace {DASH} output {display.primary(display.outputs())}")
             swaymsg(f"workspace {DASH}")
         state.pop("windows", None)
+        state["displays"] = shape(display.outputs())
         push(state)
         sync(state)
+    me = installed()
     with subprocess.Popen(
         ["swaymsg", "-r", "-t", "subscribe", "-m", '["workspace", "window", "mode", "output"]'],
         stdout=subprocess.PIPE,
         text=True,
     ) as events:
         for line in events.stdout or []:
+            # A rebuild installs a new eww-dash, but sway started this one
+            # at login and a second one would exit (above): hand over to the
+            # new one, which takes the lock as this one's closes on exec.
+            if installed() != me:
+                events.terminate()
+                break
             try:
                 event = json.loads(line)
             except ValueError:
@@ -293,8 +371,15 @@ def watch() -> None:
             if "container" not in event and "current" not in event and "pango_markup" not in event:
                 # An output event: a display came, went or changed.
                 display.apply_saved(display.outputs())
+                with locked() as state:
+                    follow_displays(state)
+                    sync(state)
+                continue
             with locked() as state:
                 sync(state)
+    if installed() != me:
+        print("a new eww-dash was installed; restarting", file=sys.stderr, flush=True)
+        os.execvp("eww-dash", ["eww-dash", "watch"])
 
 
 def main(args: list[str]) -> None:
@@ -306,10 +391,15 @@ def main(args: list[str]) -> None:
         if command == "key" and rest:
             key(state, rest[0])
         elif command == "open" and rest:
+            # A click on the dash while another display has the focus
+            # brings the focus here, so the tile it opens stays open.
+            if not state.get("focused", True):
+                swaymsg(f"workspace {DASH}")
+                state["focused"] = True
             key(state, rest[0])
         elif command == "show" and rest:
             swaymsg(f"workspace {DASH}")
-            state.update(sel=rest[0], open=rest[0])
+            state.update(sel=rest[0], open=rest[0], focused=True)
             push(state)
         elif command == "pin":
             outs = display.outputs()

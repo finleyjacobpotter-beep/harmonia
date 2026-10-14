@@ -3,7 +3,8 @@
 """Install base NixOS for harmonia, from the NixOS minimal ISO (UEFI).
 
 Wipes one disk, creates a GPT table with a 1 GiB ESP and a root partition
-(optionally LUKS2-encrypted, always ext4), installs a small base system
+(optionally LUKS2-encrypted, unlocked at boot by passphrase, TPM, or TPM
+and PIN; always ext4), installs a small base system
 that matches harmonia (systemd-boot, flakes, git), and clones harmonia
 into the user's ~/harmonia with this machine's hardware-configuration.nix
 already in place for the host you pick: harmonia (desktop, user u), cadmus
@@ -40,6 +41,19 @@ STATE_VERSION = "26.05"
 
 MNT = Path("/mnt")
 
+# How the root partition is unlocked at boot. The passphrase is always
+# enrolled as well, so a TPM that changes (firmware update, Secure Boot
+# turned on, a new motherboard) still leaves a way in.
+UNLOCK = {
+    "passphrase": "type the passphrase at every boot",
+    "tpm": "the TPM unlocks it by itself; anyone who can boot this machine can too",
+    "tpm-pin": "the TPM unlocks it after you type a short PIN",
+}
+# The TPM releases the key only while PCR 7 (the Secure Boot state) is as it
+# was at enrolment. Kernel and NixOS updates don't change it, so updates
+# don't need re-enrolling; docs/install.md says how to after a firmware change.
+TPM_PCRS = "7"
+
 CONFIGURATION_NIX = """\
 {{ pkgs, ... }}:
 {{
@@ -48,6 +62,10 @@ CONFIGURATION_NIX = """\
   # Same boot loader as harmonia.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+
+  # The systemd initrd unlocks LUKS with any TPM2 token in its header, as
+  # harmonia's hosts do (nixpkgs' default there; hosts/base.nix).
+  boot.initrd.systemd.enable = true;
 
   networking.hostName = "{hostname}";
   networking.networkmanager.enable = true;
@@ -93,17 +111,39 @@ def ask(question: str) -> bool:
     return input(f"{question} [y/N] ").strip().lower().startswith("y")
 
 
-def read_passphrase() -> str:
-    """Read the LUKS passphrase without echo, then show it back to confirm."""
+def read_secret(what: str) -> str:
+    """Read a passphrase or PIN without echo, then show it back to confirm."""
     while True:
-        passphrase = getpass.getpass("LUKS passphrase: ")
-        if not passphrase:
-            print("The passphrase can't be empty.")
+        secret = getpass.getpass(f"{what}: ")
+        if not secret:
+            print(f"The {what} can't be empty.")
             continue
-        print(f"You entered: {passphrase}")
+        print(f"You entered: {secret}")
         if ask("Is that correct?"):
-            os.system("clear")  # take the passphrase off the screen
-            return passphrase
+            os.system("clear")  # take it off the screen
+            return secret
+
+
+def has_tpm2() -> bool:
+    version = Path("/sys/class/tpm/tpm0/tpm_version_major")
+    return version.is_file() and version.read_text().strip() == "2"
+
+
+def ask_unlock() -> str:
+    """Passphrase, TPM or TPM and PIN; only the passphrase without a TPM2."""
+    if not has_tpm2():
+        print("No TPM2 found (or it is off in the firmware); the passphrase unlocks it.")
+        return "passphrase"
+    print("How should the root partition be unlocked at boot?")
+    for i, (mode, what) in enumerate(UNLOCK.items(), 1):
+        print(f"  {i}) {mode}: {what}")
+    choice = input("Unlock [1]: ").strip() or "1"
+    if choice not in {str(i) for i in range(1, len(UNLOCK) + 1)}:
+        die(f"{choice!r} is not 1 to {len(UNLOCK)}")
+    mode = list(UNLOCK)[int(choice) - 1]
+    if mode != "passphrase":
+        print("The passphrase you set next stays as the fallback; keep it somewhere safe.")
+    return mode
 
 
 def partitions(disk: str) -> tuple[str, str]:
@@ -134,6 +174,7 @@ def ask_settings() -> dict:
         die(f"{host!r} is not one of {', '.join(HOSTS)}")
 
     luks = ask("Use LUKS encryption for the root partition?")
+    unlock = ask_unlock() if luks else None
     swap = input("Swap file size in GiB (0 for none): ").strip()
     if not re.fullmatch(r"[0-9]+", swap):
         die("swap size must be a whole number")
@@ -147,7 +188,9 @@ def ask_settings() -> dict:
         "esp": esp,
         "root": root,
         "luks": luks,
-        "passphrase": read_passphrase() if luks else None,
+        "unlock": unlock,
+        "passphrase": read_secret("LUKS passphrase") if luks else None,
+        "pin": read_secret("TPM PIN") if unlock == "tpm-pin" else None,
         "swap_gib": int(swap),
     }
 
@@ -168,6 +211,8 @@ def confirm(s: dict) -> None:
     print(f"\nAbout to ERASE {s['disk']} and install:")
     print(f"  {s['esp']}  1 GiB ESP (vfat, label boot) at /boot")
     print(f"  {s['root']} rest of the disk, ext4 (label nixos){' inside LUKS2' if s['luks'] else ''}")
+    if s["luks"]:
+        print(f"  unlocked by {s['unlock']}" + ("" if s["unlock"] == "passphrase" else " (passphrase as fallback)"))
     if s["swap_gib"]:
         print(f"  {s['swap_gib']} GiB swap file at /swap/swapfile")
     print(f"  host {s['host']} (flake .#{s['flake']}), user {s['user']}")
@@ -198,7 +243,9 @@ def partition_and_mount(s: dict) -> None:
             "--key-file=-", s["root"], input=s["passphrase"])
         run("cryptsetup", "open", "--key-file=-", s["root"], "cryptroot",
             input=s["passphrase"])
-        s["passphrase"] = None
+        if s["unlock"] != "passphrase":
+            enroll_tpm(s)
+        s["passphrase"] = s["pin"] = None
         root_fs = "/dev/mapper/cryptroot"
 
     run("mkfs.ext4", "-F", "-L", "nixos", root_fs)
@@ -214,6 +261,23 @@ def partition_and_mount(s: dict) -> None:
         swapfile.chmod(0o600)
         run("mkswap", str(swapfile))
         run("swapon", str(swapfile))
+
+
+def enroll_tpm(s: dict) -> None:
+    """Add a TPM2 key slot beside the passphrase. systemd-cryptenroll reads
+    the passphrase that unlocks the partition from $PASSWORD and the new PIN
+    from $NEWPIN, so neither shows up in the process list."""
+    env = dict(os.environ, PASSWORD=s["passphrase"])
+    cmd = ["systemd-cryptenroll", "--tpm2-device=auto", f"--tpm2-pcrs={TPM_PCRS}"]
+    if s["unlock"] == "tpm-pin":
+        cmd.append("--tpm2-with-pin=yes")
+        env["NEWPIN"] = s["pin"]
+    cmd.append(s["root"])
+    print("+", shlex.join(cmd))
+    if subprocess.run(cmd, env=env).returncode != 0:
+        # The disk is already encrypted with the passphrase; carry on with it.
+        print("warning: couldn't enroll the TPM; the passphrase unlocks it. Enroll later as"
+              " docs/install.md says.", file=sys.stderr)
 
 
 def install(s: dict) -> None:

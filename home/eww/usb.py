@@ -1,16 +1,30 @@
-"""Connected USB devices from sysfs (world-readable), for the dash's devices
+"""Connected USB devices from sysfs (world-readable), for the dash's usb
 tile. Names come from the device's own strings, else from usb.ids.
 
-Usage: eww-usb        print once: {"count": N (hubs left out), "devices": [...]}
-       eww-usb watch  print, then again whenever a USB device comes or goes
+Flash drives (filesystems on a USB disk) are listed too, with where they are
+mounted. Mount and Unmount start and stop harmonia-usb-mount@UUID, which
+mounts at /mnt/UUID as root (modules/nixos/usb-mount.nix); the disk tile
+lists the mounted ones as well (disk.py).
+
+Usage: eww-usb               print once: {"count": N (hubs left out),
+                             "devices": [...], "drives": [...]}
+       eww-usb watch         print, then again whenever a USB device or
+                             drive comes or goes, or a mount changes
+       eww-usb mount UUID    mount a flash drive at /mnt/UUID
+       eww-usb unmount UUID  unmount it
+       eww-usb open UUID     open it in ranger
 """
 
 import json
+import os
+import re
+import select
 import subprocess
 import sys
 from pathlib import Path
 
-from common import config, read
+from common import config, output, read
+from procs import size
 
 DEVICES = Path("/sys/bus/usb/devices")
 # hwdata's usb.ids (home/eww.nix).
@@ -120,12 +134,86 @@ def devices() -> list:
     return found
 
 
+def unit(uuid: str) -> str:
+    """The mount unit's name: the UUID escaped as systemd does (- is \\x2d)."""
+    escaped = uuid.replace("-", "\\x2d")
+    return f"harmonia-usb-mount@{escaped}.service"
+
+
+def drives() -> list:
+    """Each filesystem on a USB disk: the disk's partitions, or the disk itself
+    when it is formatted whole."""
+    try:
+        tree = json.loads(output(
+            "lsblk", "-J", "-b", "-o",
+            "NAME,TRAN,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,FSAVAIL,FSSIZE,FSUSED,MODEL,VENDOR",
+        ) or "{}")
+    except ValueError:
+        return []
+    found = []
+    for disk in tree.get("blockdevices", []):
+        if disk.get("tran") != "usb":
+            continue
+        model = " ".join(p for p in ((disk.get("vendor") or "").strip(), (disk.get("model") or "").strip()) if p)
+        for part in disk.get("children") or [disk]:
+            uuid = part.get("uuid") or ""
+            # Encrypted, swap and unformatted space can't be mounted here.
+            if not re.fullmatch(r"[A-Za-z0-9-]+", uuid) or part.get("fstype") in (None, "", "swap", "crypto_LUKS"):
+                continue
+            mount = part.get("mountpoint") or ""
+            total, used = int(part.get("fssize") or 0), int(part.get("fsused") or 0)
+            found.append({
+                "uuid": uuid,
+                "device": part["name"],
+                "name": model or part["name"],
+                "label": part.get("label") or "",
+                "size": size(int(part.get("size") or 0)),
+                "type": part["fstype"],
+                "mount": mount,
+                # Only what harmonia-usb-mount mounted can be unmounted here.
+                "ours": mount == f"/mnt/{uuid}",
+                "target": f"/mnt/{uuid}",
+                "free": f"{size(int(part.get('fsavail') or 0))} free" if mount else "",
+                "text": f"{size(used)} of {size(total)}" if mount else "",
+                "pct": round(used / total * 100) if mount and total else 0,
+            })
+    return found
+
+
 def listing() -> str:
     found = devices()
     # Hubs are listed on the dash, but its count is of what's plugged into them.
     count = sum(d["kind"] != "Hub" for d in found)
-    return json.dumps({"count": count, "devices": found},
+    return json.dumps({"count": count, "devices": found, "drives": drives()},
                       separators=(",", ":"), ensure_ascii=False)
+
+
+def notify(text: str) -> None:
+    output("notify-send", "-a", "harmonia", "USB drive", text)
+
+
+def mount(uuid: str) -> None:
+    result = subprocess.run(["systemctl", "start", unit(uuid)], capture_output=True, text=True)
+    if result.returncode != 0:
+        notify(f"Couldn't mount it: {result.stderr.strip() or 'see journalctl -u ' + unit(uuid)}")
+
+
+def unmount(uuid: str) -> None:
+    # A failed unmount (something still has a file open) leaves the unit
+    # stopped but the drive mounted: start it again, which sees the mount and
+    # does nothing, so the stop tries again.
+    if os.path.ismount(f"/mnt/{uuid}"):
+        subprocess.run(["systemctl", "start", unit(uuid)], capture_output=True)
+    subprocess.run(["systemctl", "stop", unit(uuid)], capture_output=True)
+    if os.path.ismount(f"/mnt/{uuid}"):
+        notify(f"/mnt/{uuid} is busy: close what has files open on it, then unmount again.")
+
+
+def open_drive(uuid: str) -> None:
+    subprocess.Popen(
+        ["alacritty", "--class", "ranger", "-e", "ranger", f"/mnt/{uuid}"],
+        start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
 
 
 def watch() -> None:
@@ -133,23 +221,41 @@ def watch() -> None:
     print(last, flush=True)
     try:
         monitor = subprocess.Popen(
-            ["udevadm", "monitor", "--udev", "--subsystem-match=usb/usb_device"],
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+            ["udevadm", "monitor", "--udev", "--subsystem-match=usb/usb_device", "--subsystem-match=block"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
         )
     except OSError:
         return
-    # One line per add/remove event; print only when the list changed.
-    for line in monitor.stdout:
-        if not line.startswith("UDEV"):
-            continue
+    # udev events for devices and drives; /proc/self/mounts turns readable
+    # with an error flag whenever something is mounted or unmounted.
+    mounts = open("/proc/self/mounts")
+    poller = select.poll()
+    poller.register(monitor.stdout, select.POLLIN)
+    poller.register(mounts, select.POLLPRI | select.POLLERR)
+    while True:
+        for fd, _ in poller.poll():
+            if fd == monitor.stdout.fileno():
+                if not os.read(fd, 65536):
+                    return  # udevadm exited
+            else:
+                mounts.seek(0)
+                mounts.read()
+        # Print only when the listing changed.
         now = listing()
         if now != last:
             print(now, flush=True)
             last = now
 
 
-if __name__ == "__main__":
-    if sys.argv[1:] == ["watch"]:
+def main(args: list[str]) -> None:
+    command, rest = (args[0], args[1:]) if args else ("", [])
+    if command == "watch":
         watch()
+    elif command in ("mount", "unmount", "open") and rest and re.fullmatch(r"[A-Za-z0-9-]+", rest[0]):
+        {"mount": mount, "unmount": unmount, "open": open_drive}[command](rest[0])
     else:
         print(listing())
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

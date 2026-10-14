@@ -1,4 +1,4 @@
-"""The dash's display settings (the devices tile, home/eww/eww.yuck): every
+"""The dash's display settings (the displays tile, home/eww/eww.yuck): every
 display's resolution, rotation, on/off and place, and which one is primary,
 drawn as a small map. Changes are a draft until Apply, which hands them all
 to `eww-display apply` at once; a new resolution or rotation, or a display

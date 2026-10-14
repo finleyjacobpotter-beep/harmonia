@@ -4,6 +4,11 @@ the last hour, the running NixOS generation and whether a reboot is needed
 to use it all, how old the flake's pins are (from flake.lock at build time,
 home/eww.nix), and the Nix store's disk and garbage collection.
 
+Then who can reach this machine: every listening port, whether the NixOS
+firewall lets it through (the allowed ports come from the config, by
+home/eww.nix), who is logged in and from where, and failed sudo and SSH
+logins over the last day. Without root, ss names only your own programs.
+
 Usage: eww-system               JSON for the tile
        eww-system restart UNIT  restart one of your own (user) units
        eww-system gc            collect the store's garbage in the background
@@ -11,6 +16,7 @@ Usage: eww-system               JSON for the tile
 
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -93,6 +99,95 @@ def pins() -> list:
     return rows
 
 
+def allowed(proto: str, port: int) -> list:
+    """Where the firewall lets port through: "everywhere", or the interfaces
+    that open it (networking.firewall, given by home/eww.nix)."""
+    fw = config().get("firewall", {})
+    where = []
+    for scope, rules in [("everywhere", fw.get("all", {}))] + sorted(fw.get("interfaces", {}).items()):
+        ports = rules.get(proto, [])
+        ranges = rules.get(f"{proto}Ranges", [])
+        if port in ports or any(r["from"] <= port <= r["to"] for r in ranges):
+            where.append(scope)
+    # A trusted interface (a microVM's tap, say) lets every port through;
+    # NixOS always trusts lo, which only this machine reaches anyway.
+    return where + [i for i in fw.get("trusted", []) if i not in where and i != "lo"]
+
+
+def listening() -> list:
+    """One row per protocol and port, the IPv4 and IPv6 sockets together."""
+    rows: dict = {}
+    for line in output("ss", "-tulnpH").splitlines():
+        f = line.split()
+        if len(f) < 5:
+            continue
+        proto, local = f[0], f[4]
+        addr, _, port = local.rpartition(":")
+        addr = addr.strip("[]").split("%")[0]
+        if not port.isdigit():
+            continue
+        local_only = addr.startswith("127.") or addr == "::1"
+        program = re.search(r'users:\(\("([^"]+)"', line)
+        key = (proto, int(port))
+        row = rows.setdefault(key, {"proto": proto, "port": int(port), "program": "", "local": True, "addresses": []})
+        row["local"] = row["local"] and local_only
+        row["program"] = row["program"] or (program.group(1) if program else "")
+        if addr not in row["addresses"]:
+            row["addresses"].append(addr)
+    fw = config().get("firewall", {})
+    out = []
+    for (proto, port), row in sorted(rows.items(), key=lambda item: (item[1]["local"], item[0][1])):
+        where = allowed(proto, port)
+        if row["local"]:
+            reach = "this machine only"
+        elif not fw.get("enable", True):
+            reach = "open (no firewall)"
+        elif where:
+            reach = "open " + ("to everyone" if "everywhere" in where else "on " + ", ".join(where))
+        else:
+            reach = "blocked by the firewall"
+        out.append({**row, "reach": reach, "exposed": reach.startswith("open"), "addresses": ", ".join(row["addresses"])})
+    return out
+
+
+def logins() -> list:
+    """Each login session (not systemd's own user manager): who, where, how."""
+    found = []
+    for line in output("loginctl", "list-sessions", "--no-legend").splitlines():
+        f = line.split()
+        if len(f) < 6 or f[5] != "user":
+            continue
+        props = dict(
+            p.split("=", 1) for p in output("loginctl", "show-session", f[0], "-p", "Remote", "-p", "RemoteHost", "-p", "Service", "-p", "TTY", "-p", "Type").splitlines() if "=" in p
+        )
+        remote = props.get("Remote") == "yes"
+        found.append(
+            {
+                "user": f[2],
+                "where": f"from {props.get('RemoteHost') or 'remote'}" if remote else (props.get("TTY") or f[3]),
+                "how": props.get("Service", ""),
+                "remote": remote,
+            }
+        )
+    return found
+
+
+def failed_logins() -> tuple:
+    """Failed sudo and SSH logins over the last day: how many, and the latest."""
+    out = output("journalctl", "--since", "-24h", "--no-pager", "-o", "json", "-t", "sudo", "-t", "sshd", "-t", "sshd-session")
+    hits = []
+    for line in out.splitlines():
+        try:
+            e = json.loads(line)
+        except ValueError:
+            continue
+        message = str(e.get("MESSAGE") or "")
+        if re.search(r"incorrect password|authentication failure|Failed password|Invalid user|Failed publickey", message):
+            when = int(e.get("__REALTIME_TIMESTAMP", "0")) / 1e6
+            hits.append({"time": time.strftime("%a %H:%M", time.localtime(when)), "who": e.get("SYSLOG_IDENTIFIER", ""), "message": " ".join(message.split())})
+    return len(hits), hits[-4:][::-1]
+
+
 def store() -> dict:
     st = os.statvfs("/nix/store")
     total, free = st.f_blocks * st.f_frsize, st.f_bavail * st.f_frsize
@@ -122,8 +217,15 @@ def collect() -> None:
 
 def state() -> str:
     count, recent = errors()
+    bad, bad_recent = failed_logins()
+    ports = listening()
     return json.dumps(
         {
+            "ports": ports,
+            "exposed": sum(p["exposed"] for p in ports),
+            "logins": logins(),
+            "failed_logins": bad,
+            "failed_recent": bad_recent,
             "failed": failed(),
             "errors": count,
             "recent": recent,

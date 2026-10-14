@@ -37,7 +37,7 @@ alacritty binding outside Ctrl+Shift fails `nixos-rebuild`.
 | `n` / `Shift+n` / `Ctrl+n` / `i` | dismiss / dismiss all / restore / act on notification |
 | `Shift+s` / `Ctrl+s` | screenshot region / screen to clipboard |
 | `Shift+b` | turn the eww bar off or on (remembered; also a button on the dash) |
-| `Shift+x` | lock |
+| `Shift+x` | lock (wipes the clipboard history first, as every lock does) |
 | `Shift+c` | reload sway |
 
 **Modes** (Esc or Return leaves; the eww bar, or the dash, shows the active mode and its keys):
@@ -48,7 +48,7 @@ alacritty binding outside Ctrl+Shift fails `nixos-rebuild`.
 | `Super+o` | open | `b` Firefox · `f` ranger · `e` nvim · `t` tmux · `s` btop · `a` pulsemixer · `u` bluetuith · `n` nmtui · `v` Nike (ssh) · `g` Lutris · `Shift+g` Steam · `c` Matrix (iamb) · `Shift+b` Blender · `d` Godot |
 | `Super+m` | media | `j`/`k` volume · `m` mute · `Shift+m` mic · `h`/`l` prev/next · `p` play/pause · `Shift+j`/`Shift+k` brightness |
 | `Super+Shift+e` | system | `l` lock · `e` exit sway · `s` suspend · `r` reboot · `Shift+p` power off |
-| `Super+0` | dash (while the dash is focused; leaving it ends the mode, and every `Super` key still works) | `h` `j` `k` `l` / arrows select a tile · `e` / `Return` / `Space` open or close it · `Esc` close · `c` cpu · `m` memory · `f` disk · `g` gpu · `n` network · `p` containers · `v` microvms · `y` system · `u` secrets · `a` notifications · `d` devices · `s` sound · `t` time |
+| `Super+0` | dash (while the dash is focused; leaving it ends the mode, and every `Super` key still works) | `h` `j` `k` `l` / arrows select a tile · `e` / `Return` / `Space` open or close it · `Esc` close · `c` cpu · `m` memory · `f` disk · `g` gpu · `n` network · `v` virtualization · `y` system · `i` usb · `d` displays · `s` sound (and now playing) · `p` projects · `x` tmux · `w` downloads · `u` secrets · `t` time · `r` games · `a` notifications · `b` clipboard · `?` key reminders |
 
 Hardware keys (volume, media, brightness, Print) work as usual.
 
@@ -63,6 +63,7 @@ Hardware keys (volume, media, brightness, Print) work as usual.
 | `w` / `S` | pick window / session |
 | `<` / `>` | move window left/right |
 | `z` | zoom pane |
+| `{` / `}` / `!` | move pane: swap with the previous / next one, or break it out into its own window (tmux's defaults) |
 | `Escape` or `[` | copy mode: vim motions, `v` select, `Ctrl+v` block, `y` yank |
 | `P` | paste |
 | `d` | detach |

@@ -52,6 +52,9 @@ only change when an input's commit is bumped; update this table when you do.
 | mako | 1.11.0 |
 | wl-clipboard, grim, slurp | 2.3.0, 1.5.0, 1.5.0 |
 | brightnessctl, playerctl, pavucontrol | 0.5.1, 2.4.1, 6.2 |
+| cliphist (the dash's clipboard) | 0.7.0 |
+| Agent containers' base image (`home/agents.nix`) | Debian trixie-slim, `sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f` |
+| mtr, nethogs (the dash's network tile) | 0.96, 0.9.0 |
 | gawk (eww scripts) | 5.4.1 |
 | adw-gtk3 | 6.5 |
 | Bibata cursors | 2.0.7 |
@@ -140,7 +143,6 @@ Same nixpkgs as the host, so neovim, tmux, ranger and bash match the tables abov
 | Package | Version |
 | --- | --- |
 | GnuPG | 2.4.9 |
-| KeePassXC (`keepassxc-cli`) | 2.7.12 |
 | yubikey-manager (`ykman`) | 5.9.2 |
 | pcsc-lite | 2.4.1 |
 | Bitwarden CLI (`bw`) | 2026.9.0 |

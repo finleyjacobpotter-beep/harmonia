@@ -84,8 +84,7 @@ uses the session `bw-unlock` saved in `$XDG_RUNTIME_DIR/bw-session`. A timed
 sync works while the vault is unlocked (until `bw-lock` or logout). When it
 isn't, the sync fails quietly and the calendar keeps the events from the last
 good sync; run `bw-unlock` and `vdirsyncer sync` in a terminal to sync
-straight away. KeePassXC isn't used here because `keepassxc-cli` asks for the
-database password on every call. A published `.ics` link needs no
+straight away. A published `.ics` link needs no
 password, so it always syncs.
 
 ## Colours

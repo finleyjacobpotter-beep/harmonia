@@ -5,7 +5,8 @@ last reading, how busy it was, and its temperature where it reports one.
 The filesystems are those on a block device (so /, /boot, /home, not tmpfs
 or the Nix store's bind mount), once each; the disks are /sys/block's
 entries backed by hardware (not loop, zram or device-mapper devices, whose
-I/O is already counted on the disk beneath them).
+I/O is already counted on the disk beneath them). Mounted flash drives are
+listed apart, with Open and Unmount, as on the usb tile (usb.py).
 """
 
 import json
@@ -15,6 +16,7 @@ from pathlib import Path
 
 from common import RUN_DIR, read
 from procs import size
+from usb import drives
 
 SAMPLE = RUN_DIR / "eww-disk.json"
 SECTOR = 512
@@ -96,7 +98,8 @@ def disks() -> list:
 
 
 def main() -> None:
-    fs = filesystems()
+    usb = [d for d in drives() if d["mount"]]
+    fs = [f for f in filesystems() if f["device"] not in {d["device"] for d in usb}]
     io = disks()
     root = next((f for f in fs if f["mount"] == "/"), fs[0] if fs else {"pct": 0, "text": "", "free": ""})
     print(
@@ -104,6 +107,7 @@ def main() -> None:
             {
                 "root": root,
                 "filesystems": fs,
+                "usb": usb,
                 "disks": io,
                 # Every disk's reads and writes together, and the busiest disk, for the summary.
                 "io": rate(sum(d.pop("bytes") for d in io)),

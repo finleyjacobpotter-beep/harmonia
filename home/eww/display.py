@@ -31,6 +31,7 @@ MODES_FILE = STATE_DIR / "display-modes.json"
 LAYOUT_FILE = STATE_DIR / "display-layout.json"
 ROTATION_FILE = STATE_DIR / "display-rotation.json"
 SEEN_FILE = RUN_DIR / "eww-display.seen"
+APPLY_TRIES = 3
 
 
 def eww(*args: str) -> str:
@@ -123,26 +124,43 @@ def key(outs: list, name: str) -> str:
     return ""
 
 
+def saved_args(outs: list, o: dict, modes: dict, layout: dict, rotation: dict) -> list:
+    """The `swaymsg output NAME …` arguments for what is saved for o but not
+    what sway has now (none once o is as saved)."""
+    k = key(outs, o["name"])
+    current = o.get("current_mode")
+    args = []
+    if modes.get(k) and (not current or mode_id(current) != modes[k]):
+        args += ["mode", modes[k]]
+    if rotation.get(k) and (o.get("transform") or "normal") != rotation[k]:
+        args += ["transform", rotation[k]]
+    rect = o.get("rect") or {}
+    if layout.get(k) and [rect.get("x"), rect.get("y")] != [int(v) for v in layout[k]]:
+        args += ["position", *(str(int(v)) for v in layout[k])]
+    return args
+
+
 def apply_saved(outs: list) -> None:
-    """Give newly connected displays their saved resolution, rotation and
-    position (once per connection, so a mode sway can't do doesn't loop)."""
-    seen = read(SEEN_FILE).splitlines()
-    now_on = [o["name"] for o in outs if o.get("active")]
+    """Give connected displays their saved resolution, rotation and position.
+    A display counts as done once sway shows them, not once they are sent: at
+    login sway may still be setting a display up and undo them, and its next
+    output event brings us back here to try again. After APPLY_TRIES a display
+    is left alone too, so a mode sway can't do doesn't loop. Each line of
+    SEEN_FILE is a connected display and "done" or its tries so far."""
+    seen = dict(line.split(" ", 1) for line in read(SEEN_FILE).splitlines() if " " in line)
     modes, layout, rotation = load(MODES_FILE), load(LAYOUT_FILE), load(ROTATION_FILE)
-    for name in now_on:
-        if name in seen:
+    now = {}
+    for o in outs:
+        if not o.get("active"):
             continue
-        k = key(outs, name)
-        args = []
-        if modes.get(k):
-            args += ["mode", modes[k]]
-        if rotation.get(k):
-            args += ["transform", rotation[k]]
-        if layout.get(k):
-            args += ["position", *(str(int(v)) for v in layout[k])]
-        if args:
-            swaymsg("output", name, *args)
-    SEEN_FILE.write_text("\n".join(now_on) + "\n")
+        name, tries = o["name"], seen.get(o["name"], "0")
+        args = [] if tries == "done" else saved_args(outs, o, modes, layout, rotation)
+        if not args or int(tries) >= APPLY_TRIES:
+            now[name] = "done"
+            continue
+        swaymsg("output", name, *args)
+        now[name] = str(int(tries) + 1)
+    SEEN_FILE.write_text("".join(f"{name} {tries}\n" for name, tries in now.items()))
 
 
 def apply(wanted: dict) -> None:

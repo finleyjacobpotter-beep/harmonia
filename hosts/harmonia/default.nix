@@ -27,6 +27,7 @@
   home-manager.users.${username}.imports = [
     ../../home/ai.nix
     ../../home/gamedev.nix
+    ../../home/agents.nix
   ];
   harmonia.allowedUnfree = [ "claude-code" ];
 }

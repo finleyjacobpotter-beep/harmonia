@@ -29,7 +29,7 @@ DRM = Path("/sys/class/drm")
 # hwdata's pci.ids (home/eww.nix).
 PCI_IDS = config().get("pciIds", "/usr/share/hwdata/pci.ids")
 
-EMPTY = {"ok": False, "auto": True, "use": 0, "temp": 0, "vram": 0, "vram_text": "", "name": "", "text": "", "gpus": []}
+EMPTY = {"ok": False, "auto": True, "use": 0, "temp": 0, "vram": 0, "vram_text": "", "name": "", "power_text": "", "text": "", "gpus": []}
 
 
 def rounded(x: float) -> int:
@@ -185,6 +185,7 @@ def stats(data: dict, choice: str) -> dict:
         "vram": main["vram"],
         "vram_text": main["vram_text"],
         "name": main["name"],
+        "power_text": main["power_text"],
         # Left-padded for the worst case, "100% 200°C", so the tile stays put.
         "text": f"{main['use']:>3}% {main['temp']:>3}°C",
         "gpus": gpus,

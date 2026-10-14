@@ -26,6 +26,12 @@ Open it with `Super+o b`, or `firefox` in a shell.
   [keyboard.md](keyboard.md#firefox-vimium)).
 - **[Bitwarden](https://bitwarden.com/)** for the cloud vault, the same one
   the `bw` CLI reads ([secrets.md](secrets.md)); sign in once per profile.
+  Its server is `harmonia.bitwarden.server` (vault.iojoi.cc), given to the
+  add-on as a managed-storage manifest in
+  `~/.var/app/org.mozilla.firefox/.mozilla/managed-storage/` (and
+  `config/mozilla/managed-storage/`), since the sandbox can't see
+  `/etc/firefox/policies`. If the add-on was signed in to bitwarden.com
+  before, log out of it to pick the server up.
 - **Miami Wind** on the toolbar, tab strip, menus and `about:` pages, and on
   Vimium's link hints, find bar (HUD) and Vomnibar.
 

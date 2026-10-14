@@ -1,12 +1,12 @@
 # pi, the coding agent, on harmonia itself (not Cadmus, which doesn't
-# import this; hosts/harmonia/default.nix does): with the Blender, Godot
-# and radare2 MCP servers (./mcp-servers.nix) and Claude Code's skills (./gamedev.nix), and
-# a project's instructions from its .agents/ only (./pi/agents-dir.ts);
-# otherwise on its defaults. See docs/pi.md.
+# import this; hosts/harmonia/default.nix does): its configuration, with
+# the Blender, Godot and radare2 MCP servers (./mcp-servers.nix) and Claude
+# Code's skills (./gamedev.nix), and a project's instructions from its
+# .agents/ only (./pi/agents-dir.ts); otherwise on its defaults. pi itself
+# runs in a container (./agents.nix). See docs/pi.md.
 { pkgs, lib, ... }:
 let
   mcpServers = import ./mcp-servers.nix { inherit pkgs; };
-  pi = pkgs.callPackage ../pkgs/pi.nix { };
 
   # What pi gets in ~/.pi/agent, merged into the files it keeps there (it
   # writes them too: /mcp, /model, /settings), so only these entries are
@@ -18,10 +18,12 @@ let
   );
 in
 {
-  home.packages = [ pi ];
-
-  # Instructions from .agents/ only, nothing from a project's .pi/.
-  home.file.".pi/agent/extensions/agents-dir.ts".source = ./pi/agents-dir.ts;
+  # Instructions from .agents/ only, nothing from a project's .pi/: copied,
+  # not linked, since pi's container has its own Nix store (./agents.nix).
+  home.activation.piExtension = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run rm -f "$HOME/.pi/agent/extensions/agents-dir.ts"
+    run install -D -m 644 ${./pi/agents-dir.ts} "$HOME/.pi/agent/extensions/agents-dir.ts"
+  '';
 
   # pi's own files, merged in on every switch. What's set here wins (the
   # MCP servers by name, the settings key by key); everything else you add

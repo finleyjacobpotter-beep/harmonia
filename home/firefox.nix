@@ -231,7 +231,8 @@ let
       };
     };
     # Bitwarden: the browser side of the cloud vault the `bw` CLI also reads
-    # (home/secrets.nix); sign in once per profile.
+    # (home/secrets.nix); sign in once per profile. Its server comes from
+    # bitwardenPolicy below.
     bitwarden = {
       id = "{446900e4-71c2-419f-a6a7-df9c091e268b}";
       xpi = pkgs.fetchurl {
@@ -240,6 +241,20 @@ let
       };
     };
   };
+
+  # The Bitwarden add-on's server (harmonia.bitwarden.server, home/secrets.nix),
+  # as a managed-storage manifest: the same `environment` Bitwarden documents
+  # for policies.json, but the sandbox can't see /etc/firefox, while Firefox
+  # does read ~/.mozilla/managed-storage inside its own data dir.
+  bitwardenServer = config.harmonia.bitwarden.server;
+  bitwardenPolicy = pkgs.writeText "bitwarden-managed-storage.json" (
+    builtins.toJSON {
+      name = addons.bitwarden.id;
+      description = "Bitwarden server (home/firefox.nix)";
+      type = "storage";
+      data.environment.base = bitwardenServer;
+    }
+  );
 
   # Icons inside the sandbox. Firefox may read and write its own
   # ~/.var/app/org.mozilla.firefox, and GTK in the sandbox looks for icon
@@ -273,6 +288,14 @@ in
     ".var/app/org.mozilla.firefox/data/icons/Tulasi" = "${tulasi}/share/icons/Tulasi";
     ".var/app/org.mozilla.firefox/config/gtk-3.0/settings.ini" = gtkSettings;
     ".local/share/fonts/departure-mono-nerd" = fontFiles;
+  }
+  # Both places a profile can live (home/flatpak-files.py), so the manifest
+  # is found whichever layout this Firefox uses.
+  // lib.optionalAttrs (bitwardenServer != null) {
+    ".var/app/org.mozilla.firefox/.mozilla/managed-storage/${addons.bitwarden.id}.json" =
+      bitwardenPolicy;
+    ".var/app/org.mozilla.firefox/config/mozilla/managed-storage/${addons.bitwarden.id}.json" =
+      bitwardenPolicy;
   };
   harmonia.firefoxProfileFiles = {
     "chrome/userChrome.css" = userChrome;

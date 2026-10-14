@@ -1,7 +1,6 @@
 """secrets-backup [DIR]  (packaged as a command by home/secrets.nix)
 
-Bundle every secret into one file: the KeePassXC database(s), a Bitwarden
-export, ~/.ssh, the age key sops decrypts with and any pass store left from
+Bundle every secret into one file: a Bitwarden export, ~/.ssh, the age key sops decrypts with and any pass store left from
 before, into DIR/secrets-backup-<UTC timestamp>.tar.gz.gpg (DIR defaults to
 $HOME), encrypted with a passphrase (AES-256), so the backup opens with
 nothing but that passphrase. gpg keys are left out: no gpg identity is kept.
@@ -40,29 +39,6 @@ def ok(*args: str, stdout: Path | None = None, quiet: bool = False) -> bool:
         return subprocess.run(args, stdout=null, stderr=null if quiet else None).returncode == 0
     except OSError as e:
         warn(f"{args[0]}: {e.strerror}")
-        return False
-
-
-def copy_keepassxc(tmp: Path) -> bool:
-    """$KEEPASSXC_DB and every other .kdbx next to it (and its key files),
-    already encrypted: copied as is."""
-    default = Path.home() / ".local/share/keepassxc/passwords.kdbx"
-    db = Path(os.environ.get("KEEPASSXC_DB") or default)
-    files = {db} if db.is_file() else set()
-    if db.parent.is_dir():
-        files |= {f for f in db.parent.iterdir() if f.is_file() and f.suffix in (".kdbx", ".keyx", ".key")}
-    if not files:
-        warn(f"keepassxc: no database at {db} (keepassxc-cli db-create -p \"$KEEPASSXC_DB\"), skipping")
-        return False
-    d = tmp / "keepassxc"
-    d.mkdir()
-    try:
-        for f in sorted(files):
-            shutil.copy2(f, d / f.name)
-        return True
-    except OSError:
-        warn("keepassxc: copy failed, skipping")
-        shutil.rmtree(d, ignore_errors=True)
         return False
 
 
@@ -107,7 +83,7 @@ def copy_sops(tmp: Path) -> bool:
 
 
 def copy_pass(tmp: Path) -> bool:
-    """A pass store left from before KeePassXC/Bitwarden, if there is one. It
+    """A pass store left from before Bitwarden, if there is one. It
     is gpg-encrypted already: copied as is, with its git history."""
     candidates = [os.environ.get("PASSWORD_STORE_DIR"), Path.home() / ".local/share/password-store", Path.home() / ".password-store"]
     store = next((Path(c) for c in candidates if c and (Path(c) / ".gpg-id").is_file()), None)
@@ -122,14 +98,34 @@ def copy_pass(tmp: Path) -> bool:
         return False
 
 
-def export_bitwarden(tmp: Path) -> bool:
-    """Needs an unlocked session (export BW_SESSION=$(bw unlock --raw))."""
+def bw_status() -> str | None:
     try:
-        status = json.loads(subprocess.run(["bw", "status"], capture_output=True, text=True).stdout).get("status")
+        return json.loads(subprocess.run(["bw", "status"], capture_output=True, text=True).stdout).get("status")
     except (OSError, ValueError, AttributeError):
-        status = None
+        return None
+
+
+def saved_session() -> str:
+    """The session bw-unlock (home/secrets.nix) leaves in $XDG_RUNTIME_DIR. A
+    shell opened before that unlock, or before the dash's Unlock button
+    (home/eww/eww.yuck), has no BW_SESSION or an old one."""
+    try:
+        line = (Path(os.environ.get("XDG_RUNTIME_DIR", "")) / "bw-session").read_text().strip()
+    except OSError:
+        return ""
+    return line.removeprefix("BW_SESSION=")
+
+
+def export_bitwarden(tmp: Path) -> bool:
+    """Needs an unlocked session: BW_SESSION, or the one bw-unlock saved."""
+    status = bw_status()
     if status != "unlocked":
-        warn("bitwarden: vault is not unlocked (bw login / bw unlock), skipping")
+        session = saved_session()
+        if session and session != os.environ.get("BW_SESSION"):
+            os.environ["BW_SESSION"] = session
+            status = bw_status()
+    if status != "unlocked":
+        warn("bitwarden: vault is not unlocked (bw login / bw-unlock), skipping")
         return False
     if not ok("bw", "sync", quiet=True):
         warn("bitwarden: sync failed, exporting the local copy")
@@ -218,7 +214,6 @@ def main(argv: list[str]) -> int:
             name
             for name, step in (
                 ("ssh", copy_ssh),
-                ("keepassxc", copy_keepassxc),
                 ("sops", copy_sops),
                 ("bitwarden", export_bitwarden),
                 ("pass", copy_pass),

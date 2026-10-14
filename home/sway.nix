@@ -21,6 +21,17 @@ let
   # The dash's workspace; home/eww/dash.py uses the same name.
   dash = "10:dash";
 
+  # The clipboard history, in a private tmpfs so it never reaches the disk
+  # (the dash's clipboard tile, home/eww/clip.py, reads the same file).
+  clipDb = "$XDG_RUNTIME_DIR/cliphist.db";
+
+  # Every lock goes through this: it wipes the clipboard history first, so
+  # nothing copied before the lock (a password, say) waits behind it.
+  lock = pkgs.writeShellScriptBin "harmonia-lock" ''
+    ${pkgs.cliphist}/bin/cliphist -db-path "${clipDb}" wipe 2>/dev/null
+    exec ${pkgs.swaylock}/bin/swaylock "$@"
+  '';
+
   # Complete keymap (sway's defaults are *replaced*, not merged): every
   # binding is Super+…, apart from dedicated hardware keys. See keys.nix.
   keybindings =
@@ -77,7 +88,7 @@ let
       "${mod}+Return" = "exec alacritty";
       "${mod}+d" = "exec fuzzel";
       "${mod}+Shift+c" = "reload";
-      "${mod}+Shift+x" = "exec swaylock -f";
+      "${mod}+Shift+x" = "exec harmonia-lock -f";
       "${mod}+Shift+b" = "exec eww-dash toggle-bar";
 
       # notifications (mako)
@@ -129,11 +140,16 @@ let
       "f"
       "g"
       "n"
-      "p"
       "v"
       "y"
+      "p"
+      "x"
+      "w"
+      "b"
       "u"
       "a"
+      "r"
+      "i"
       "d"
       "s"
       "t"
@@ -146,6 +162,10 @@ let
       Return = key "e";
       space = key "e";
       Escape = key "esc";
+      # ? shows or hides the key reminders under the tiles.
+      question = key "hints";
+      "Shift+question" = key "hints";
+      "Shift+slash" = key "hints";
     };
 in
 {
@@ -237,12 +257,14 @@ in
       };
 
       startup = [
-        # Starts eww, reapplies the saved display settings (home/eww/display.py),
+        # Reapplies the saved display settings (home/eww/display.py), starts eww,
         # opens on the dash and keeps the dash and the bar in step with sway
         # (home/eww/dash.py). Run on every reload too, in case it stopped; a
-        # second one exits at once.
+        # second one exits at once. Sway's own output goes nowhere under
+        # greetd (modules/nixos/desktop.nix), so the watcher's goes to the
+        # journal: journalctl -t eww-dash.
         {
-          command = "eww-dash watch";
+          command = "${pkgs.systemd}/bin/systemd-cat -t eww-dash eww-dash watch";
           always = true;
         }
       ];
@@ -285,7 +307,7 @@ in
           };
           dash = dashKeys;
           system = leave // {
-            l = run "swaylock -f";
+            l = run "harmonia-lock -f";
             e = "exit";
             s = run "systemctl suspend";
             r = run "systemctl reboot";
@@ -304,6 +326,23 @@ in
       for_window [class=".*"] inhibit_idle fullscreen
     '';
   };
+
+  # Clipboard history for the dash's clipboard tile: every copy, text and
+  # images, kept in memory only (clipDb) and wiped when the screen locks.
+  # cliphist skips what an app marks as sensitive (a password manager's
+  # copies, via wl-clipboard's CLIPBOARD_STATE).
+  services.cliphist = {
+    enable = true;
+    allowImages = true;
+    extraOptions = [
+      "-db-path"
+      "%t/cliphist.db"
+      "-max-items"
+      "200"
+    ];
+  };
+
+  home.packages = [ lock ];
 
   # Launcher
   programs.fuzzel = {
@@ -403,7 +442,7 @@ in
     timeouts = [
       {
         timeout = 600;
-        command = "${pkgs.swaylock}/bin/swaylock -f";
+        command = "${lock}/bin/harmonia-lock -f";
       }
       {
         timeout = 900;
@@ -411,6 +450,6 @@ in
         resumeCommand = ''${pkgs.sway}/bin/swaymsg "output * power on"'';
       }
     ];
-    events.before-sleep = "${pkgs.swaylock}/bin/swaylock -f";
+    events.before-sleep = "${lock}/bin/harmonia-lock -f";
   };
 }

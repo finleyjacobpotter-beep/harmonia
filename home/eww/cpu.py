@@ -1,7 +1,8 @@
 """CPU details for the dash's CPU tile (home/eww/eww.yuck): the model, every
 temperature sensor, clocks, load, uptime, how many processes and threads
 there are, and the busiest processes (procs.py). eww's own EWW_CPU gives
-the usage per thread.
+the usage per thread. The power draw comes from a root service that reads
+the CPU's energy counters (modules/nixos/dash.nix).
 
 Temperatures come from k10temp or zenpower (AMD) or coretemp (Intel); the
 first one is the package's, shown in the tile's summary.
@@ -15,6 +16,7 @@ from procs import snapshot, top_cpu
 
 SENSORS = ("k10temp", "zenpower", "coretemp")
 CPUFREQ = Path("/sys/devices/system/cpu")
+POWER = Path("/run/harmonia-cpu-power/power.json")
 
 
 def model() -> str:
@@ -55,6 +57,18 @@ def clocks() -> dict:
     }
 
 
+def power() -> dict:
+    """The package's (and cores') average power over the last few seconds."""
+    try:
+        p = json.loads(POWER.read_text())
+    except (OSError, ValueError):
+        return {"power": "", "power_core": ""}
+    return {
+        "power": f"{p['package']:.0f} W" if "package" in p else "",
+        "power_core": f"{p['core']:.0f} W" if "core" in p else "",
+    }
+
+
 def uptime() -> str:
     seconds = int(float((read(Path("/proc/uptime")) or "0").split()[0]))
     days, rest = divmod(seconds, 86400)
@@ -79,6 +93,7 @@ def main() -> None:
                 "tasks": f"{len(procs)} processes · {loadavg[3].split('/')[-1]} threads",
                 "top": top_cpu(procs),
                 **clocks(),
+                **power(),
             },
             ensure_ascii=False,
             separators=(",", ":"),

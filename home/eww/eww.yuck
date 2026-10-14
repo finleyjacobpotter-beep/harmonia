@@ -6,6 +6,11 @@
 ; The bar shows the workspaces, the focused window's title and the fuzzy
 ; time. Everything else is on the dash, workspace 10: home/eww/dash.py opens
 ; it while that workspace is on screen and closes the bar there.
+;
+; Every onclick that runs a bar script ends in &: eww kills an onclick
+; command still running after 200ms, and a Python script that takes the
+; dash's lock or calls eww itself (eww-dash open) often takes longer, so
+; the click would do nothing but log "timed out".
 
 (deflisten workspaces :initial "[]" "@bin@/eww-sway-workspaces")
 (deflisten title :initial "" "@bin@/eww-sway-title")
@@ -19,7 +24,7 @@
 (defpoll volume :interval "2s" :initial "{\"pct\":0,\"muted\":false,\"sink\":\"\",\"text\":\"\"}"
   "@bin@/eww-volume")
 (defpoll cpuinfo :interval "2s"
-  :initial "{\"model\":\"\",\"temp\":0,\"temp_text\":\"\",\"temps\":[],\"load\":\"\",\"uptime\":\"\",\"tasks\":\"\",\"top\":[],\"freq\":\"\",\"freq_max\":\"\",\"governor\":\"\"}"
+  :initial "{\"model\":\"\",\"temp\":0,\"temp_text\":\"\",\"temps\":[],\"load\":\"\",\"uptime\":\"\",\"tasks\":\"\",\"top\":[],\"freq\":\"\",\"freq_max\":\"\",\"governor\":\"\",\"power\":\"\",\"power_core\":\"\"}"
   "@bin@/eww-cpu")
 (defpoll meminfo :interval "2s"
   :initial "{\"total\":\"\",\"used\":{\"text\":\"\",\"pct\":0},\"cache\":{\"text\":\"\",\"pct\":0},\"shared\":{\"text\":\"\",\"pct\":0},\"free\":{\"text\":\"\",\"pct\":0},\"available\":{\"text\":\"\",\"pct\":0},\"swap\":{\"text\":\"\",\"pct\":0,\"total\":\"\",\"on\":false},\"zswap\":\"\",\"dirty\":\"\",\"top\":[]}"
@@ -32,16 +37,29 @@
 (defpoll notify :interval "3s" :initial "{\"focus\":false,\"count\":0,\"urgent\":0,\"history\":0,\"list\":[]}"
   "@bin@/eww-notify")
 (defpoll secrets :interval "10s"
-  :initial "{\"bw\":false,\"ssh\":[],\"gpg\":0,\"yubikeys\":[],\"keepass\":{\"exists\":false,\"path\":\"\",\"changed\":\"\"},\"age\":false,\"backup\":\"\",\"locked\":true}"
+  :initial "{\"bw\":false,\"ssh\":[],\"gpg\":0,\"yubikeys\":[],\"age\":false,\"backup\":\"\",\"locked\":true}"
   "@bin@/eww-secrets")
 (defpoll system :interval "30s"
-  :initial "{\"failed\":[],\"errors\":0,\"recent\":[],\"generation\":{\"number\":\"\",\"built\":\"\",\"version\":\"\",\"kernel\":\"\",\"reboot\":false},\"pins\":[],\"store\":{\"free\":\"\",\"pct\":0,\"gc\":\"\",\"running\":false}}"
+  :initial "{\"failed\":[],\"errors\":0,\"recent\":[],\"generation\":{\"number\":\"\",\"built\":\"\",\"version\":\"\",\"kernel\":\"\",\"reboot\":false},\"pins\":[],\"store\":{\"free\":\"\",\"pct\":0,\"gc\":\"\",\"running\":false},\"ports\":[],\"exposed\":0,\"logins\":[],\"failed_logins\":0,\"failed_recent\":[]}"
   "@bin@/eww-system")
+(defpoll conn :interval "5s"
+  :initial "{\"known\":false,\"running\":false,\"when\":\"\",\"gateway\":\"\",\"dns\":{},\"dns_text\":\"\",\"reached\":false,\"hops\":[],\"hop_count\":0,\"rtt\":\"\",\"loss\":\"\"}"
+  "@bin@/eww-conn")
+(deflisten nettop :initial "{\"ok\":false,\"procs\":[]}" "@bin@/eww-nettop")
+(defpoll tmux :interval "3s" :initial "{\"count\":0,\"sessions\":[]}" "@bin@/eww-tmux")
+(defpoll clip :interval "3s" :initial "{\"count\":0,\"entries\":[]}" "@bin@/eww-clip")
+(defpoll downloads :interval "5s" :initial "{\"count\":0,\"files\":[],\"folder\":\"\"}" "@bin@/eww-downloads")
+(defpoll games :interval "30s"
+  :initial "{\"count\":0,\"games\":[],\"gamemode\":false,\"steam\":false,\"lutris\":false}" "@bin@/eww-games")
+(defpoll projects :interval "30s" :initial "{\"count\":0,\"dirty\":0,\"repos\":[]}" "@bin@/eww-projects")
+(defpoll media :interval "2s"
+  :initial "{\"playing\":false,\"paused\":false,\"player\":\"\",\"title\":\"\",\"artist\":\"\",\"album\":\"\",\"pct\":0,\"time\":\"\"}"
+  "@bin@/eww-media")
 (defpoll disk :interval "2s"
-  :initial "{\"root\":{\"pct\":0,\"text\":\"\",\"free\":\"\"},\"filesystems\":[],\"disks\":[],\"io\":\"\",\"busy\":0}"
+  :initial "{\"root\":{\"pct\":0,\"text\":\"\",\"free\":\"\"},\"filesystems\":[],\"usb\":[],\"disks\":[],\"io\":\"\",\"busy\":0}"
   "@bin@/eww-disk")
 (defpoll gpu :interval "3s"
-  :initial "{\"ok\":false,\"auto\":true,\"use\":0,\"temp\":0,\"vram\":0,\"vram_text\":\"\",\"name\":\"\",\"text\":\"\",\"gpus\":[]}"
+  :initial "{\"ok\":false,\"auto\":true,\"use\":0,\"temp\":0,\"vram\":0,\"vram_text\":\"\",\"name\":\"\",\"power_text\":\"\",\"text\":\"\",\"gpus\":[]}"
   "@bin@/eww-gpu")
 (defpoll net :interval "2s"
   :initial "{\"auto\":true,\"default\":\"\",\"shown\":{\"name\":\"\",\"state\":\"down\",\"wireless\":false,\"down\":\"\",\"up\":\"\",\"address\":\"\"},\"ifaces\":[]}"
@@ -60,18 +78,19 @@
 @vmPolls@
 (defpoll pods :interval "5s" :initial "{\"count\":0,\"text\":\"00\",\"stopped\":0,\"containers\":[]}"
   "@bin@/eww-pods")
-(deflisten usb :initial "{\"count\":0,\"devices\":[]}" "@bin@/eww-usb watch")
+(deflisten usb :initial "{\"count\":0,\"devices\":[],\"drives\":[]}" "@bin@/eww-usb watch")
 (defpoll locks :interval "500ms" :initial "{\"caps\":false,\"num\":false}" "@bin@/eww-locks")
 (defpoll caffeine :interval "10s" "@bin@/eww-caffeine")
 (defpoll battery :interval "30s" "@bin@/eww-battery")
 (defpoll cal :interval "60s"
-  :initial "{\"title\":\"\",\"zone\":\"\",\"calendars\":[],\"weeks\":[],\"selected\":{\"label\":\"\",\"events\":[]}}"
+  :initial "{\"title\":\"\",\"zone\":\"\",\"calendars\":[],\"weeks\":[],\"selected\":{\"label\":\"\",\"events\":[]},\"today\":[]}"
   "@bin@/eww-cal")
 
 ; The dash's state, set by home/eww/dash.py: the selected tile, the open one
 ; and its row (-1 while none is open), the display it is pinned to (if
-; any), whether the bar is on, and its size on its display.
-(defvar dash "{\"sel\":\"cpu\",\"open\":\"\",\"row\":-1,\"pinned\":\"\",\"bar\":true}")
+; any), whether the bar and the key reminders are on, and its size on its
+; display.
+(defvar dash "{\"sel\":\"cpu\",\"open\":\"\",\"focused\":true,\"row\":-1,\"pinned\":\"\",\"bar\":true,\"hints\":true}")
 (defvar dash_layout "{\"orient\":\"h\",\"split\":true,\"w\":640,\"h\":640}")
 
 ;; ---------------------------------------------------------------- the bar
@@ -95,7 +114,7 @@
     (label :class "title" :limit-width 80 :text title)
     (button :class "fuzzy" :halign "end"
       :tooltip "${time.text} ${time.abbr}: click for the calendar on the dash"
-      :onclick "@bin@/eww-dash show time"
+      :onclick "@bin@/eww-dash show time &"
       "${time.fuzzy}")))
 
 ;; ---------------------------------------------------------------- the dash
@@ -120,32 +139,53 @@
           (label :class "proc-value" :text "${p.text}"))
         (progress :class "meter ${p.pct >= 90 ? "high" : ""}" :orientation "h" :value {p.pct})))))
 
+; A summary list keeps a fixed number of lines so the tiles never move: it
+; shows at most N items (jq ".[:N]"), and `pad` fills the rest with blank
+; lines, counting an empty list's "Nothing …" line as one of them (unless
+; `always`: the tile's first line is there either way). The details still
+; list everything.
+; Hidden when the list is full, so it adds no gap of its own then.
+(defwidget pad [items cap ?always]
+  (box :orientation "v" :space-evenly false :spacing 2
+    :visible {arraylength(jq(items, always == "true" ? "[range(${cap} - ([length, ${cap}] | min))]"
+      : "[range(${cap} - ([[length, 1] | max, ${cap}] | min))]")) > 0}
+    (for _ in {jq(items, always == "true" ? "[range(${cap} - ([length, ${cap}] | min))]"
+        : "[range(${cap} - ([[length, 1] | max, ${cap}] | min))]")}
+      (label :class "wg-detail" :text " "))))
+
 ; A tile: its key, title and headline number, then a summary, which open
 ; it on a click; then the details, while it is open. While another tile in
-; its row is open it narrows to its header; while one in another row is, it
+; its row is open it narrows to its key; while one in another row is, it
 ; flattens to its header. The open tile takes the room they give up, so the
-; dash keeps its shape.
+; dash keeps its shape. Summaries and details clip (and scroll) sideways
+; rather than widen the tile, so the dash fits a small square (a laptop's,
+; a VM's) as well as a big one. While the focus is on another display no
+; tile is outlined, and home/eww/dash.py closes the open one.
 (defwidget tile [name key title value row]
-  (box :class "tile ${dash.sel == name ? "sel" : ""} ${dash.open == name ? "open" : ""}"
+  (box :class "tile ${dash.focused && dash.sel == name ? "sel" : ""} ${dash.open == name ? "open" : ""}"
     :orientation "v" :space-evenly false
     :hexpand {dash.row != row || dash.open == name}
     :vexpand true
-    (button :class "tile-head" :onclick "@bin@/eww-dash open ${name}"
+    (button :class "tile-head" :onclick "@bin@/eww-dash open ${name} &"
       (box :orientation "v" :space-evenly false
-        (box :orientation "h" :space-evenly false :spacing 8
+        (box :orientation "h" :space-evenly false
           (label :class "tile-key" :text key)
-          (label :class "tile-title" :text title)
-          (label :class "tile-value" :hexpand true :halign "end" :unindent false :text value))
+          (revealer :reveal {dash.row != row || dash.open == name} :transition "slideright" :duration "200ms"
+            :hexpand true
+            (box :orientation "h" :space-evenly false :spacing 8 :class "tile-names"
+              (label :class "tile-title" :text title)
+              (label :class "tile-value" :hexpand true :halign "end" :unindent false :text value))))
         (revealer :reveal {dash.row != row || dash.open == name} :transition "slideright" :duration "200ms"
           (revealer :reveal {dash.row == -1 || dash.row == row} :transition "slideup" :duration "200ms"
-            (box :class "tile-summary" :orientation "v" :space-evenly false
-              (children :nth 0))))))
+            (scroll :class "tile-summary" :hscroll true :vscroll false
+              (box :orientation "v" :space-evenly false
+                (children :nth 0)))))))
     ; A hidden revealer still asks for its child's width across its
     ; transition, so the details sit in a sideways one as well.
     (revealer :reveal {dash.open == name} :transition "slideright" :duration "200ms"
       :vexpand {dash.open == name}
       (revealer :reveal {dash.open == name} :transition "slidedown" :duration "200ms"
-        (scroll :class "tile-detail" :vscroll true :hscroll false :vexpand true
+        (scroll :class "tile-detail" :vscroll true :hscroll true :vexpand true
           (box :class "tile-body" :orientation "v" :space-evenly false
             (children :nth 1)))))))
 
@@ -159,7 +199,7 @@
 (defwidget cpu-summary []
   (box :orientation "v" :space-evenly false :spacing 6
     (label :class "wg-detail" :halign "start"
-      :text "${cpuinfo.temp_text != "" ? "${cpuinfo.temp_text} · " : ""}${cpuinfo.freq} · load ${cpuinfo.load}")
+      :text "${cpuinfo.temp_text != "" ? "${cpuinfo.temp_text} · " : ""}${cpuinfo.power != "" ? "${cpuinfo.power} · " : ""}${cpuinfo.freq} · load ${cpuinfo.load}")
     (box :class "threads" :orientation "h" :space-evenly true :spacing 2
       (for c in {EWW_CPU.cores}
         (progress :class "thread ${c.usage >= 90 ? "high" : ""}" :orientation "v" :flipped true
@@ -172,6 +212,8 @@
       (label :class "wg-detail" :halign "start"
         :text "${arraylength(EWW_CPU.cores)} threads · ${cpuinfo.freq} now, ${cpuinfo.freq_max} top · ${cpuinfo.governor}")
       (label :class "wg-detail" :halign "start" :text "Load ${cpuinfo.load} · up ${cpuinfo.uptime}")
+      (label :class "wg-detail" :halign "start"
+        :text {cpuinfo.power != "" ? "Power ${cpuinfo.power}${cpuinfo.power_core != "" ? ", cores ${cpuinfo.power_core}" : ""} (averaged over 3 s)" : "Power unknown"})
       (label :class "wg-detail" :halign "start" :text "${cpuinfo.tasks}"))
     (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 6
       (meter :name "All threads" :value {round(EWW_CPU.avg, 0)} :text "${round(EWW_CPU.avg, 0)}%")
@@ -234,7 +276,13 @@
     (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 6
       (label :class "wg-name" :halign "start" :text "Filesystems")
       (for f in {disk.filesystems}
-        (meter :name "${f.mount} (${f.device}, ${f.type}) · ${f.free}" :value {f.pct} :text "${f.text}")))))
+        (meter :name "${f.mount} (${f.device}, ${f.type}) · ${f.free}" :value {f.pct} :text "${f.text}")))
+    (box :class "wg-tunnel" :visible {arraylength(disk.usb) > 0} :orientation "v" :space-evenly false :spacing 6
+      (label :class "wg-name" :halign "start" :text "USB drives")
+      (for d in {disk.usb}
+        (box :orientation "v" :space-evenly false :spacing 4
+          (meter :name "󰋊 ${d.mount} (${d.device}, ${d.type}) · ${d.free}" :value {d.pct} :text "${d.text}")
+          (drive-buttons :d d))))))
 
 ;; GPUs: home/eww/gpu.py. The main GPU's load, temperature and VRAM, then a
 ;; pair of small meters per GPU (load, then VRAM, the main GPU's brighter).
@@ -245,6 +293,7 @@
     (label :class "wg-detail" :visible {gpu.ok} :halign "start" :limit-width 34 :text "${gpu.name}")
     (box :visible {gpu.ok} :orientation "h" :space-evenly false :spacing 8
       (label :unindent false :text "${gpu.text}")
+      (label :class "wg-detail" :text "${gpu.power_text}")
       (box :class "gpu-bars" :orientation "h" :space-evenly false :spacing 4
         (for g in {gpu.gpus}
           (box :class "gpu-pair ${g.main ? "main" : ""}" :orientation "h" :space-evenly false :spacing 1
@@ -262,7 +311,7 @@
         (label :class "wg-name" :halign "start" :text "${gpu.auto ? "●" : "○"} Automatic")
         (label :class "wg-detail" :halign "start" :text "The GPU with the most VRAM"))
       (button :class "wg-toggle ${gpu.auto ? "active" : ""}" :valign "center"
-        :onclick "@bin@/eww-gpu main auto"
+        :onclick "@bin@/eww-gpu main auto &"
         "${gpu.auto ? "Main" : "Set main"}"))
     (for g in {gpu.gpus}
       (box :class "wg-tunnel gpu-card ${g.main ? "up" : "down"}" :orientation "v" :space-evenly false :spacing 6
@@ -271,7 +320,7 @@
             (label :class "wg-name" :halign "start" :limit-width 34 :text "${g.main ? "●" : "○"} ${g.name}")
             (label :class "wg-detail" :halign "start" :text "${g.chip} · PCI ${g.short} · ${g.pcie}"))
           (button :class "wg-toggle ${g.main && !gpu.auto ? "active" : ""}" :valign "center"
-            :onclick "@bin@/eww-gpu main ${g.bus}"
+            :onclick "@bin@/eww-gpu main ${g.bus} &"
             "${g.main && !gpu.auto ? "Main" : "Set main"}"))
         (meter :name "Load" :value {g.use} :text "${g.use}%")
         (meter :name "VRAM" :value {g.vram} :text "${g.vram_text} (${g.vram}%)")
@@ -293,13 +342,47 @@
         @vpnStars@)
       (label :class "wg-detail" :limit-width 30 :text "${net.shown.address}"))
     (label :halign "start" :unindent false :text "↓${net.shown.down} ↑${net.shown.up}")
-    (label :class "wg-detail" :halign "start" :visible {vpn.active > 0}
-      :text "VPN@vpnTooltip@")))
+    (label :class "wg-detail" :halign "start"
+      :text {vpn.active > 0 ? "VPN@vpnTooltip@" : "No VPN"})
+    (label :class "wg-detail ${conn.known && !(conn.dns.ok ?: false) ? "live" : ""}" :halign "start" :limit-width 40
+      :text {!conn.known ? "Connectivity not tested yet" : (conn.dns.ok ?: false) ? "DNS ${conn.dns.ms} ms · google.com ${conn.reached ? "${conn.rtt}, ${conn.hop_count} hops" : "unreachable"}" : "DNS failing"})))
+
+; The connectivity test (home/eww/conn.py, modules/nixos/dash.nix): DNS for
+; google.com and the ICMP route there, and which programs send and receive
+; (home/eww/nettop.py).
+(defwidget net-connectivity []
+  (box :orientation "v" :space-evenly false :spacing 10
+    (box :class "wg-tunnel ${conn.reached && (conn.dns.ok ?: false) ? "up" : "warn"}" :orientation "v" :space-evenly false :spacing 4
+      (box :orientation "h" :space-evenly false :spacing 8
+        (label :class "wg-name" :hexpand true :halign "start"
+          :text {conn.known ? "${conn.reached ? "●" : "○"} Connectivity, ${conn.when}" : "○ Connectivity: not tested yet"})
+        (button :class "wg-toggle" :active {!conn.running} :onclick "@bin@/eww-conn run &"
+          {conn.running ? "Testing…" : "Run again"}))
+      (label :class "wg-detail" :halign "start" :visible {conn.gateway != ""} :text "Gateway ${conn.gateway}")
+      (label :class "wg-detail" :halign "start" :wrap true :text "${conn.dns_text}")
+      (label :class "wg-detail" :halign "start" :visible {conn.known}
+        :text {conn.reached ? "Route to google.com: ${conn.hop_count} hops, ${conn.rtt}, ${conn.loss} lost" : "google.com did not answer ICMP"})
+      (for h in {conn.hops}
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "wg-detail" :text "${h.n}")
+          (label :class "${h.lost ? "wg-detail" : "proc-name"}" :hexpand true :halign "start" :limit-width 44 :text "${h.host}")
+          (label :class "${h.loss > 0 && !h.lost ? "proc-value old" : "proc-value"}" :text {h.lost ? "*" : "${h.avg_text}"}))))
+    (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 4
+      (label :class "wg-name" :halign "start" :text "Programs sending and receiving")
+      (label :class "wg-detail" :visible {!nettop.ok} :halign "start" :wrap true
+        :text "Starting nethogs…")
+      (label :class "wg-detail" :visible {nettop.ok && arraylength(nettop.procs) == 0} :halign "start" :text "Nothing right now")
+      (for p in {nettop.procs}
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "proc-name" :hexpand true :halign "start" :limit-width 30 :text "${p.name}")
+          (label :class "wg-detail" :text "↑ ${p.up}")
+          (label :class "proc-value" :text "↓ ${p.down}"))))))
 
 ; The VPNs with Connect/Disconnect, then every interface's rates and which
 ; one the tile shows.
 (defwidget net-detail []
   (box :orientation "v" :space-evenly false :spacing 10
+    (net-connectivity)
     (label :class "wg-name" :halign "start" :text "VPN")
     (label :class "wg-detail" :visible {arraylength(vpn.connections) == 0} :halign "start" :wrap true
       :text "No VPNs yet. docs/vpn.md shows how to add WireGuard, OpenVPN and openfortivpn ones.")
@@ -324,7 +407,7 @@
         (label :class "wg-detail" :halign "start"
           :text "Default route: ${net.default != "" ? net.default : "none"}"))
       (button :class "wg-toggle ${net.auto ? "active" : ""}" :valign "center"
-        :onclick "@bin@/eww-net show auto"
+        :onclick "@bin@/eww-net show auto &"
         "${net.auto ? "Shown" : "Show"}"))
     (for i in {net.ifaces}
       (box :class "wg-tunnel ${i.state == "up" ? "up" : "down"}" :orientation "h" :space-evenly false :spacing 16
@@ -334,7 +417,7 @@
           (label :class "wg-detail" :halign "start" :text "${i.state} ${i.address}")
           (label :class "wg-detail" :halign "start" :text "↓ ${i.down}  ↑ ${i.up}"))
         (button :class "wg-toggle ${i.shown && !net.auto ? "active" : ""}" :valign "center"
-          :onclick "@bin@/eww-net show ${i.name}"
+          :onclick "@bin@/eww-net show ${i.name} &"
           "${i.shown && !net.auto ? "Shown" : "Show"}")))))
 
 ;; Containers: every running one, yours and root's (home/eww/pods.py).
@@ -344,7 +427,8 @@
     (label :class "wg-detail" :halign "start"
       :text "${pods.count} running${pods.stopped > 0 ? ", ${pods.stopped} stopped" : ""}")
     (for c in {pods.containers}
-      (label :class "pod-name" :halign "start" :limit-width 30 :text "● ${c.name}"))))
+      (label :class "pod-name ${c.agent != "" ? "agent" : ""}" :halign "start" :limit-width 30
+        :text "${c.agent != "" ? "󰚩" : "●"} ${c.name}"))))
 
 (defwidget pods-detail []
   (box :orientation "v" :space-evenly false :spacing 10
@@ -352,8 +436,11 @@
     (for c in {pods.containers}
       (box :class "wg-tunnel up pod" :orientation "v" :space-evenly false :spacing 2
         (box :orientation "h" :space-evenly false :spacing 8
-          (label :class "wg-name" :hexpand true :halign "start" :limit-width 34 :text "● ${c.name}")
-          (label :class "wg-detail" :text "${c.owner}"))
+          (label :class "wg-name" :hexpand true :halign "start" :limit-width 34
+            :text "${c.agent != "" ? "󰚩" : "●"} ${c.name}")
+          (label :class "wg-detail" :text "${c.agent != "" ? "${c.agent} agent" : c.owner}"))
+        (label :class "wg-detail" :visible {c.workdir != ""} :halign "start" :limit-width 52
+          :text "Working in ${c.workdir}")
         (label :class "wg-detail" :visible {c.pod != ""} :halign "start" :text "Pod ${c.pod}")
         (label :class "pod-image" :halign "start" :limit-width 48 :text "${c.image}")
         (label :class "wg-detail" :halign "start" :text "Container ${c.id} · image ${c.image_id}")
@@ -365,7 +452,8 @@
         (for m in {c.mounts}
           (label :class "wg-detail" :halign "start" :limit-width 52 :text "Mount ${m}"))))))
 
-;; microVMs: each one's badge and panel are generated in home/eww.nix.
+;; Virtualization: the microVMs, whose lines and panels are generated in
+;; home/eww.nix, and the containers above.
 
 @vmPanels@
 
@@ -374,20 +462,33 @@
     (label :class "wg-detail" :visible {@vmTotal@ == 0} :halign "start" :text "No microVMs on this host")
     @vmBadges@))
 
+(defwidget virt-summary []
+  (box :orientation "v" :space-evenly false :spacing 4
+    (vms-summary)
+    (label :class "wg-detail" :halign "start"
+      :text "󰡨 ${pods.count} container${pods.count == 1 ? "" : "s"} running${pods.stopped > 0 ? ", ${pods.stopped} stopped" : ""}")))
+
+(defwidget virt-detail []
+  (box :orientation "v" :space-evenly false :spacing 16
+    (label :class "wg-name" :halign "start" :text "microVMs")
+    (vms-detail)
+    (label :class "wg-name" :halign "start" :text "Containers")
+    (pods-detail)))
+
 (defwidget vms-detail []
   (box :orientation "v" :space-evenly false :spacing 16
     (label :class "wg-detail" :visible {@vmTotal@ == 0} :halign "start" :wrap true
       :text "This host runs no microVMs (modules/nixos/microvms.nix).")
     @vmBodies@))
 
-;; Devices: displays (home/eww/display.py) and USB (home/eww/usb.py).
+;; Displays (home/eww/display.py): each one and its mode, then the settings.
 
-(defwidget devices-summary []
+(defwidget displays-summary []
   (box :orientation "v" :space-evenly false :spacing 2
-    (for o in {displays.outputs}
+    (for o in {jq(displays.outputs, ".[:3]")}
       (label :class "wg-detail ${o.primary ? "primary" : ""}" :halign "start" :limit-width 34
         :text "${o.active ? "●" : "○"} ${o.name} ${o.current}${o.primary ? " ★" : ""}"))
-    (label :class "wg-detail" :halign "start" :text "${usb.count} USB device${usb.count == 1 ? "" : "s"}")))
+    (pad :items {displays.outputs} :cap 3 :always true)))
 
 ;; The display settings (home/eww/display-edit.py): a map of the displays
 ;; that are on (click one to pick it), the picked one's form, and Apply.
@@ -473,10 +574,42 @@
             (display-option :label "end" :active {display_edit.align == "end"}
               :onclick "@bin@/eww-display-edit align end &")))))))
 
-(defwidget devices-detail []
+(defwidget displays-detail []
   (box :orientation "v" :space-evenly false :spacing 10
-    (display-editor)
-    (label :class "wg-name" :halign "start" :text "USB")
+    (display-editor)))
+
+;; USB (home/eww/usb.py): flash drives first, with Mount, Open and Unmount
+;; (mounted at /mnt/UUID by modules/nixos/usb-mount.nix), then every
+;; device, hubs included, in port order.
+
+(defwidget drive-buttons [d]
+  (box :orientation "h" :space-evenly true :spacing 8
+    (button :class "wg-toggle" :visible {d.mount == ""} :onclick "@bin@/eww-usb mount ${d.uuid} &"
+      "Mount at ${d.target}")
+    (button :class "wg-toggle" :visible {d.mount != ""} :onclick "@bin@/eww-usb open ${d.uuid} &"
+      "Open in ranger")
+    (button :class "wg-toggle" :visible {d.ours} :onclick "@bin@/eww-usb unmount ${d.uuid} &"
+      "Unmount")))
+
+(defwidget usb-summary []
+  (box :orientation "v" :space-evenly false :spacing 2
+    (label :class "wg-detail" :halign "start" :text "${usb.count} device${usb.count == 1 ? "" : "s"}")
+    (for d in {jq(usb.drives, ".[:2]")}
+      (label :class "wg-detail" :halign "start" :limit-width 34
+        :text "󰋊 ${d.label != "" ? d.label : d.name} ${d.mount != "" ? d.mount : "not mounted"}"))
+    (pad :items {usb.drives} :cap 2 :always true)))
+
+(defwidget usb-detail []
+  (box :orientation "v" :space-evenly false :spacing 10
+    (label :class "wg-name" :visible {arraylength(usb.drives) > 0} :halign "start" :text "Flash drives")
+    (for d in {usb.drives}
+      (box :class "wg-tunnel ${d.mount != "" ? "up" : "down"}" :orientation "v" :space-evenly false :spacing 6
+        (label :class "wg-name" :halign "start" :limit-width 48
+          :text "󰋊 ${d.name} · ${d.size} · ${d.type}${d.label != "" ? " · “${d.label}”" : ""}")
+        (label :class "wg-detail" :halign "start" :limit-width 48
+          :text {d.mount != "" ? "mounted at ${d.mount} · ${d.free}" : "not mounted"})
+        (drive-buttons :d d)))
+    (label :class "wg-name" :halign "start" :text "Devices")
     (label :class "wg-detail" :visible {arraylength(usb.devices) == 0} :halign "start"
       :text "No USB devices connected")
     (for d in {usb.devices}
@@ -489,29 +622,31 @@
             :text "${d.kind}${d.speed != "" ? " · ${d.speed}" : ""}")
           (label :class "wg-detail" :halign "start" :text "ID ${d.id} · port ${d.port}"))))))
 
-;; Sound: the default output (home/eww/volume.py).
-
-;; Sound: the default output (home/eww/volume.py), the microphone and
-;; cameras (home/eww/mic.py), and Bluetooth (home/eww/bt.py). Whatever is
-;; recording, from the microphone or a camera, shows in red.
+;; Sound: what is playing, while something plays or is paused
+;; (home/eww/media.py), the default output (home/eww/volume.py), the
+;; microphone and cameras (home/eww/mic.py), and Bluetooth (home/eww/bt.py).
+;; Whatever is recording, from the microphone or a camera, shows in red.
 
 (defwidget sound-summary []
   (eventbox :onscroll "@bin@/eww-volume {}"
     (box :orientation "v" :space-evenly false :spacing 4
+      (box :orientation "v" :space-evenly false :spacing 2
+        (media-summary))
       (label :class "wg-detail" :halign "start" :limit-width 34
         :text "${volume.muted ? "󰖁" : "󰕾"} ${volume.sink != "" ? volume.sink : "Default output"}")
       (progress :class "meter ${volume.muted ? "muted" : ""}" :orientation "h" :value {volume.pct})
-      (label :class "wg-detail ${arraylength(mic.recording) > 0 ? "live" : ""}" :halign "start" :limit-width 34
-        :text {!mic.present ? "󰍭 no microphone"
-          : "${mic.muted ? "󰍭" : "󰍬"} ${mic.pct}%${arraylength(mic.recording) > 0 ? " · recording" : ""}"})
-      (label :class "wg-detail live" :visible {arraylength(mic.camera_users) > 0} :halign "start"
-        :text "󰄀 camera in use")
+      (label :class "wg-detail ${arraylength(mic.recording) > 0 || arraylength(mic.camera_users) > 0 ? "live" : ""}"
+        :halign "start" :limit-width 34
+        :text "${!mic.present ? "󰍭 no microphone"
+          : "${mic.muted ? "󰍭" : "󰍬"} ${mic.pct}%${arraylength(mic.recording) > 0 ? " · recording" : ""}"}${arraylength(mic.camera_users) > 0 ? " · 󰄀 camera in use" : ""}")
       (label :class "wg-detail" :halign "start"
         :text {!bt.present ? "󰂲 no Bluetooth"
           : (!bt.powered ? "󰂲 Bluetooth off" : "󰂯 ${bt.connected} connected")}))))
 
 (defwidget sound-detail []
   (box :orientation "v" :space-evenly false :spacing 10
+    (box :visible {media.playing || media.paused} :orientation "v" :space-evenly false
+      (media-detail))
     (box :class "wg-tunnel ${volume.muted ? "down" : "up"}" :orientation "v" :space-evenly false :spacing 10
       (box :orientation "h" :space-evenly false :spacing 8
         (label :class "wg-name" :hexpand true :halign "start" :limit-width 34
@@ -520,10 +655,10 @@
       (scale :class "vol-scale" :min 0 :max 101 :value {volume.pct}
         :onchange "@bin@/eww-volume set {}")
       (box :orientation "h" :space-evenly true :spacing 8
-        (button :class "wg-toggle" :onclick "@bin@/eww-volume down" "− 5%")
-        (button :class "wg-toggle" :onclick "@bin@/eww-volume mute"
+        (button :class "wg-toggle" :onclick "@bin@/eww-volume down &" "− 5%")
+        (button :class "wg-toggle" :onclick "@bin@/eww-volume mute &"
           "${volume.muted ? "Unmute" : "Mute"}")
-        (button :class "wg-toggle" :onclick "@bin@/eww-volume up" "+ 5%")))
+        (button :class "wg-toggle" :onclick "@bin@/eww-volume up &" "+ 5%")))
     (box :class "wg-tunnel ${mic.present && !mic.muted ? "up" : "down"}" :orientation "v" :space-evenly false :spacing 10
       (box :orientation "h" :space-evenly false :spacing 8
         (label :class "wg-name" :hexpand true :halign "start" :limit-width 34
@@ -569,12 +704,35 @@
     (label :class "wg-detail ${arraylength(system.failed) > 0 ? "live" : ""}" :halign "start"
       :text {arraylength(system.failed) > 0 ? "${arraylength(system.failed)} failed unit${arraylength(system.failed) == 1 ? "" : "s"}" : "No failed units"})
     (label :class "wg-detail" :halign "start" :text "${system.errors} errors in the last hour")
-    (label :class "wg-detail" :halign "start"
-      :text "Generation ${system.generation.number}, built ${system.generation.built} ago")
-    (label :class "wg-detail warn" :visible {system.generation.reboot} :halign "start" :text "Reboot to finish the update")))
+    (label :class "wg-detail ${system.generation.reboot ? "warn" : ""}" :halign "start" :limit-width 40
+      :text "Generation ${system.generation.number}, built ${system.generation.built} ago${system.generation.reboot ? " · reboot to finish" : ""}")
+    (label :class "wg-detail ${system.exposed > 0 ? "warn" : ""}" :halign "start"
+      :text "${system.exposed} port${system.exposed == 1 ? "" : "s"} open · ${arraylength(system.logins)} login${arraylength(system.logins) == 1 ? "" : "s"}${system.failed_logins > 0 ? " · ${system.failed_logins} failed" : ""}")))
+
+; Who can reach this machine (home/eww/system.py): ports, logins, failures.
+(defwidget system-access []
+  (box :orientation "v" :space-evenly false :spacing 10
+    (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 4
+      (label :class "wg-name" :halign "start" :text "Listening ports")
+      (for p in {system.ports}
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "proc-value" :text "${p.proto} ${p.port}")
+          (label :class "proc-name" :limit-width 16 :text "${p.program != "" ? p.program : "—"}")
+          (label :class "${p.exposed ? "wg-detail warn" : "wg-detail"}" :hexpand true :halign "end" :text "${p.reach}"))))
+    (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 4
+      (label :class "wg-name" :halign "start" :text "Logged in")
+      (for l in {system.logins}
+        (label :class "wg-detail ${l.remote ? "warn" : ""}" :halign "start" :text "${l.user} on ${l.where} (${l.how})")))
+    (box :class "wg-tunnel ${system.failed_logins > 0 ? "warn" : ""}" :orientation "v" :space-evenly false :spacing 4
+      (label :class "wg-name" :halign "start" :text "Failed sudo and SSH logins, last day: ${system.failed_logins}")
+      (for f in {system.failed_recent}
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "wg-detail" :valign "start" :text "${f.time}")
+          (label :class "wg-detail" :halign "start" :hexpand true :xalign 0 :wrap true :limit-width 160 :text "${f.message}"))))))
 
 (defwidget system-detail []
   (box :orientation "v" :space-evenly false :spacing 10
+    (system-access)
     (box :class "wg-tunnel ${arraylength(system.failed) > 0 ? "warn" : "up"}" :orientation "v" :space-evenly false :spacing 4
       (label :class "wg-name" :halign "start"
         :text "${arraylength(system.failed) > 0 ? "●" : "○"} Failed units")
@@ -652,9 +810,6 @@
     (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 4
       (label :class "wg-name" :halign "start"
         :text {arraylength(secrets.yubikeys) > 0 ? "● ${secrets.yubikeys[0]}" : "○ No YubiKey plugged in"})
-      (label :class "wg-detail" :halign "start" :limit-width 52
-        :text {secrets.keepass.exists ? "KeePassXC ${secrets.keepass.path}, changed ${secrets.keepass.changed}"
-          : "No KeePassXC database at ${secrets.keepass.path}"})
       (label :class "wg-detail" :halign "start"
         :text "sops age key ${secrets.age ? "present" : "missing"} · last secrets-backup ${secrets.backup != "" ? secrets.backup : "never (in ~)"}"))))
 
@@ -667,8 +822,9 @@
       :text "${notify.focus ? "󰂛 Focus: popups off" : "󰂚 Popups on"}")
     (label :class "wg-detail" :halign "start"
       :text "${notify.count} waiting${notify.urgent > 0 ? ", ${notify.urgent} urgent" : ""}")
-    (for n in {notify.list}
-      (label :class "pod-name ${n.urgency}" :halign "start" :limit-width 30 :text "${n.summary}"))))
+    (for n in {jq(notify.list, ".[:3]")}
+      (label :class "pod-name ${n.urgency}" :halign "start" :limit-width 30 :text "${n.summary}"))
+    (pad :items {notify.list} :cap 3 :always true)))
 
 (defwidget notify-detail []
   (box :orientation "v" :space-evenly false :spacing 10
@@ -688,6 +844,151 @@
           (label :class "wg-detail" :halign "start" :text "${n.app}${n.urgency == "critical" ? " · urgent" : ""}"))
         (button :class "wg-toggle" :valign "start" :onclick "@bin@/eww-notify dismiss ${n.id} &" "✕")))))
 
+;; Projects: git repositories in ~/Projects and ~/nike-share/Projects
+;; (home/eww/projects.py), the latest commit first.
+
+(defwidget projects-summary []
+  (box :orientation "v" :space-evenly false :spacing 2
+    (label :class "wg-detail" :halign "start"
+      :text "${projects.count} repositories${projects.dirty > 0 ? ", ${projects.dirty} with changes" : ""}")
+    (for r in {jq(projects.repos, ".[:8]")}
+      (label :class "${r.changes > 0 ? "pod-name warn" : "pod-name"}" :halign "start" :limit-width 30
+        :text "${r.changes > 0 ? "●" : "○"} ${r.name}${r.where != "" ? " (${r.where})" : ""}"))
+    (pad :items {projects.repos} :cap 8 :always true)))
+
+(defwidget projects-detail []
+  (box :orientation "v" :space-evenly false :spacing 8
+    (label :class "wg-detail" :visible {projects.count == 0} :halign "start" :wrap true
+      :text "No git repositories in ~/Projects or ~/nike-share/Projects")
+    (for r in {projects.repos}
+      (box :class "wg-tunnel ${r.changes > 0 ? "warn" : "up"}" :orientation "v" :space-evenly false :spacing 2
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "wg-name" :hexpand true :halign "start" :limit-width 30
+            :text "${r.name}${r.where != "" ? " (${r.where})" : ""} · ${r.branch}")
+          (button :class "wg-toggle" :onclick "@bin@/eww-projects tmux '${r.path}' &" "tmux")
+          (button :class "wg-toggle" :onclick "@bin@/eww-projects nvim '${r.path}' &" "nvim"))
+        (label :class "wg-detail" :halign "start"
+          :text "${r.changes > 0 ? "${r.changes} uncommitted" : "clean"}${r.upstream ? " · ${r.ahead} ahead, ${r.behind} behind" : " · no upstream"}")
+        (label :class "wg-detail" :halign "start" :limit-width 60 :text "${r.age} ago: ${r.last}")))))
+
+;; tmux: every session and its windows (home/eww/tmux.py).
+
+(defwidget tmux-summary []
+  (box :orientation "v" :space-evenly false :spacing 2
+    (label :class "wg-detail" :visible {tmux.count == 0} :halign "start" :text "No sessions")
+    (for t in {jq(tmux.sessions, ".[:8]")}
+      (label :class "${t.attached ? "pod-name" : "wg-detail"}" :halign "start" :limit-width 30
+        :text "${t.attached ? "●" : "○"} ${t.name} · ${t.count} window${t.count == 1 ? "" : "s"}"))
+    (pad :items {tmux.sessions} :cap 8)))
+
+(defwidget tmux-detail []
+  (box :orientation "v" :space-evenly false :spacing 8
+    (label :class "wg-detail" :visible {tmux.count == 0} :halign "start" :text "No tmux sessions (Super+o t starts main)")
+    (for t in {tmux.sessions}
+      (box :class "wg-tunnel ${t.attached ? "up" : "down"}" :orientation "v" :space-evenly false :spacing 2
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "wg-name" :hexpand true :halign "start" :limit-width 30
+            :text "${t.attached ? "●" : "○"} ${t.name}${t.attached ? " (attached)" : ""}")
+          (button :class "wg-toggle" :onclick "@bin@/eww-tmux attach '${t.name}' &" "Attach")
+          (button :class "wg-toggle" :onclick "@bin@/eww-tmux kill '${t.name}' &" "Kill"))
+        (for w in {t.windows}
+          (label :class "wg-detail" :halign "start" :limit-width 60
+            :text "${w.active ? "▸" : " "} ${w.index}: ${w.name} · ${w.command} · ${w.path}"))))))
+
+;; Downloads: the newest in ~/Downloads/firefox (home/eww/downloads.py).
+
+(defwidget downloads-summary []
+  (box :orientation "v" :space-evenly false :spacing 2
+    (label :class "wg-detail" :visible {downloads.count == 0} :halign "start" :text "Nothing downloaded")
+    (for f in {jq(downloads.files, ".[:8]")}
+      (label :class "${f.partial ? "wg-detail warn" : "pod-name"}" :halign "start" :limit-width 30
+        :text "${f.partial ? "↓" : "●"} ${f.name}"))
+    (pad :items {downloads.files} :cap 8)))
+
+(defwidget downloads-detail []
+  (box :orientation "v" :space-evenly false :spacing 8
+    (label :class "wg-detail" :halign "start" :text "${downloads.folder}: ${downloads.count} item${downloads.count == 1 ? "" : "s"}")
+    (for f in {downloads.files}
+      (box :class "wg-tunnel" :orientation "v" :space-evenly false :spacing 4
+        (box :orientation "h" :space-evenly false :spacing 8
+          (label :class "wg-name" :hexpand true :halign "start" :limit-width 40 :text "${f.name}")
+          (label :class "wg-detail" :text "${f.size} · ${f.age}${f.partial ? " · downloading" : ""}"))
+        (box :orientation "h" :space-evenly false :spacing 6 :visible {!f.partial}
+          (button :class "wg-toggle" :onclick "@bin@/eww-downloads open '${f.name}' &" "Show")
+          (button :class "wg-toggle" :onclick "@bin@/eww-downloads keep '${f.name}' documents &" "To Documents")
+          (button :class "wg-toggle" :onclick "@bin@/eww-downloads keep '${f.name}' projects &" "To Projects")
+          (button :class "wg-toggle" :onclick "@bin@/eww-downloads trash '${f.name}' &" "Bin"))))))
+
+;; Clipboard history: cliphist, in memory and wiped on lock (home/eww/clip.py).
+
+(defwidget clip-summary []
+  (box :orientation "v" :space-evenly false :spacing 2
+    (label :class "wg-detail" :halign "start"
+      :text {clip.count == 0 ? "Nothing copied" : "${clip.count} cop${clip.count == 1 ? "y" : "ies"} in the history"})
+    (for e in {jq(clip.entries, ".[:3]")}
+      (label :class "wg-detail" :halign "start" :limit-width 30 :text "${e.image ? "󰋩 " : ""}${e.text}"))
+    (pad :items {clip.entries} :cap 3 :always true)))
+
+(defwidget clip-detail []
+  (box :orientation "v" :space-evenly false :spacing 8
+    (box :orientation "h" :space-evenly false :spacing 8
+      (label :class "wg-detail" :hexpand true :halign "start" :wrap true
+        :text "Click one to copy it again. Kept in memory only, wiped when the screen locks.")
+      (button :class "wg-toggle" :visible {clip.count > 0} :onclick "@bin@/eww-clip wipe &" "Clear all"))
+    (for e in {clip.entries}
+      (box :class "wg-tunnel" :orientation "h" :space-evenly false :spacing 8
+        (button :class "clip-entry" :hexpand true :onclick "@bin@/eww-clip copy ${e.id} &"
+          (label :halign "start" :xalign 0 :limit-width 80 :wrap true :text "${e.image ? "󰋩 " : ""}${e.text}"))
+        (button :class "wg-toggle" :valign "start" :onclick "@bin@/eww-clip delete ${e.id} &" "✕")))))
+
+;; Games: Lutris and Steam, the last played first (home/eww/games.py).
+
+(defwidget games-summary []
+  (box :orientation "v" :space-evenly false :spacing 2
+    (label :class "wg-detail ${games.gamemode ? "live" : ""}" :halign "start"
+      :text "${games.gamemode ? "󰊗 GameMode on" : "${games.count} installed"}${games.steam ? " · Steam running" : ""}")
+    (for g in {jq(games.games, ".[:3]")}
+      (label :class "pod-name" :halign "start" :limit-width 30 :text "▸ ${g.name}"))
+    (pad :items {games.games} :cap 3 :always true)))
+
+(defwidget games-detail []
+  (box :orientation "v" :space-evenly false :spacing 8
+    (label :class "wg-detail" :visible {games.count == 0} :halign "start" :wrap true
+      :text "No games installed in Lutris or Steam yet")
+    (box :orientation "h" :space-evenly false :spacing 6
+      (label :class "wg-detail" :hexpand true :halign "start"
+        :text "GameMode ${games.gamemode ? "on" : "off"} · Steam ${games.steam ? "running" : "closed"} · Lutris ${games.lutris ? "running" : "closed"}")
+      (button :class "wg-toggle" :visible {games.steam} :onclick "@bin@/eww-steam-close &" "Close Steam"))
+    (for g in {games.games}
+      (box :class "wg-tunnel" :orientation "h" :space-evenly false :spacing 8
+        (box :orientation "v" :space-evenly false :hexpand true :spacing 2
+          (label :class "wg-name" :halign "start" :limit-width 40 :text "${g.name}")
+          (label :class "wg-detail" :halign "start" :text "${g.detail} · ${g.played}"))
+        (button :class "wg-toggle" :valign "center" :onclick "@bin@/eww-games play ${g.store} ${g.id} &" "Play")))))
+
+;; Now playing, at the top of the sound tile while a player plays or is
+;; paused (home/eww/media.py).
+
+(defwidget media-summary []
+  (box :orientation "v" :space-evenly false :spacing 4
+    (label :class "${media.playing || media.paused ? "pod-name" : "wg-detail"}" :halign "start" :limit-width 30
+      :text {media.playing || media.paused ? "${media.playing ? "▶" : "󰏤"} ${media.title}" : "Nothing playing"})
+    ; A space, not "", so the line keeps its height with no artist.
+    (label :class "wg-detail" :halign "start" :limit-width 34 :text "${media.artist != "" ? media.artist : " "}")
+    (progress :class "meter" :orientation "h" :value {media.pct})))
+
+(defwidget media-detail []
+  (box :class "wg-tunnel up" :orientation "v" :space-evenly false :spacing 8
+    (label :class "wg-name" :halign "start" :wrap true :text "${media.title}")
+    (label :class "wg-detail" :halign "start" :wrap true
+      :text "${media.artist}${media.album != "" ? " · ${media.album}" : ""} · ${media.player}")
+    (progress :class "meter" :orientation "h" :value {media.pct})
+    (label :class "wg-detail" :halign "start" :text "${media.time}")
+    (box :orientation "h" :space-evenly true :spacing 8
+      (button :class "wg-toggle" :onclick "@bin@/eww-media previous ${media.player} &" "󰒮")
+      (button :class "wg-toggle" :onclick "@bin@/eww-media play-pause ${media.player} &" {media.playing ? "󰏤 Pause" : "▶ Play"})
+      (button :class "wg-toggle" :onclick "@bin@/eww-media next ${media.player} &" "󰒭"))))
+
 ;; Time: the clock (home/eww/clock.py) and the calendar (home/eww/cal.py):
 ;; time zone, a month grid with a dot per calendar with events that day
 ;; (docs/calendar.md), and the picked day's events.
@@ -695,11 +996,18 @@
 (defwidget time-summary []
   (box :orientation "v" :space-evenly false :spacing 2
     (label :class "clock-big" :halign "start" :text "${time.text}")
-    (label :class "wg-detail" :halign "start" :text "${time.zone == "local" ? "Local time" : time.zone} · ${time.abbr}")))
+    (label :class "wg-detail" :halign "start" :text "${time.zone == "local" ? "Local time" : time.zone} · ${time.abbr}")
+    (label :class "wg-detail" :visible {arraylength(cal.today) == 0} :halign "start" :text "No events today")
+    (for e in {jq(cal.today, ".[:2]")}
+      (box :orientation "h" :space-evenly false :spacing 6
+        (label :class "cal-dot" :style "color: ${e.color};" :text "󰝥")
+        (label :class "wg-detail" :text "${e.time}")
+        (label :halign "start" :limit-width 26 :text "${e.summary}")))
+    (pad :items {cal.today} :cap 2)))
 
 (defwidget tz-button [zone name]
   (button :class "wg-toggle ${time.zone == zone ? "active" : ""}"
-    :onclick "@bin@/eww-clock tz ${zone}" name))
+    :onclick "@bin@/eww-clock tz ${zone} &" name))
 
 (defwidget time-detail []
   (box :class "cal-panel" :orientation "v" :space-evenly false :spacing 10
@@ -709,10 +1017,10 @@
       (tz-button :zone "America/Los_Angeles" :name "Pacific")
       (tz-button :zone "UTC" :name "UTC"))
     (box :orientation "h" :space-evenly false :spacing 6
-      (button :class "cal-nav" :onclick "@bin@/eww-cal prev" "‹")
+      (button :class "cal-nav" :onclick "@bin@/eww-cal prev &" "‹")
       (label :class "cal-title" :hexpand true :text "${cal.title}")
-      (button :class "cal-nav" :onclick "@bin@/eww-cal today" "Today")
-      (button :class "cal-nav" :onclick "@bin@/eww-cal next" "›"))
+      (button :class "cal-nav" :onclick "@bin@/eww-cal today &" "Today")
+      (button :class "cal-nav" :onclick "@bin@/eww-cal next &" "›"))
     (box :class "cal-grid" :orientation "v" :space-evenly false :spacing 2
       (box :class "cal-head" :orientation "h" :space-evenly true
         (label :text "Su") (label :text "Mo") (label :text "Tu") (label :text "We")
@@ -722,7 +1030,7 @@
           (for d in week
             (button
               :class "cal-day ${d.other ? "other" : ""} ${d.today ? "today" : ""} ${d.selected ? "selected" : ""}"
-              :onclick "@bin@/eww-cal day ${d.date}"
+              :onclick "@bin@/eww-cal day ${d.date} &"
               (box :orientation "v" :space-evenly false
                 (label :class "cal-num" :text "${d.day}")
                 (box :class "cal-dots" :orientation "h" :halign "center" :space-evenly false :spacing 1
@@ -770,7 +1078,7 @@
       (label :text "󰐃${dash.pinned != "" ? " ${dash.pinned}" : ""}"))
     (button :class "chip caffeine ${caffeine}"
       :tooltip "Caffeine ${caffeine}: click to ${caffeine == "on" ? "allow" : "stop"} locking and screen blanking"
-      :onclick "@bin@/eww-caffeine toggle"
+      :onclick "@bin@/eww-caffeine toggle &"
       (label :text {caffeine == "on" ? "󰅶" : "󰛊"}))
     (session-button :icon "󰌾" :name "Lock" :onclick "@swaylock@ -f")
     (session-button :icon "󰍃" :name "Log out" :onclick "@swaymsg@ exit")
@@ -806,34 +1114,52 @@
       (dash-row :row 1
         (tile :name "net" :key "n" :title "network" :value "${net.shown.name}" :row 1
           (net-summary) (net-detail))
-        (tile :name "pods" :key "p" :title "containers" :value "${pods.text}" :row 1
-          (pods-summary) (pods-detail))
-        (tile :name "vms" :key "v" :title "microvms" :value "${@vmRunning@}/@vmTotal@" :row 1
-          (vms-summary) (vms-detail)))
-      (dash-row :row 2
+        (tile :name "virt" :key "v" :title "virtualization"
+          :value "${@vmRunning@}/@vmTotal@ · ${pods.text}" :row 1
+          (virt-summary) (virt-detail))
         (tile :name "system" :key "y" :title "system"
-          :value {arraylength(system.failed) > 0 ? "${arraylength(system.failed)} failed" : "ok"} :row 2
-          (system-summary) (system-detail))
-        (tile :name "secrets" :key "u" :title "secrets" :value {secrets.locked ? "locked" : "open"} :row 2
-          (secrets-summary) (secrets-detail))
-        (tile :name "notify" :key "a" :title "notifications"
-          :value "${notify.focus ? "󰂛 " : ""}${notify.count}" :row 2
-          (notify-summary) (notify-detail)))
+          :value {arraylength(system.failed) > 0 ? "${arraylength(system.failed)} failed" : "ok"} :row 1
+          (system-summary) (system-detail)))
+      (dash-row :row 2
+        (tile :name "usb" :key "i" :title "usb"
+          :value "󰕓 ${usb.count}${arraylength(usb.drives) > 0 ? " · 󰋊 ${arraylength(usb.drives)}" : ""}" :row 2
+          (usb-summary) (usb-detail))
+        (tile :name "displays" :key "d" :title "displays" :value "󰍹 ${arraylength(displays.outputs)}" :row 2
+          (displays-summary) (displays-detail))
+        (tile :name "sound" :key "s" :title "sound"
+          :value "${media.playing ? "▶ " : (media.paused ? "󰏤 " : "")}${volume.text}" :row 2
+          (sound-summary) (sound-detail)))
       (dash-row :row 3
-        (tile :name "devices" :key "d" :title "devices" :value "󰍹 ${arraylength(displays.outputs)} 󰕓 ${usb.count}" :row 3
-          (devices-summary) (devices-detail))
-        (tile :name "sound" :key "s" :title "sound" :value "${volume.text}" :row 3
-          (sound-summary) (sound-detail))
-        (tile :name "time" :key "t" :title "time" :value "${time.clock}" :row 3
-          (time-summary) (time-detail))))
+        (tile :name "projects" :key "p" :title "projects" :value "${projects.count}" :row 3
+          (projects-summary) (projects-detail))
+        (tile :name "tmux" :key "x" :title "tmux" :value "${tmux.count}" :row 3
+          (tmux-summary) (tmux-detail))
+        (tile :name "downloads" :key "w" :title "downloads" :value "${downloads.count}" :row 3
+          (downloads-summary) (downloads-detail))
+        (tile :name "secrets" :key "u" :title "secrets" :value {secrets.locked ? "locked" : "open"} :row 3
+          (secrets-summary) (secrets-detail)))
+      (dash-row :row 4
+        (tile :name "time" :key "t" :title "time" :value "${time.clock}" :row 4
+          (time-summary) (time-detail))
+        (tile :name "games" :key "r" :title "games" :value "${games.count}" :row 4
+          (games-summary) (games-detail))
+        (tile :name "notify" :key "a" :title "notifications"
+          :value "${notify.focus ? "󰂛 " : ""}${notify.count}" :row 4
+          (notify-summary) (notify-detail))
+        (tile :name "clip" :key "b" :title "clipboard" :value "${clip.count}" :row 4
+          (clip-summary) (clip-detail))))
     (box :class "mode" :visible {mode.name != "default" && mode.name != "dash"}
       :orientation "h" :space-evenly false :spacing 8
       (label :class "mode-name" :text "${mode.name}")
       (label :class "mode-hint" :halign "start" :wrap true :text "${mode.hint}"))
-    (label :class "dash-hint" :halign "start" :wrap true :text "@dashHint@")
-    ; Reminders of sway's, tmux's and neovim's main keys (home/eww.nix).
-    (box :class "key-hints" :orientation "h" :space-evenly true :spacing 12
-      @keyHints@)))
+    ; Both scroll sideways on a small dash rather than widen it.
+    (scroll :hscroll true :vscroll false
+      (label :class "dash-hint" :halign "start" :text "@dashHint@"))
+    ; Reminders of sway's, tmux's and neovim's main keys (home/eww.nix), on ?.
+    (revealer :reveal {dash.hints} :transition "slideup" :duration "200ms"
+      (scroll :hscroll true :vscroll false
+        (box :class "key-hints" :orientation "h" :space-evenly true :spacing 12
+          @keyHints@)))))
 
 ; The dash's half of the display and the wallpaper's (home/eww/dash.py
 ; sizes it), or the dash alone, scrolling if the display is too small.

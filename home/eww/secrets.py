@@ -1,7 +1,7 @@
 """Secrets at a glance for the dash's secrets tile (home/eww/eww.yuck,
 home/secrets.nix): whether the Bitwarden vault is unlocked, which keys
-ssh-agent and gpg-agent hold, whether a YubiKey is plugged in, the KeePassXC
-database, the sops age key, and the last secrets-backup. Nothing here reads
+ssh-agent and gpg-agent hold, whether a YubiKey is plugged in, the sops age
+key, and the last secrets-backup. Nothing here reads
 a secret: only whether one is there.
 
 Usage: eww-secrets              JSON for the tile
@@ -87,7 +87,6 @@ def main(args: list[str]) -> None:
 
 
 def state() -> str:
-    db = Path(os.environ.get("KEEPASSXC_DB") or HOME / ".local/share/keepassxc/passwords.kdbx")
     config = Path(os.environ.get("XDG_CONFIG_HOME") or HOME / ".config")
     age = Path(os.environ.get("SOPS_AGE_KEY_FILE") or config / "sops/age/keys.txt")
     backups = sorted(HOME.glob("secrets-backup-*.tar.gz.gpg"), key=lambda p: p.stat().st_mtime)
@@ -100,7 +99,6 @@ def state() -> str:
             "ssh": keys,
             "gpg": gpg_cached(),
             "yubikeys": yubikeys(),
-            "keepass": {"exists": db.exists(), "path": str(db).replace(str(HOME), "~"), "changed": ago(db)},
             "age": age.exists(),
             "backup": ago(backups[-1]) if backups else "",
             "locked": not BW_SESSION.exists() and not keys,

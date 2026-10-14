@@ -23,7 +23,7 @@ for packages.
 
 ### Using it
 
-It doesn't start at boot. Start or stop it with the button on the dash's microvms tile
+It doesn't start at boot. Start or stop it with the button on the dash's virtualization tile
 ([the dash](bar.md#nike)), or from a terminal:
 
 ```sh
@@ -53,14 +53,14 @@ sudo openvpn --config ~/share/client.ovpn
 (in a tmux window, or add `--daemon`). An orange **\*** appears beside the
 dash's network tile while the tunnel is up; see [VPNs](vpn.md#the-dash).
 A config without `redirect-gateway` brings the tunnel up without routing the
-internet through it: its line on the microvms tile, and the open tile, say whether Nike's traffic
+internet through it: its line on the virtualization tile, and the open tile, say whether Nike's traffic
 actually leaves through it. DNS goes to Quad9 (`9.9.9.9`) unless the VPN config changes it;
 with a full tunnel those queries go through the VPN too.
 
 ### Firewall modes
 
 The host decides what Nike may reach, so nothing inside Nike (root included)
-can change it. Pick a mode on the dash's microvms tile (the *Firewall* dropdown),
+can change it. Pick a mode on the dash's virtualization tile (the *Firewall* dropdown),
 or on the host:
 
 ```sh
@@ -81,7 +81,7 @@ reaches the internet around it. Use the UDP connection pack; if yours uses
 another port or TCP, change the port in `modules/nixos/nike.nix`. Nike can't
 open connections to the host in any mode but permissive; `ssh nike` works in
 every mode, since the host starts it. The mode is kept across reboots
-(`/var/lib/vm-firewall/nike`), and the dash's microvms tile shows it.
+(`/var/lib/vm-firewall/nike`), and the dash's virtualization tile shows it.
 
 ### Network
 

@@ -17,7 +17,7 @@ let
   pyApp = import ../lib/python-app.nix { inherit pkgs lib; };
 
   # The dash's own keys, in sway's dash mode (home/sway.nix, home/eww/dash.py).
-  dashHint = "h/j/k/l move · e expand · Esc collapse · c m f g n p v y u a d s t open a tile · Super+Tab back";
+  dashHint = "h/j/k/l move · e expand · Esc collapse · c m f g · n v y · i d s · p x w u · t r a b open a tile · ? keys · Super+Tab back";
 
   # The dash shows the wallpaper beside its tiles; sway's background is a
   # solid colour (home/sway.nix).
@@ -90,6 +90,10 @@ let
         [
           "z"
           "zoom pane"
+        ]
+        [
+          "{ / } / !"
+          "move pane back / on / to window"
         ]
         [
           "c / n / p"
@@ -196,6 +200,24 @@ let
     builtins.toJSON {
       hints = modeHints;
       inherit pins;
+      # The system tile's ports: what the NixOS firewall lets through
+      # (system.py), everywhere and per interface.
+      firewall =
+        let
+          fw = osConfig.networking.firewall;
+          rules = r: {
+            tcp = r.allowedTCPPorts;
+            udp = r.allowedUDPPorts;
+            tcpRanges = r.allowedTCPPortRanges;
+            udpRanges = r.allowedUDPPortRanges;
+          };
+        in
+        {
+          inherit (fw) enable;
+          all = rules fw;
+          interfaces = lib.mapAttrs (_: rules) fw.interfaces;
+          trusted = fw.trustedInterfaces;
+        };
       # The calendars' dots (cal.py), one colour per calendar in turn.
       calColors = with p; [
         pink
@@ -235,6 +257,14 @@ let
       eww-mic = "mic";
       eww-bt = "bt";
       eww-system = "system";
+      eww-conn = "conn";
+      eww-nettop = "nettop";
+      eww-tmux = "tmux";
+      eww-clip = "clip";
+      eww-downloads = "downloads";
+      eww-games = "games";
+      eww-projects = "projects";
+      eww-media = "media";
       eww-dash = "dash";
       eww-gpu = "gpu";
       eww-net = "net";
@@ -279,6 +309,15 @@ let
         bitwarden-cli
         # The system tile's garbage collection (system.py).
         nix
+        # The tmux, clipboard and projects tiles, and the sound tile's now playing.
+        tmux
+        cliphist
+        wl-clipboard
+        git
+        playerctl
+        # The usb tile's flash drives and their messages (usb.py).
+        util-linux
+        libnotify
       ]
       # GPU load, temperature and VRAM (modules/nixos/fans.nix). ROCm is
       # x86_64 only; elsewhere (e.g. an aarch64 Dionysus VM) the widget just
@@ -501,11 +540,11 @@ in
     pkgs.vdirsyncer
   ];
 
-  # The display settings are on the dash's devices tile (home/eww/display-edit.py).
+  # The display settings are on the dash's displays tile (home/eww/display-edit.py).
   xdg.desktopEntries.display-settings = {
     name = "Displays";
     comment = "Arrange displays, pick resolutions and the primary display";
-    exec = "eww-dash show devices";
+    exec = "eww-dash show displays";
     icon = "preferences-desktop-display";
     categories = [ "Settings" ];
   };
@@ -549,7 +588,8 @@ in
       ;
     vpnStars = vpnStarLabels;
     swaymsg = "${pkgs.sway}/bin/swaymsg";
-    swaylock = "${pkgs.swaylock}/bin/swaylock";
+    # Wipes the clipboard history, then locks (home/sway.nix).
+    swaylock = "harmonia-lock";
     systemctl = "${pkgs.systemd}/bin/systemctl";
     vmPolls = lib.concatMapStrings vmPoll vmNames;
     vmBadges = lib.concatMapStrings vmBadge vmNames;

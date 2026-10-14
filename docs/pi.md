@@ -1,19 +1,76 @@
 # pi and Claude Code
 
 [pi](https://pi.dev) and [Claude Code](https://github.com/anthropics/claude-code)
-run natively on harmonia, configured by [`home/ai.nix`](../home/ai.nix) (pi)
-and [`home/gamedev.nix`](../home/gamedev.nix) (Claude Code).
+run on harmonia in containers ([below](#the-containers)), configured by
+[`home/ai.nix`](../home/ai.nix) (pi) and
+[`home/gamedev.nix`](../home/gamedev.nix) (Claude Code), with the
+containers in [`home/agents.nix`](../home/agents.nix).
 They're harmonia only: cadmus, Dionysus and Nike have no AI agents. Both
-are on their own defaults, with no global rules or system prompts from this repo: a project's instructions live in its
-own `.agents/AGENTS.md` ([below](#instructions-come-from-agents);
-[gamedev.md](gamedev.md) has templates for games).
+are on their own defaults, with no global rules from this repo: a project's
+instructions live in its own `.agents/AGENTS.md`
+([below](#instructions-come-from-agents); [gamedev.md](gamedev.md) has
+templates for games). The one thing added to their system prompt is where
+they run ([below](#what-the-agents-are-told-about-the-container)).
 
 ```sh
+cd ~/Projects/agon/agon
 pi          # /login the first time, or set a provider's API key
 claude      # /login the first time
 ```
 
-Both run on the host with your user's access.
+## The containers
+
+`claude` and `pi` aren't the agents themselves but launchers: each starts
+the agent in a new rootless podman container for the folder you're in,
+named `<agent>-<folder>-<uuid>` (`claude-agon-3f2c…`), and removes it when
+the agent exits. They show on the dash's virtualization tile with a 󰚩 and
+the folder they work in ([the dash](bar.md#tiles)). Neither agent is
+installed on the host any more.
+
+The image is built by Nix and loaded into podman the first time you run
+an agent after a rebuild that changed it (about half a minute):
+
+- **Debian 13 (trixie-slim)**, pinned by digest, as the system;
+- **Nix** with flakes, single-user and owned by you inside, so `nix shell
+  nixpkgs#…`, `nix develop` and `nix build` work. It has its own store,
+  separate from the host's (your user is a trusted Nix user, so sharing the
+  host's daemon would hand the agent root); its builds run without Nix's
+  sandbox, which needs namespaces the container doesn't allow;
+- **Claude Code** and **pi**, the same builds as before, and the **MCP
+  servers** (the same builds the configs name);
+- **Godot** and **Blender**, headless (`godot --headless`, `blender -b`);
+- git, ripgrep, fd, jq, curl, uv, Python and the usual shell tools.
+
+Each container sees only:
+
+| In the container | From the host |
+| --- | --- |
+| `~/workdir` (read-write, where the agent starts) | the folder you ran `claude` or `pi` in |
+| `~/.claude` (Claude Code) | `~/.claude`: settings, login, sessions, skills; `.claude.json` lives in it now (`CLAUDE_CONFIG_DIR`), moved there from `~/.claude.json` once |
+| `~/.pi` and `~/.claude/skills` read-only (pi) | the same |
+| `~/.cache` | `~/.cache/harmonia-agents` (uv's and Nix's caches, so MCP servers start fast) |
+| `~/.config/godot-ai/capabilities`, read-only | the godot-ai record ([below](#the-godot-ai-service)) |
+
+Everything else in the container's home is a private tmpfs, gone when it
+exits, and so is anything installed into its Nix store. It runs as your
+uid (`--userns=keep-id`) with every capability dropped, no-new-privileges
+and no sudo or setuid programs, so there is no way to root; it has a
+process limit. It reaches the internet, but of the host's own services only
+Blender's add-on (9876) and godot-ai (8000, 9500), which pasta forwards to
+the container's localhost; everything else on the host's localhost is
+refused. Commits carry your git name and email (passed in, since
+`~/.config/git` isn't mounted); pushing over SSH has no keys inside, so
+push from the host.
+
+### What the agents are told about the container
+
+Both start with `--append-system-prompt`: that they run in a rootless
+container with Nix and flakes and headless Godot and Blender, that only
+`~/workdir` and their configuration are there and only Blender and Godot
+of the host's services, to use `nix shell` for missing tools, to tell you
+when a request needs something outside the container rather than work
+around it, and not to probe or test the container, or run a project's
+tests unless the change calls for them.
 
 ## pi
 
@@ -38,7 +95,7 @@ there; what it sets wins, and whatever else you add with `/mcp`,
 | `~/.pi/agent/models.json` | nothing; it only takes out the `local` provider older versions put there |
 | `~/.pi/agent/mcp.json` | the Blender, Godot and radare2 MCP servers (below) |
 | `~/.pi/agent/settings.json` | `~/.claude/skills` as a skill path, projects never trusted, telemetry off; it takes out the `local/ai` startup model older versions set |
-| `~/.pi/agent/extensions/agents-dir.ts` | the `.agents/` extension (below), a link into the Nix store |
+| `~/.pi/agent/extensions/agents-dir.ts` | the `.agents/` extension (below), copied (a link into the host's Nix store would dangle in the container) |
 
 omo (oh-my-openagent), which this replaced, kept its state in `~/.omo`;
 delete that folder once you don't need its sessions.
@@ -72,7 +129,10 @@ release. They connect to the editors on localhost.
 | `radare2`: [r2mcp](https://github.com/radareorg/radare2-mcp) | 1.8.8 | binaries on this machine | none |
 
 In Claude Code, `/mcp` lists them as user servers; they're merged into
-`~/.claude.json` on every switch.
+`~/.claude/.claude.json` on every switch. The containers run the servers
+themselves, from the same builds; Blender's and Godot's ports are
+forwarded from the host ([above](#the-containers)), and radare2 analyses
+binaries in `~/workdir`.
 
 Several clients can share the Godot server, so Claude Code and pi can
 both use Godot at once. The Blender add-on accepts one client at a time.
@@ -105,7 +165,8 @@ Port 8000 is Godot's, which is why the Nike CyberChef tunnel uses 8001.
 
 ## Skills
 
-Claude Code's skills are in `~/.claude/skills`, and pi reads them
+Claude Code's skills are in `~/.claude/skills` (copied there on every
+switch, not linked, so the containers can read them), and pi reads them
 there too: the game dev ones from [`home/gamedev/skills/`](../home/gamedev/skills)
 ([gamedev.md](gamedev.md#what-the-agents-are-told)) and three for the Rust
 command-line tools from [`home/skills/`](../home/skills): `rust-search`,

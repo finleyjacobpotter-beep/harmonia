@@ -21,6 +21,8 @@
     ../modules/nixos/sudo.nix
     ../modules/nixos/secrets.nix
     ../modules/nixos/vpn.nix
+    ../modules/nixos/dash.nix
+    ../modules/nixos/usb-mount.nix
   ];
 
   # The only non-free packages allowed, by name. A host adds its own here

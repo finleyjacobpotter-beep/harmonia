@@ -27,8 +27,10 @@ chmod +x install.py && sudo ./install.py   # fetches Python via nix-shell
 ```
 
 It asks for the disk, the host (for dionysus it picks `.#dionysus` or
-`.#dionysus-aarch64` from the machine's architecture), whether to use LUKS (the passphrase is read in, then
-shown back to you to confirm before anything is written), and a swap size,
+`.#dionysus-aarch64` from the machine's architecture), whether to use LUKS
+and how to unlock it at boot (see [Unlocking with the TPM](#luks-unlocking-with-the-tpm)),
+the passphrase (and PIN) (each read in, then shown back to you to confirm
+before anything is written), and a swap size,
 then asks you to type `ERASE` before touching the disk. It ends with your
 hardware config already in `~/harmonia` of the host's user, ready for step 11.
 
@@ -136,6 +138,47 @@ mount -o umask=077 /dev/disk/by-label/boot /mnt/boot
 `boot.initrd.luks.devices` entry into the hardware config for you, so harmonia
 needs no extra changes for it.
 
+### (LUKS) Unlocking with the TPM
+
+With a TPM2 (on in the firmware), the root partition can unlock without
+typing the passphrase. There are three choices, and `install.py` asks which:
+
+| Unlock | At boot | Who else can unlock it |
+|---|---|---|
+| **passphrase** | type the passphrase | whoever knows it |
+| **tpm** | nothing to type | anyone who can boot this machine with Secure Boot as it is now, a live USB included, as long as the disk stays in it |
+| **tpm-pin** | type a short PIN | whoever knows the PIN, on this machine only; the TPM locks out guessing |
+
+**tpm** only guards a disk taken out of the machine, so pick **tpm-pin** (or
+the passphrase) for a laptop that might be stolen. The passphrase stays
+enrolled with either TPM choice, as the way in when the TPM refuses.
+
+The TPM releases the key only while PCR 7, the Secure Boot state, is as it
+was when you enrolled: kernel and NixOS updates leave it alone, while
+turning Secure Boot on or off, new Secure Boot keys, some firmware updates,
+or a new motherboard change it. Then you are asked for the passphrase, and
+can enroll again once booted.
+
+On an installed machine, [`scripts/tpm-pin.py`](../scripts/tpm-pin.py) does
+that for **tpm-pin**, and also turns a passphrase-only disk into one: run
+`sudo ./scripts/tpm-pin.py` from `~/harmonia`. It finds the partition behind
+`cryptroot`, checks for a TPM2 and a passphrase slot, has you type the
+passphrase once to prove it opens the disk, then replaces any TPM slot with
+one that needs the TPM and a PIN (you type the passphrase again and the
+PIN twice). The passphrase slot is never touched, and the key slots are
+listed before and after. By hand, for either TPM choice:
+
+```sh
+sudo systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/root
+# add --tpm2-with-pin=yes for a PIN; it asks for the passphrase, then the PIN
+```
+
+By hand, after `cryptsetup open` above, run the same without `--wipe-slot=tpm2`
+on `"$ROOT"`, and add `boot.initrd.systemd.enable = true;` to the
+configuration in step 6 (harmonia's hosts have it already: it is nixpkgs'
+default there). The systemd initrd uses any TPM2 key slot it finds in the
+LUKS header, so nothing else needs configuring.
+
 ### Swap (optional)
 
 harmonia doesn't set up swap. If you want some, a swap file is simplest:
@@ -239,7 +282,8 @@ reboot
 ```
 
 Remove the USB stick. You'll get the systemd-boot menu, then (LUKS) a
-passphrase prompt, then a text login. Log in as **`u`**.
+passphrase prompt (a PIN prompt with **tpm-pin**, nothing with **tpm**),
+then a text login. Log in as **`u`**.
 
 Get online again if you're on Wi-Fi: `nmtui`.
 

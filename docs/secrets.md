@@ -10,8 +10,7 @@ each, and when `secrets-backup` last ran.
 
 | Tool | Command | Notes |
 | --- | --- | --- |
-| KeePassXC CLI | `keepassxc-cli` | the local database, at `$KEEPASSXC_DB` (`~/.local/share/keepassxc/passwords.kdbx`) |
-| Bitwarden CLI | `bw` | the cloud vault; `bw-unlock` / `bw-lock` keep a session for the shell and the calendar sync |
+| Bitwarden CLI | `bw` | the vault on `harmonia.bitwarden.server`; `bw-unlock` / `bw-lock` keep a session for the shell and the calendar sync |
 | OpenSSH ssh-agent | `ssh-add` | holds SSH keys (`$XDG_RUNTIME_DIR/ssh-agent`); gnome-keyring's SSH agent is off |
 | GnuPG | `gpg` | for the YubiKey and the backup; no gpg-agent setup, so it backs neither passwords nor SSH |
 | YubiKey Manager | `ykman` | talks to the key through pcscd; gpg's scdaemon does too (`disable-ccid`) |
@@ -19,39 +18,42 @@ each, and when `secrets-backup` last ran.
 | age | `age`, `age-keygen` | the key sops encrypts to, at `~/.config/sops/age/keys.txt` |
 | sops | `sops` | edits files kept encrypted in a repository |
 
-## KeePassXC and Bitwarden together
+## Bitwarden
 
-The two are split by where a secret needs to be:
+**Bitwarden (`bw`) is the vault**: anything you also want on your phone or
+another machine, and anything a background job needs (the calendar sync
+reads its CalDAV password from here), because `bw` can stay unlocked for the
+session. Firefox has the Bitwarden add-on for the same vault
+([firefox.md](firefox.md)). `bw` keeps an encrypted copy of the vault in
+`~/.config/Bitwarden CLI`, so it can read items offline once unlocked; edits
+need the server, and `bw sync` fetches changes.
 
-- **Bitwarden (`bw`) is the everyday vault.** Anything you also want on your
-  phone or another machine, and anything a background job needs (the
-  calendar sync reads its CalDAV password from here), because `bw` can stay
-  unlocked for the session. Firefox has the Bitwarden add-on for the same
-  vault ([firefox.md](firefox.md)).
-- **KeePassXC (`keepassxc-cli`) is the local, offline database.** Secrets that
-  should never sit on someone else's server: recovery codes, the Bitwarden
-  master password and 2FA recovery code, disk and backup passphrases, keys
-  for this machine only. It asks for the database password on every command,
-  so nothing stays unlocked.
+**The server is `harmonia.bitwarden.server`**, set to
+`https://vault.iojoi.cc` in `home/default.nix` (harmonia and cadmus;
+Dionysus keeps bitwarden.com unless its home sets it too). Each rebuild runs
+`bw config server` with it, before you `bw login`, and gives the Firefox
+add-on the same server ([firefox.md](firefox.md)). bw won't change servers
+while logged in to another one: the rebuild then warns, and `bw logout`
+followed by another rebuild switches it. `bw config server` shows the one in
+use.
 
 ```sh
-# Bitwarden: log in once, then unlock per session
+# Log in once, then unlock per session
 bw login
 bw-unlock                              # sets BW_SESSION here, in new shells and for the calendar sync
 bw get password calendar/caldav
 bw-lock                                # or log out
-
-# KeePassXC: create the database once, then use it directly
-mkdir -p "$(dirname "$KEEPASSXC_DB")"
-keepassxc-cli db-create -p "$KEEPASSXC_DB"
-keepassxc-cli add -g "$KEEPASSXC_DB" recovery/bitwarden     # -g generates a password
-keepassxc-cli show -s "$KEEPASSXC_DB" recovery/bitwarden
-keepassxc-cli clip "$KEEPASSXC_DB" recovery/bitwarden       # copies, clears after 10 s
-keepassxc-cli open "$KEEPASSXC_DB"                          # interactive shell: one unlock, many commands
 ```
 
-The same `.kdbx` opens in the KeePassXC app (installed with the CLI) if you
-want a window.
+Secrets that should never sit on someone else's server (recovery codes, the
+Bitwarden master password and 2FA recovery code, disk and backup
+passphrases) can go in a file encrypted with sops and your age key
+([below](#sops-with-age)), kept wherever you like; `secrets-backup` saves
+the age key that opens it.
+
+There is no KeePassXC: its CLI can't import a Bitwarden export into a
+`.kdbx` (`keepassxc-cli import` only reads KeePass XML), so it couldn't hold
+an offline copy of the vault, and `secrets-backup` already keeps one.
 
 ## SSH keys
 
@@ -93,7 +95,6 @@ can also still open the files.
 
 ```sh
 bw login && bw-unlock
-mkdir -p "$(dirname "$KEEPASSXC_DB")" && keepassxc-cli db-create -p "$KEEPASSXC_DB"
 ssh-add                          # your default keys
 export BAO_ADDR=https://bao.example.com && bao login
 ykman info                       # with the key plugged in
@@ -107,11 +108,10 @@ skips, with a warning, anything missing, locked or logged out:
 
 | Part | What goes in | Needs |
 | --- | --- | --- |
-| `keepassxc/` | `$KEEPASSXC_DB` and every other `.kdbx` (and key file) next to it, as is (already encrypted) | a database there |
 | `ssh/` | all of `~/.ssh`: keys, `config`, `known_hosts` (passphrase-protected keys stay protected) | a `~/.ssh` |
 | `sops/keys.txt` | the age key sops decrypts with (`$SOPS_AGE_KEY_FILE` or `~/.config/sops/age/keys.txt`) | a key there |
 | `pass/` | a pass store left from before, with its git history, if one is still there | `~/.local/share/password-store` or `~/.password-store` |
-| `bitwarden.json` | `bw export --format json` (asks for the master password again) | `bw status` is `unlocked` |
+| `bitwarden.json` | `bw export --format json` (asks for the master password again) | an unlocked vault: `BW_SESSION`, or the session `bw-unlock` left in `$XDG_RUNTIME_DIR` (so a shell opened before the unlock works too) |
 
 The tarball is encrypted with a **passphrase** (gpg `--symmetric`, AES-256),
 not with a gpg key, so it opens with nothing but that passphrase. `secrets-backup`
@@ -133,7 +133,6 @@ Restore:
 
 ```sh
 d=$(mktemp -d) && gpg --pinentry-mode loopback -d secrets-backup-<time>.tar.gz.gpg | tar -xzf - -C "$d" && cd "$d"
-mkdir -p "$(dirname "$KEEPASSXC_DB")" && cp keepassxc/* "$(dirname "$KEEPASSXC_DB")"/
 mkdir -p ~/.ssh && cp -a ssh/. ~/.ssh/ && chmod 700 ~/.ssh
 [ -f sops/keys.txt ] && install -Dm600 sops/keys.txt ~/.config/sops/age/keys.txt
 [ -d pass ] && cp -a pass ~/.local/share/password-store   # only if the backup had one
